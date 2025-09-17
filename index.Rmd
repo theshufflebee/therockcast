@@ -7,44 +7,10 @@ documentclass: book
 bibliography: [book.bib]
 biblio-style: apalike
 link-citations: yes
-description: "This is a bookdown project for the University Forecasting course."
+description: "This is a bookdown project for a University Forecasting course."
 ---
 
-# Preface {-}
-
-Welcome to The RockCast, a comprehensive guide to forecasting methods and applications. This book serves as both a learning resource and reference for the University Forecasting Project.
-
-This book was created using [bookdown](https://bookdown.org/), which makes it easy to write books and long-form articles/reports with R Markdown.
-
-## How to use this book {-}
-
-Each chapter in this book covers different aspects of forecasting:
-
-- **Chapter 1**: Introduction to Forecasting
-- **Chapter 2**: Time Series Fundamentals
-- **Chapter 3**: Forecasting Methods
-- **Chapter 4**: Model Evaluation
-
-You can navigate through the book using the table of contents on the left, or use the search function to find specific topics.
-
-## Prerequisites {-}
-
-This book assumes basic knowledge of:
-
-- Statistics and probability
-- R programming
-- Time series concepts
-
-## Software Information {-}
-
-This book was built with:
-
-```{r eval=FALSE}
-# R packages used
-library(bookdown)
-library(rmarkdown)
-library(knitr)
-```
+# Abstract {-}
 
 ```{r include=FALSE}
 # Automatically create a bibliography database for R packages
