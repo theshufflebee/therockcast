@@ -1,0 +1,48 @@
+# Bookdown build artifacts
+/_book/
+/_bookdown_files/
+/*.html
+/*.pdf
+/*.epub
+
+# R artifacts
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
+
+# Package files
+packages.bib
+
+# Temporary files
+*~
+.#*
+#*#
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
+
+# RStudio files
+.Rproj.user/
+*.Rproj
+
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.toc
+*.synctex.gz

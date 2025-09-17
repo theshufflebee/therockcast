@@ -1,0 +1,182 @@
+# Model Evaluation and Selection
+
+## Introduction
+
+Evaluating forecasting models is crucial for selecting the best approach and understanding model performance. This chapter covers various evaluation metrics and validation techniques.
+
+## Forecast Accuracy Measures
+
+### Scale-Dependent Measures
+
+**Mean Absolute Error (MAE)**
+$$MAE = \frac{1}{n}\sum_{i=1}^{n}|y_i - \hat{y}_i|$$
+
+**Root Mean Square Error (RMSE)**
+$$RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}$$
+
+### Percentage Error Measures
+
+**Mean Absolute Percentage Error (MAPE)**
+$$MAPE = \frac{100}{n}\sum_{i=1}^{n}\left|\frac{y_i - \hat{y}_i}{y_i}\right|$$
+
+**Symmetric MAPE (sMAPE)**
+$$sMAPE = \frac{200}{n}\sum_{i=1}^{n}\frac{|y_i - \hat{y}_i|}{|y_i| + |\hat{y}_i|}$$
+
+### Scale-Free Measures
+
+**Mean Absolute Scaled Error (MASE)**
+$$MASE = \frac{MAE}{MAE_{naive}}$$
+
+```{r accuracy-measures, eval=FALSE}
+library(forecast)
+
+# Calculate accuracy measures
+accuracy(forecast_object, test_data)
+
+# Custom accuracy calculation
+calculate_mape <- function(actual, predicted) {
+  mean(abs((actual - predicted) / actual)) * 100
+}
+```
+
+## Cross-Validation for Time Series
+
+Traditional cross-validation doesn't work well for time series due to temporal dependence. Instead, we use:
+
+### Time Series Cross-Validation
+
+```{r time-series-cv, eval=FALSE}
+# Time series cross-validation
+cv_results <- tsCV(ts_data, forecastfunction = auto.arima, h = 1)
+
+# Calculate CV accuracy
+sqrt(mean(cv_results^2, na.rm = TRUE))  # CV RMSE
+```
+
+### Rolling Window Validation
+
+```{r rolling-window, eval=FALSE}
+# Rolling window forecast evaluation
+n <- length(ts_data)
+window_size <- 50
+h <- 12
+
+errors <- numeric(n - window_size - h + 1)
+
+for(i in 1:(n - window_size - h + 1)) {
+  train_data <- window(ts_data, end = window_size + i - 1)
+  test_data <- window(ts_data, start = window_size + i, end = window_size + i + h - 1)
+  
+  model <- auto.arima(train_data)
+  forecast_result <- forecast(model, h = h)
+  
+  errors[i] <- accuracy(forecast_result, test_data)[2, "RMSE"]
+}
+
+mean(errors)
+```
+
+## Model Selection Criteria
+
+### Information Criteria
+
+**Akaike Information Criterion (AIC)**
+$$AIC = 2k - 2\ln(L)$$
+
+**Bayesian Information Criterion (BIC)**
+$$BIC = k\ln(n) - 2\ln(L)$$
+
+```{r model-selection, eval=FALSE}
+# Compare models using AIC
+model1 <- auto.arima(ts_data)
+model2 <- ets(ts_data)
+
+AIC(model1)
+AIC(model2)
+
+# Model comparison
+cat("Model 1 AIC:", AIC(model1), "\n")
+cat("Model 2 AIC:", AIC(model2), "\n")
+```
+
+## Residual Analysis
+
+Analyzing residuals helps validate model assumptions:
+
+```{r residual-analysis, eval=FALSE}
+# Residual diagnostics
+model <- auto.arima(ts_data)
+checkresiduals(model)
+
+# Manual residual analysis
+residuals <- residuals(model)
+
+# Ljung-Box test for autocorrelation
+Box.test(residuals, type = "Ljung-Box")
+
+# Normality test
+shapiro.test(residuals)
+```
+
+## Forecast Intervals
+
+Understanding uncertainty in forecasts:
+
+```{r forecast-intervals, eval=FALSE}
+# Generate forecast with prediction intervals
+forecast_result <- forecast(model, h = 12, level = c(80, 95))
+
+# Plot with intervals
+autoplot(forecast_result) +
+  ggtitle("Forecast with Prediction Intervals")
+```
+
+## Model Comparison Framework
+
+### Step-by-Step Evaluation Process
+
+1. **Split data** into training and test sets
+2. **Fit multiple models** on training data
+3. **Generate forecasts** for test period
+4. **Calculate accuracy measures**
+5. **Perform residual analysis**
+6. **Consider practical factors**
+
+```{r model-comparison, eval=FALSE}
+# Comprehensive model comparison
+models <- list(
+  "ARIMA" = auto.arima(train_data),
+  "ETS" = ets(train_data),
+  "Naive" = naive(train_data),
+  "Neural Network" = nnetar(train_data)
+)
+
+# Generate forecasts
+forecasts <- lapply(models, function(m) forecast(m, h = length(test_data)))
+
+# Calculate accuracy
+accuracy_results <- sapply(forecasts, function(f) accuracy(f, test_data)[2, "RMSE"])
+
+# Results table
+results_table <- data.frame(
+  Model = names(accuracy_results),
+  RMSE = accuracy_results
+)
+
+print(results_table)
+```
+
+## Best Practices
+
+1. **Use multiple evaluation metrics**
+2. **Consider forecast horizon**
+3. **Validate on out-of-sample data**
+4. **Check residuals**
+5. **Consider practical constraints**
+6. **Update models regularly**
+
+## Conclusion
+
+Model evaluation is an iterative process that requires careful consideration of multiple factors. The "best" model depends on your specific context, data characteristics, and forecasting objectives.
+
+Remember: **All models are wrong, but some are useful** - the goal is to find the most useful model for your specific forecasting task.
