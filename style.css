@@ -1,0 +1,86 @@
+p.caption {
+  color: #777;
+  margin-top: 10px;
+}
+p code {
+  white-space: inherit;
+}
+pre {
+  word-break: normal;
+  word-wrap: normal;
+}
+pre code {
+  white-space: inherit;
+}
+
+/* Custom styling for the book */
+.book .book-header h1 {
+  color: #2c3e50;
+}
+
+.book .book-summary {
+  background: #f8f9fa;
+}
+
+.book .book-summary ul.summary li a {
+  color: #2c3e50;
+}
+
+.book .book-summary ul.summary li a:hover {
+  color: #3498db;
+}
+
+/* Chapter headings */
+h1 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+h2 {
+  color: #34495e;
+  border-bottom: 1px solid #ecf0f1;
+  padding-bottom: 5px;
+}
+
+/* Code blocks */
+pre {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 5px;
+}
+
+/* Links */
+a {
+  color: #3498db;
+}
+
+a:hover {
+  color: #2980b9;
+}
+
+/* Table styling */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid #3498db;
+  margin: 0;
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+}

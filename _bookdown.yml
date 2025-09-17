@@ -1,0 +1,13 @@
+book_filename: "therockcast"
+delete_merged_file: true
+language:
+  ui:
+    chapter_name: "Chapter "
+
+rmd_files: [
+  "index.Rmd",
+  "01-intro.Rmd",
+  "02-timeseries.Rmd",
+  "03-methods.Rmd",
+  "04-evaluation.Rmd"
+]
