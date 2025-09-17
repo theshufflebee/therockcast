@@ -4,22 +4,19 @@ A comprehensive bookdown environment for learning and applying forecasting metho
 
 ## Overview
 
-This repository contains a complete bookdown project designed for university-level forecasting education. The book covers fundamental concepts, methodologies, and practical applications of forecasting using R.
+This repository contains all data related to a forecasting project on ECB Policy rates.
 
 ## Contents
 
 - **Preface**: Introduction and book structure
-- **Chapter 1**: Introduction to Forecasting
-- **Chapter 2**: Time Series Fundamentals  
-- **Chapter 3**: Forecasting Methods
-- **Chapter 4**: Model Evaluation and Selection
-
+- **Chapter 1**: tbd
+- **Chapter 2**: tbd 
+- **Chapter 3**: tbd
+- **Chapter 4**: tbd
 ## Prerequisites
 
-To work with this bookdown project, you'll need:
+To work with this bookdown project, you'll need R Studio with:
 
-- R (version 4.0 or higher)
-- Pandoc
 - The following R packages:
   - `bookdown`
   - `rmarkdown` 
@@ -27,34 +24,6 @@ To work with this bookdown project, you'll need:
 
 ## Installation
 
-### Ubuntu/Debian
-```bash
-# Install R and Pandoc
-sudo apt update
-sudo apt install r-base r-base-dev pandoc
-
-# Install R packages (choose one method)
-
-# Method 1: Via apt (recommended)
-sudo apt install r-cran-bookdown r-cran-rmarkdown r-cran-knitr
-
-# Method 2: Via R console
-R -e "install.packages(c('bookdown', 'rmarkdown', 'knitr'), repos='https://cloud.r-project.org/')"
-```
-
-### macOS
-```bash
-# Install using Homebrew
-brew install r pandoc
-
-# Install R packages
-R -e "install.packages(c('bookdown', 'rmarkdown', 'knitr'))"
-```
-
-### Windows
-1. Install R from [CRAN](https://cran.r-project.org/bin/windows/base/)
-2. Install Pandoc from [pandoc.org](https://pandoc.org/installing.html)
-3. Install R packages:
 ```r
 install.packages(c('bookdown', 'rmarkdown', 'knitr'))
 ```
@@ -72,28 +41,12 @@ cd therockcast
 # Build the book
 R -e "bookdown::render_book('index.Rmd', 'bookdown::gitbook')"
 ```
+Set wd to base repo and run comand from there in R Studio consile
 
-The generated book will be available in the `_book/` directory. Open `_book/index.html` in your web browser.
+The generated book will be available in the `_book/` directory. Open `_book/index.html` in your web browser to check it out.
 
 ### Serving the Book Locally
 
-To serve the book with a local web server:
-
-```bash
-# Navigate to the book output directory
-cd _book
-
-# Start a simple HTTP server (Python 3)
-python3 -m http.server 8000
-
-# Or using Python 2
-python -m SimpleHTTPServer 8000
-
-# Or using R
-R -e "servr::httd('.')"
-```
-
-Then visit `http://localhost:8000` in your browser.
 
 ### Building Other Formats
 
@@ -114,9 +67,9 @@ R -e "bookdown::render_book('index.Rmd')"
 therockcast/
 ├── index.Rmd              # Main entry point and preface
 ├── 01-intro.Rmd           # Introduction to Forecasting
-├── 02-timeseries.Rmd      # Time Series Fundamentals
-├── 03-methods.Rmd         # Forecasting Methods
-├── 04-evaluation.Rmd      # Model Evaluation and Selection
+├── 02-chapter-1.Rmd      # Time Series Fundamentals
+├── 03-chapter-2.Rmd         # Forecasting Methods
+├── 04-chapter-3.Rmd      # Model Evaluation and Selection
 ├── _bookdown.yml          # Bookdown configuration
 ├── _output.yml            # Output format configuration
 ├── book.bib               # Bibliography file
@@ -135,9 +88,9 @@ therockcast/
 rmd_files: [
   "index.Rmd",
   "01-intro.Rmd",
-  "02-timeseries.Rmd", 
-  "03-methods.Rmd",
-  "04-evaluation.Rmd",
+  "02-chapter-1.Rmd", 
+  "03-chapter-2.Rmd",
+  "04-chapter-3.Rmd",
   "05-applications.Rmd"
 ]
 ```
@@ -182,16 +135,7 @@ This will automatically rebuild and refresh the book when you make changes to th
 - [R Markdown documentation](https://rmarkdown.rstudio.com/)
 - [RStudio Community](https://community.rstudio.com/)
 
-## Contributing
-
-Feel free to contribute to this project by:
-
-- Adding new content or chapters
-- Improving existing explanations
-- Fixing typos or errors
-- Enhancing the styling
-- Adding examples and exercises
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+None
