@@ -7,7 +7,9 @@ language:
 rmd_files: [
   "index.Rmd",
   "01-intro.Rmd",
-  "02-timeseries.Rmd",
-  "03-methods.Rmd",
-  "04-evaluation.Rmd"
+  "02-chapter-1.Rmd",
+  "03-chapter-2.Rmd",
+  "04-chapter-3.Rmd"
 ]
+
+output_dir: "docs"
