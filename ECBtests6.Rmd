@@ -435,11 +435,11 @@ worker_results <- foreach(
     rate_lag = testing$rate_lag[1:H])
 
   # --- 6. Get H-step forecasts for all 5 models ---
-  TR_preds_1 <- pmax(predict(TR_model_1, new_data_base), -0.5)
-  TR_preds_2 <- pmax(predict(TR_model_2, new_data_base), -0.5)
-  TR_preds_3 <- pmax(predict(TR_model_3, new_data_3), -0.5)
-  TR_preds_4 <- pmax(predict(TR_model_4, new_data_4), -0.5)
-  BM_preds   <- pmax(BMpredicted_rates, -0.5) # Benchmark
+  TR_preds_1 <- pmax(predict(TR_model_1, new_data_base), min(data$rate))
+  TR_preds_2 <- pmax(predict(TR_model_2, new_data_base), min(data$rate))
+  TR_preds_3 <- pmax(predict(TR_model_3, new_data_3), min(data$rate))
+  TR_preds_4 <- pmax(predict(TR_model_4, new_data_4), min(data$rate))
+  BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark
   
   # --- 7. Compute errors against actuals ---
   actual_rates <- testing$rate[1:H]
