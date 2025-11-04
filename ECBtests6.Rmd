@@ -154,14 +154,6 @@ shadow_rate_daily$quarter <- as.yearqtr(as.Date(shadow_rate_daily$DATE))
 shadow_rate_daily$month <- as.yearmon(as.Date(shadow_rate_daily$DATE))
 quarterly_shadow = aggregate(shadowrate ~ quarter, data=shadow_rate_daily, FUN=mean, na.rm=T)
 monthly_shadow = aggregate(shadowrate ~ month, data=shadow_rate_daily, FUN=mean, na.rm=T)
-# MRR (communication) (just to test)
-ecb_mrr_daily <- fredr(series_id = "ECBMRRFR", observation_start = as.Date(start_date))
-ecb_mrr_q <- ecb_mrr_daily %>%
-  mutate(quarter = as.yearqtr(date)) %>%
-  group_by(quarter) %>%
-  summarise(rate = last(value)) %>%
-  mutate(date = as.Date(quarter))
-colnames(ecb_mrr_q)[which(names(ecb_mrr_q) == "rate")] <- "MRR"
 
 # --- 2. HICP Inflation (Euro Area) ---
 inflation_data <- get_eurostat("prc_hicp_manr", filters = list(geo = "EA", coicop = "CP00"), type = "label")
