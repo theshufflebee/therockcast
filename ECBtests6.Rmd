@@ -56,8 +56,6 @@ Predict interest rate Using forecast_dataset on TR model
 For horizon, compute DM TEST
 Use MFSE of TR against benchmark 
 
-I can ask Marco Sotonovoa for questions on the code but dont tell prof MDR
-
 ## Pseudo Code
 basically just python code
 
