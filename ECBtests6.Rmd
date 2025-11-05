@@ -368,7 +368,7 @@ generate_mincer_zarnowitz_report <- function(F_model,
     booktabs = TRUE,
     caption = model_caption,
     digits = 4,
-    col.names = c("h", "Alpha", "Beta", "p(Joint)"),
+    col.names = c("h", "Alpha", "Beta", "pv(Joint)"),
     escape = FALSE ) %>%
     kable_styling(
       latex_options = c("striped", "scale_down"),
@@ -376,7 +376,7 @@ generate_mincer_zarnowitz_report <- function(F_model,
     column_spec(1, bold = TRUE, border_right = TRUE) %>%
     column_spec(4, monospace = TRUE) %>%
     footnote(
-      general = "p(Joint) is the p-value for the joint hypothesis H_0: (Alpha, Beta) = (0, 1). A high p-value means we fail to reject the null hypothesis of an unbiased, efficient forecast.",
+      general = "pv(Joint) is the p-value for the joint hypothesis H_0: (Alpha, Beta) = (0, 1). A high p-value means we fail to reject the null hypothesis of an unbiased, efficient forecast.",
       symbol = c(
         "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"),
       general_title = "Note:",
