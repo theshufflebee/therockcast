@@ -345,8 +345,18 @@ generate_mincer_zarnowitz_report <- function(F_model,
       mz_results$Alpha[h] <- coeffs[1, 1] 
       mz_results$Beta[h]  <- coeffs[2, 1] 
       
+      # Using NW errors as seen in class, with lag selection h-1
+      v_matrix <-
+        if (h == 1) {
+          # h=1: No autocorrelation, use standard "White" (HC) errors
+          sandwich::vcovHC(mz_reg, type = "HC3")
+        } else {
+          # h>1: Use Newey-West, manually setting lag = h-1
+          sandwich::NeweyWest(mz_reg, lag = h - 1)}
+      
       # 4. Test Joint Hypothesis H0: Alpha = 0 AND Beta = 1 and store pvalues
-      test_joint <- linearHypothesis(mz_reg, c("(Intercept) = 0", "forecasts = 1"))
+      test_joint <- linearHypothesis(mz_reg,
+                       c("(Intercept) = 0", "forecasts = 1"), vcov. = v_matrix)
       mz_results$P_Value_Joint_Test[h] <- test_joint$"Pr(>F)"[2]
 
     } else {
@@ -463,6 +473,7 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
 
 #parameters
 R = 54-28-8 #note: start of ZLB at R=54
+R = 54+28
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 12 #number of different horizons
 
