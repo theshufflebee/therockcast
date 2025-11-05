@@ -110,7 +110,8 @@ require(knitr) #tables
 require(kableExtra) #tables extra
 require(rdbnomics)
 require(doParallel) #for speed
-require(foreach)
+require(foreach) #for speedy loops
+require(car) #for MZ hypothesis test
 
 getwd()
 setwd("...") 
@@ -291,36 +292,103 @@ export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest,
 
 # Forecasting Model
 
-## Performance
-```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+## Helpers
+```{r helpers}
 
-#parameters
-R = 54-28-8 #note: start of ZLB at R=54
-P = nrow(data) - R #but will effectively be: P = T-h-R
-H = 12 #number of different horizons
+# Helper function for adding p-value significance stars
+
+  format_p_values_with_stars <- function(p) {
+    stars <- case_when(
+      p < 0.01 ~ "***",
+      p < 0.05 ~ "**",
+      p < 0.10 ~ "*",
+      TRUE     ~ "")
+    paste0(format(round(p, 4), nsmall = 3), " ", stars)}
 
 
-#note: we are doing a recursive estimation scheme for out-of-sample tests
-#note: we are doing direct forecasts (check with Viktor)
-
-#-------------------------------------------------------------------
-# 1. DEFINE THE FOUR TAYLOR RULE (TR) MODEL FORMULAS
-#-------------------------------------------------------------------
-
-# TR based on current inflation
-formula_1 <- shadowrate ~ inflation_gap + output_gap
-formula_2 <- rate ~ inflation_gap + output_gap
-formula_3 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
-formula_4 <- rate ~ rate_lag + inflation_gap + output_gap
-
-# TR based on current inflation expectations of inflation in 12 months
-#formula_1 <- shadowrate ~ exp_inflation_gap + output_gap
-#formula_2 <- rate ~ exp_inflation_gap + output_gap
-#formula_3 <- shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap
-#formula_4 <- rate ~ rate_lag + exp_inflation_gap + output_gap
 
 #-------------------------------------------------------------------
-# 2. HELPER FUNCTION FOR REPORTING
+# HELPER FUNCTION FOR MINCER-ZARNOWITZ REPORTING
+#-------------------------------------------------------------------
+# This function runs the Mincer-Zarnowitz regression (Actuals ~ Forecasts)
+# for each horizon h and tests the joint null hypothesis H0: (alpha, beta) = (0, 1).
+#-------------------------------------------------------------------
+
+generate_mincer_zarnowitz_report <- function(F_model, 
+                                             Actual_values, 
+                                             H, 
+                                             model_caption, 
+                                             format = "html") {
+  # Pre-allocate storage for results
+  mz_results <- data.frame(
+    Horizon = 1:H,
+    Alpha = numeric(H),
+    Beta = numeric(H),
+    P_Value_Joint_Test = numeric(H))
+  
+  for (h in 1:H) {
+    # 1. Create a clean data frame for this horizon
+    #    This pairs the forecasts and actual values and removes any NAs,
+    #    ensuring they remain perfectly aligned.
+    df_h <- data.frame(
+      actuals = Actual_values[[h]],
+      forecasts = F_model[[h]] ) %>%
+      na.omit() 
+    
+    # Check if we have enough data to run the regression (at least 2 obs)
+    if (nrow(df_h) > 2) {
+      # 2. Run MZ regression
+      mz_reg <- lm(actuals ~ forecasts, data = df_h)
+      
+      # 3. Get coefficients
+      coeffs <- summary(mz_reg)$coefficients
+      mz_results$Alpha[h] <- coeffs[1, 1] 
+      mz_results$Beta[h]  <- coeffs[2, 1] 
+      
+      # 4. Test Joint Hypothesis H0: Alpha = 0 AND Beta = 1 and store pvalues
+      test_joint <- linearHypothesis(mz_reg, c("(Intercept) = 0", "forecasts = 1"))
+      mz_results$P_Value_Joint_Test[h] <- test_joint$"Pr(>F)"[2]
+
+    } else {
+      # Not enough data to run regression for this horizon
+      mz_results$Alpha[h] <- NA_real_
+      mz_results$Beta[h]  <- NA_real_
+      mz_results$P_Value_Joint_Test[h] <- NA_real_ } }
+  
+  # Format the results for the table
+  mz_results <- mz_results %>%
+    mutate(Alpha = round(Alpha, 4),
+           Beta = round(Beta, 4),
+           P_Value_Joint_Test = format_p_values_with_stars(P_Value_Joint_Test))
+    
+  # Create the table
+  table_output <- kable(
+    mz_results,
+    format = format,
+    booktabs = TRUE,
+    caption = model_caption,
+    digits = 4,
+    col.names = c("h", "Alpha", "Beta", "p(Joint)"),
+    escape = FALSE ) %>%
+    kable_styling(
+      latex_options = c("striped", "scale_down"),
+      position = "center") %>%
+    column_spec(1, bold = TRUE, border_right = TRUE) %>%
+    column_spec(4, monospace = TRUE) %>%
+    footnote(
+      general = "p(Joint) is the p-value for the joint hypothesis H_0: (Alpha, Beta) = (0, 1). A high p-value means we fail to reject the null hypothesis of an unbiased, efficient forecast.",
+      symbol = c(
+        "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"),
+      general_title = "Note:",
+      symbol_title = "",
+      footnote_as_chunk = TRUE,
+      threeparttable = TRUE)
+  return(table_output) }
+
+
+
+#-------------------------------------------------------------------
+# HELPER FUNCTION FOR REPORTING DM tests
 #-------------------------------------------------------------------
 
 # This function creates the DM tests and kable output
@@ -348,16 +416,7 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
     DMpvalues[h, 1] = round(x1$p.value, digits = 4)
     DMpvalues[h, 2] = round(x2$p.value, digits = 4)
     DMpvalues[h, 3] = round(x3$p.value, digits = 4)}
-  
-  # Format p-values with stars
-  format_p_values_with_stars <- function(p) {
-    stars <- case_when(
-      p < 0.01 ~ "***",
-      p < 0.05 ~ "**",
-      p < 0.10 ~ "*",
-      TRUE     ~ "")
-    paste0(format(round(p, 4), nsmall = 3), " ", stars)}
-  
+
   # Create final table data
   forecast_comparison <- data.frame(
     Horizon = 1:H,
@@ -393,11 +452,41 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
       symbol_title = "DM Test Alternative Hypotheses (H_A):",
       footnote_as_chunk = TRUE,
       threeparttable = TRUE)
-  
+
   return(table_output)}
 
+```
+
+
+## Estimation
+```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+#parameters
+R = 54-28-8 #note: start of ZLB at R=54
+P = nrow(data) - R #but will effectively be: P = T-h-R
+H = 12 #number of different horizons
+
+#note: we are doing a recursive estimation scheme for out-of-sample tests
+#note: we are doing direct forecasts (check with Viktor)
+
 #-------------------------------------------------------------------
-# 3. PRE-ALLOCATE STORAGE FOR ALL RESULTS
+# 1. DEFINE THE FOUR TAYLOR RULE (TR) MODEL FORMULAS
+#-------------------------------------------------------------------
+
+# TR based on current inflation
+formula_1 <- shadowrate ~ inflation_gap + output_gap
+formula_2 <- rate ~ inflation_gap + output_gap
+formula_3 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
+formula_4 <- rate ~ rate_lag + inflation_gap + output_gap
+
+# TR based on current inflation expectations of inflation in 12 months
+#formula_1 <- shadowrate ~ exp_inflation_gap + output_gap
+#formula_2 <- rate ~ exp_inflation_gap + output_gap
+#formula_3 <- shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap
+#formula_4 <- rate ~ rate_lag + exp_inflation_gap + output_gap
+
+#-------------------------------------------------------------------
+# 2. PRE-ALLOCATE STORAGE FOR ALL RESULTS
 #-------------------------------------------------------------------
 
 # We need 4 lists for the TR models, 1 list for the shared benchmark
@@ -407,6 +496,17 @@ init_storage_list <- function(H, P) {
     storage[[h]] <- rep(NA_real_, P)}
   return(storage)}
 
+# Storage for realised values 
+Actuals <- init_storage_list(H, P)
+
+# Storage for Forecasts 
+F_TR_1 <- init_storage_list(H, P) # Model 1: shadowrate, no lag
+F_TR_2 <- init_storage_list(H, P) # Model 2: rate, no lag
+F_TR_3 <- init_storage_list(H, P) # Model 3: shadowrate, with lag
+F_TR_4 <- init_storage_list(H, P) # Model 4: rate, with lag
+F_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
+
+# Storage for Forecast Errors 
 FE_TR_1 <- init_storage_list(H, P) # Model 1: shadowrate, no lag
 FE_TR_2 <- init_storage_list(H, P) # Model 2: rate, no lag
 FE_TR_3 <- init_storage_list(H, P) # Model 3: shadowrate, with lag
@@ -415,7 +515,7 @@ FE_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
 
 
 #-------------------------------------------------------------------
-# 4. SETUP & RUN THE PARALLEL BACKTESTING LOOP
+# 3. SETUP & RUN THE PARALLEL BACKTESTING LOOP
 #-------------------------------------------------------------------
 num_cores <- detectCores() - 1 
 cl <- makeCluster(num_cores)
@@ -475,29 +575,24 @@ worker_results <- foreach(
   TR_preds_4 <- pmax(predict(TR_model_4, new_data_4), min(data$rate))
   BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark
   
-  # --- 7. Compute errors against actuals ---
+  # --- 7. Get actual values in evaluation sample  ---
   actual_rates <- testing$rate[1:H]
   
-  errors_TR_1 <- TR_preds_1 - actual_rates
-  errors_TR_2 <- TR_preds_2 - actual_rates
-  errors_TR_3 <- TR_preds_3 - actual_rates
-  errors_TR_4 <- TR_preds_4 - actual_rates
-  errors_BM   <- BM_preds   - actual_rates
-  
-  # --- 8. Return all errors from the worker ---
-  list(tr1 = errors_TR_1,
-       tr2 = errors_TR_2,
-       tr3 = errors_TR_3,
-       tr4 = errors_TR_4,
-       bm  = errors_BM)}
+  # --- 8. Return all FORECASTS and ACTUALS from the worker ---
+  # We no longer calculate errors inside the loop
+  list(f_tr1 = TR_preds_1,
+       f_tr2 = TR_preds_2,
+       f_tr3 = TR_preds_3,
+       f_tr4 = TR_preds_4,
+       f_bm  = BM_preds,
+       actuals = actual_rates) }
     
-
-
 # --- Stop the Cluster ---
 stopCluster(cl)
+rm(cl)
 
 #-------------------------------------------------------------------
-# 5. UNPACK PARALLEL RESULTS INTO STORAGE LISTS
+# 4. UNPACK PARALLEL RESULTS INTO STORAGE LISTS
 #-------------------------------------------------------------------
 
 # 'worker_results' is a list of P lists. We need to re-organize it.
@@ -505,24 +600,96 @@ for (i in 1:P) {
   # i=1 corresponds to p=P, i=2 to p=P-1, ... i=P to p=1
   # This 'storage_index' matches the loop order
   storage_index <- i 
-  
-  # Get the list of error vectors for this 'p'
   p_results <- worker_results[[i]]
   
-  # Assign the h-step error to the correct list
   for (h in 1:H) {
-    FE_TR_1[[h]][storage_index] <- p_results$tr1[h]
-    FE_TR_2[[h]][storage_index] <- p_results$tr2[h]
-    FE_TR_3[[h]][storage_index] <- p_results$tr3[h]
-    FE_TR_4[[h]][storage_index] <- p_results$tr4[h]
-    FE_BM[[h]][storage_index]   <- p_results$bm[h]}}
+    # Get the raw values for this h
+    actual_val <- p_results$actuals[h]
+    f_tr1_val  <- p_results$f_tr1[h]
+    f_tr2_val  <- p_results$f_tr2[h]
+    f_tr3_val  <- p_results$f_tr3[h]
+    f_tr4_val  <- p_results$f_tr4[h]
+    f_bm_val   <- p_results$f_bm[h]
+    
+    # Store Actuals (for MZ)
+    Actuals[[h]][storage_index] <- actual_val
+    
+    # Store Forecasts (for MZ)
+    F_TR_1[[h]][storage_index] <- f_tr1_val
+    F_TR_2[[h]][storage_index] <- f_tr2_val
+    F_TR_3[[h]][storage_index] <- f_tr3_val
+    F_TR_4[[h]][storage_index] <- f_tr4_val
+    F_BM[[h]][storage_index]   <- f_bm_val
+    
+    # Calculate and Store Errors (for MSFE/DM)
+    FE_TR_1[[h]][storage_index] <- f_tr1_val - actual_val
+    FE_TR_2[[h]][storage_index] <- f_tr2_val - actual_val
+    FE_TR_3[[h]][storage_index] <- f_tr3_val - actual_val
+    FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
+    FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
 
-#-------------------------------------------------------------------
-# 6. GENERATE AND PRINT ALL FOUR REPORTS
-#-------------------------------------------------------------------
+```
 
-# We can now just call our helper function 4 times.
-# All models are compared against the same 'FE_BM' benchmark.
+
+## Efficiency
+```{r forecast-model-efficiency, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+# Call MZ-test helper function 4 times.
+
+# MZ Report 1: Shadowrate, No Lag
+mz_report_1 <- generate_mincer_zarnowitz_report(
+  F_model = F_TR_1,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: ShadowRate, No Lag",
+  format = format)
+
+# MZ Report 2: Actual Rate, No Lag
+mz_report_2 <- generate_mincer_zarnowitz_report(
+  F_model = F_TR_2,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
+  format = format)
+
+# MZ Report 3: Shadowrate, with Lag
+mz_report_3 <- generate_mincer_zarnowitz_report(
+  F_model = F_TR_3,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: ShadowRate, with Lag",
+  format = format)
+
+# MZ Report 4: Actual Rate, with Lag
+mz_report_4 <- generate_mincer_zarnowitz_report(
+  F_model = F_TR_4,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
+  format = format)
+
+# MZ Report 5: Benchmark
+mz_report_BM <- generate_mincer_zarnowitz_report(
+  F_model = F_BM,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: Benchmark ARIMA",
+  format = format)
+
+list(
+  mz_report_1, 
+  mz_report_2, 
+  mz_report_3, 
+  mz_report_4, 
+  mz_report_BM)
+
+```
+
+
+## Performance (against benchmark)
+```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+# Call DM-test helper function 4 times.
 
 # Report 1: Shadowrate, No Lag
 report_1 <- generate_report_table(
@@ -562,16 +729,6 @@ list(report_1, report_2, report_3, report_4)
 
 
 
-
-## Efficiency
-```{r forecast-model-efficiency, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
-
-
-
-
-
-
-```
 
 
 
