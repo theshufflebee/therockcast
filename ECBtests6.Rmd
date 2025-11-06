@@ -741,6 +741,45 @@ list(report_1, report_2, report_3, report_4)
 
 
 
+# Our Forecast
+
+```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}}
+
+# Formula 4 seems to work best
+our_predict <- function(data,formula){
+
+  # --- 1. Fit inputs and benchmark models  ---
+   inflation_arma <- auto.arima(data$inflation_gap, max.p=4, max.q=4, max.d=1)
+   #exp_inflation_arma <- auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
+   outputgap_arma <- auto.arima(data$output_gap, max.p=4, max.q=4, max.d=1)
+   interest_arma <- auto.arima(data$rate, max.p=4, max.q=4, max.d=1) # Benchmark
+  
+  # --- 2. Get forecasts of inputs (all H horizons) ---
+   inflation_forecasts <- forecast::forecast(inflation_arma, h = H)$mean
+   #exp_inflation_forecasts <- forecast::forecast(exp_inflation_arma, h = H)$mean
+   outputgap_forecasts <- forecast::forecast(outputgap_arma, h = H)$mean
+   BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
+  
+  # --- 3. Fit TR model
+   TR_model <- lm(formula_4, data = data)
+    
+  # --- 4. Build forecast input data frame ---
+   new_data_base <- data.frame(
+      inflation_gap = inflation_forecasts,
+      #exp_inflation_gap = exp_inflation_forecasts,
+      output_gap = outputgap_forecasts,
+      rate_lag = data$rate_lag[1:H],
+      shadowrate_lag = data$shadowrate_lag[1:H])
+  
+  # --- 5. Compute forecast ---
+   TR_preds <- pmax(predict(TR_model, new_data_base), min(data$rate))
+   BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark 
+  return(TR_preds,BM_preds)
+   }
+ 
+ our_predict(data=data,formula=formula_4)
+ 
+```
 
 
 
