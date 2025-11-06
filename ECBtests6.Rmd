@@ -590,7 +590,6 @@ worker_results <- foreach(
   actual_rates <- testing$rate[1:H]
   
   # --- 8. Return all FORECASTS and ACTUALS from the worker ---
-  # We no longer calculate errors inside the loop
   list(f_tr1 = TR_preds_1,
        f_tr2 = TR_preds_2,
        f_tr3 = TR_preds_3,
