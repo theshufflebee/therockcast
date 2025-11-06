@@ -788,8 +788,8 @@ display_forecasts <- function(forecast_list,
   # Create a data frame for display
   forecast_df <- data.frame(
     Horizon_Quarter = horizon_quarter_label,
-    Taylor_Rule_Forecast = forecast_list$TR_Forecast,
-    Benchmark_ARIMA_Forecast = forecast_list$BM_Forecast)
+    Taylor_Rule_Forecast = round(forecast_list$TR_Forecast,4),
+    Benchmark_ARIMA_Forecast = round(forecast_list$BM_Forecast,4))
   
   # Create the table
   table_output <- kable(
