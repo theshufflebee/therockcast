@@ -295,7 +295,9 @@ export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest,
 ## Helpers
 ```{r helpers}
 
+#-------------------------------------------------------------------
 # Helper function for adding p-value significance stars
+#-------------------------------------------------------------------
 
   format_p_values_with_stars <- function(p) {
     stars <- case_when(
@@ -304,8 +306,6 @@ export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest,
       p < 0.10 ~ "*",
       TRUE     ~ "")
     paste0(format(round(p, 4), nsmall = 3), " ", stars)}
-
-
 
 #-------------------------------------------------------------------
 # HELPER FUNCTION FOR MINCER-ZARNOWITZ REPORTING
@@ -556,36 +556,59 @@ worker_results <- foreach(
   outputgap_forecasts <- forecast::forecast(outputgap_arma, h = H)$mean
   BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
   
-  # --- 4. Fit the 4 SPECIFIC TR models ---
+  # --- 4. Fit the 4 TR models ---
   TR_model_1 <- lm(formula_1, data = training)
   TR_model_2 <- lm(formula_2, data = training)
   TR_model_3 <- lm(formula_3, data = training)
   TR_model_4 <- lm(formula_4, data = training)
   
-  # --- 5. Build forecast input data frames ---
-  # Base inputs (for Models 1 & 2)
+  # --- 5. Build forecast input data & get forecasts for non-lagged models ---
+  # These are direct forecasts
   new_data_base <- data.frame(
     inflation_gap = inflation_forecasts,
     #exp_inflation_gap = exp_inflation_forecasts,
     output_gap = outputgap_forecasts)
-  
-  # Inputs for Model 3 (needs shadowrate_lag)
-  new_data_3 <- data.frame(
-    new_data_base,
-    shadowrate_lag = testing$shadowrate_lag[1:H])
-  
-  # Inputs for Model 4 (needs rate_lag)
-  new_data_4 <- data.frame(
-    new_data_base,
-    rate_lag = testing$rate_lag[1:H])
-
-  # --- 6. Get H-step forecasts for all 5 models ---
+    
   TR_preds_1 <- pmax(predict(TR_model_1, new_data_base), min(data$rate))
   TR_preds_2 <- pmax(predict(TR_model_2, new_data_base), min(data$rate))
-  TR_preds_3 <- pmax(predict(TR_model_3, new_data_3), min(data$rate))
-  TR_preds_4 <- pmax(predict(TR_model_4, new_data_4), min(data$rate))
   BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark
   
+  # --- 6. Get forecasts for lagged models via iteration ---
+  # We must loop 1 step at a time, feeding forecasts back in.   
+  
+  # a) Pre-allocate storage for H forecasts
+  TR_preds_3 <- numeric(H)
+  TR_preds_4 <- numeric(H)
+  
+  # b) Get the last known lag from the training set (lag for h=1 forecast)
+  current_shadowrate_lag <- last(training$shadowrate)
+  current_rate_lag       <- last(training$rate)
+
+  # Loop for iterative forecasting 
+  for (h in 1:H) {
+    # --- Prepare dataset for predictions ---
+    new_data_3_h <- data.frame(
+      inflation_gap = inflation_forecasts[h],
+      #exp_inflation_gap = exp_inflation_forecasts[h],
+      output_gap = outputgap_forecasts[h],
+      shadowrate_lag = current_shadowrate_lag)
+    new_data_4_h <- data.frame(
+      inflation_gap = inflation_forecasts[h],
+      #exp_inflation_gap = exp_inflation_forecasts[h],
+      output_gap = outputgap_forecasts[h],
+      rate_lag = current_rate_lag )
+    
+    # Get the forecast values
+    pred_3_h <- pmax(predict(TR_model_3, new_data_3_h), min(data$rate))
+    TR_preds_3[h] <- pred_3_h
+    pred_4_h <- pmax(predict(TR_model_4, new_data_4_h), min(data$rate))
+    TR_preds_4[h] <- pred_4_h
+    
+    # Update lag for h+1 
+    current_shadowrate_lag <- pred_3_h
+    current_rate_lag <- pred_4_h
+    }
+
   # --- 7. Get actual values in evaluation sample  ---
   actual_rates <- testing$rate[1:H]
   
@@ -742,10 +765,53 @@ list(report_1, report_2, report_3, report_4)
 
 # Our Forecast
 
-```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}}
+## Helpers
+```{r our_helper, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+#-------------------------------------------------------------------
+# Helper function for displaying our final forecast results
+#-------------------------------------------------------------------
+
+display_forecasts <- function(forecast_list, 
+                              caption = "Interest Rate Forecasts", 
+                              format = "html") {
+  
+  # Determine the number of horizons and corresponding quarters
+  H <- length(forecast_list$TR_Forecast)
+  
+  forecast_quarters <- seq(from = last(data$quarter) + 0.25, 
+                           by = 0.25, 
+                           length.out = H)
+  
+  horizon_quarter_label <- paste0(1:H, ": ", as.character(forecast_quarters))
+  
+  # Create a data frame for display
+  forecast_df <- data.frame(
+    Horizon_Quarter = horizon_quarter_label,
+    Taylor_Rule_Forecast = forecast_list$TR_Forecast,
+    Benchmark_ARIMA_Forecast = forecast_list$BM_Forecast)
+  
+  # Create the table
+  table_output <- kable(
+    forecast_df,
+    format = format,
+    digits = 4,
+    col.names = c("Horizon: Quarter", "Taylor Rule Forecast", "Benchmark Forecast"),
+    caption = caption,
+    booktabs = TRUE) %>%
+  kable_styling(
+    latex_options = "striped",
+    position = "center") %>%
+  column_spec(1, bold = TRUE, border_right = TRUE)
+    return(table_output) }
+
+```
+
+
+```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Formula 4 seems to work best
-our_predict <- function(data,formula){
+our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
    inflation_arma <- auto.arima(data$inflation_gap, max.p=4, max.q=4, max.d=1)
@@ -760,23 +826,43 @@ our_predict <- function(data,formula){
    BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
   
   # --- 3. Fit TR model
-   TR_model <- lm(formula_4, data = data)
+   TR_model <- lm(formula, data = data)
     
-  # --- 4. Build forecast input data frame ---
-   new_data_base <- data.frame(
-      inflation_gap = inflation_forecasts,
-      #exp_inflation_gap = exp_inflation_forecasts,
-      output_gap = outputgap_forecasts,
-      rate_lag = data$rate_lag[1:H],
-      shadowrate_lag = data$shadowrate_lag[1:H])
-  
-  # --- 5. Compute forecast ---
-   TR_preds <- pmax(predict(TR_model, new_data_base), min(data$rate))
-   BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark 
-  return(TR_preds,BM_preds)
-   }
+  # --- 4. Build forecast input data frame (iteratively for lags) ---
+   
+   # Allocate storage for full horizon
+   TR_preds <- numeric(H)
+   
+   # Get last known lags (starting point for lagged models)
+   current_shadowrate_lag <- last(data$shadowrate)
+   current_rate_lag <- last(data$rate)
+   
+  for (h in 1:H) {
+     new_data_h <- data.frame(
+        inflation_gap = inflation_forecasts[h],
+        #exp_inflation_gap = exp_inflation_forecasts[h],
+        output_gap = outputgap_forecasts[h],
+        shadowrate_lag = current_shadowrate_lag,
+        rate_lag = current_rate_lag)
+     
+     # Get forecasted values
+     pred_h <- pmax(predict(TR_model, new_data_h), min(data$rate))
+     TR_preds[h] <- pred_h
+     
+     # Update the lag for h+1
+     current_rate_lag <- pred_h }
+     
+   # --- 5. Compute forecast for BM ---
+    BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark 
+    
+  return(list(TR_Forecast = TR_preds, BM_Forecast = BM_preds))}
+
  
- our_predict(data=data,formula=formula_4)
+ final_forecasts <- our_predict(data = data, formula = formula_4, H = H)
+ 
+display_forecasts(final_forecasts, 
+                  caption = "",
+                  format = format)
  
 ```
 
