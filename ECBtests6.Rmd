@@ -807,7 +807,7 @@ display_forecasts <- function(forecast_list,
 
 ```
 
-
+## Forecasting
 ```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Formula 4 seems to work best
