@@ -1,0 +1,301 @@
+Todo List:
+Replace API Key
+
+Initial Setups
+---------------------
+Load packages
+Set Wd
+set API Keyes (environ)
+set start_date - end_date of Analysis
+set seed
+set format
+
+# Load Data
+----------------------------
+
+download rate on FRED
+	if not as.date as.date(date)
+	if not in quarterly assign quarter
+	transform quarterly, Keep last value
+	if date not as.date as.date(quarter)
+
+download shadowrate
+	if not as.Date as.Date(date)
+	if not in quarterly assign quarter
+	transform quarterly, Aggregate by mean
+	if date not as.date, as.date(quarter)
+
+download HICP (inflation)
+	if not as.Date as.Date(date)
+	if not in quarterly assign quarter
+	transform quarterly, Aggregate by mean
+	if date not as.date, as.date(quarter)
+
+load inflation expectation data
+	if not as.Date as.Date(date)
+	if not in quarterly assign quarter
+	transform quarterly, Aggregate
+	if date not as.date, as.date(quarter)
+
+download GDP on FRED
+	if not as.date as.date(date)
+	if not in quarterly assign quarter
+	transform quarterly, Keep last value
+	transform logs for growth
+	if date not as.date as.date(quarter)
+
+
+
+# Build Dataframe	
+-----------------------------------------------
+
+
+if HICP$date = inflation_expectation$date combine
+	else shift expectations to align (is this shift correct? december value forecasts q4 next year?)
+	combine in inflation_data
+
+output gap = hp filter(gdp Growth)
+
+join(ecb_rate, inflation_data, shadow rate, how=left, on ecb_rate)
+
+if ecb_rate in shadow_rate_intervall, replace
+
+END OF THE DATASETUP
+
+Taylor Rule Estimation
+-------------------------------------------------------------------------
+
+#Basic taylor rule (Inflation & output gap)
+Regress rate on inflation_gap + output_gap
+Regress w/shadow rate on inflation_gap + output_gap
+
+Inspect as table
+
+#Taylor Rule with inflation expectations
+Regress  rate on exp_inflation + output_gap
+Regress w/shadow rate on exp:inflation + outout gap
+Regress rate on exp_inflation + inflation + output_gap
+Regress w/shadow rate on +exp_inflation + inflaton + output_gap
+
+Inspect as table
+
+#Taylor Rule w/ lag
+Regress  rate on rate{-1} + exp_inflation + output_gap
+Regress w/shadow rate on w/shadow rate{-1} + exp:inflation + outout gap
+
+Inspect as Table
+
+#Taylor Rule with inflation expectations with lag
+Regress  rate ~ rate{-1} + exp_inflation + output_gap
+Regress w/shadow rate ~ w/shadow rate{-1} + exp:inflation + outout gap
+Regress rate ~ rate{-1} + exp_inflation + inflation + output_gap
+Regress w/shadow rate ~ w/shadow rate{-1} + exp_inflation + inflaton + output_gap
+
+
+Forecasting Model
+--------------------------------------------------------------------------------
+Needed helperfunctions
+
+format_p_values_with_stars
+	when
+	p < 0.01 -> ***
+	p < 0.05 -> **
+	p < 0.10 -> *
+
+Mincer Zarnowitz 
+
+	output Table
+
+
+Diebold Mariano 
+
+	output Table
+
+
+
+Estimation
+--------------------------------------
+
+lenght of sample is T, Training data is R and testing is T-R
+
+R = __ (Training length
+P = nrow(data) - R
+H = 12 (horizon)
+
+Save all Taylor rule specification (copy from Above)
+formula1 rate ~ rate{-1} + exp_inflation + output_gap
+formula2 w/shadow rate ~ w/shadow rate{-1} + exp:inflation + outout gap
+formula3 rate ~ rate{-1} + exp_inflation + inflation + output_gap
+formula4 w/shadow rate ~ w/shadow rate{-1} + exp_inflation + inflaton + output_gap
+
+*change based on selection of TR*
+
+initialize df to store results
+
+Initialize_sorage_function(H, P)
+	list of len(H)
+		for 1:h add P NaN values
+(each testimg data observation Needs to get an empty container for each horizon
+
+***#Probably better to switch this (update)#***
+
+Generate forecast Storage for each Model + Benchmark
+
+F_TR_1 <- initialize_storage_function (H, P)
+F_TR_2 <- initialize_storage_function (H, P)
+F_TR_3 <- initialize_storage_function (H, P)
+F_TR_4 <- initialize_storage_function (H, P)
+F_BM <- initialize_storage_function (H, P)
+
+Genrate container for error$
+
+ER_TR_1 <- initialize_storage_function (H, P)
+ER_TR_2 <- initialize_storage_function (H, P)
+ER_TR_3 <- initialize_storage_function (H, P)
+ER_TR_4 <- initialize_storage_function (H, P)
+ER_BM <- initialize_storage_function (H, P)
+	
+***#Can we put this in estimation Function? -> shortener#***
+
+
+#Detect parallel compution
+num cores <_ detectCores
+doParallel(num_cores)
+
+Estimation
+------------------------------
+worker_function {load packages on cores, send data(observations, formulas, horizon)}dopart{
+	split training, test
+	
+	*fit models for forecasting inflation, output gap, interest rate*
+	inflation_arima <- (training_data)
+	output_gap_arima <- (traning_data)
+	interest_rate_arima <- (training_data) *Benchmark*
+
+	*forecast the 3 models*
+	inflation_forecast <- forecast(inflation_arima, h)
+	output_gap_forecast <- forecast(output_gap_arima, h)
+	interest_rate_forecast <- forecast(interest_rate_arima, h)
+
+	*Fit the 4 TR models*
+	TR_1 <- lm(formula1, tainingdata)
+	TR_2 <- lm(formula2, tainingdata)
+	TR_3 <- lm(formula3, tainingdata)
+	TR_4 <- lm(formula4, tainingdata)
+
+	
+	*Build the df for the forecastst then direct forecast*
+	database <- (inflation_forecast, output_gap_forecast)
+
+	TR_1_pred_non_lag <- predict(TR_1, database), forcast stay >0 ZLB
+ 	TR_2_pred_non_lag <- predict(TR_2, database),  forcast stay >0 ZLB
+	BM_pred <- predict <- predict(interest_rate_forecast)
+
+
+	*Lagged model must be iteratively forecast as forcasted value becomes lag -> loop in loop
+
+	make storage for TR prediction at each forecast horizon
+	TR_prediction_3 <- numeric(H)
+	TR_prediction_4 <- numeric(H)
+	
+	**Initialize the firt lag for the first forecast (it's in the training data)**
+	current_rate_lag <- last(training$rate)
+	current_shadow_rate_lag <- last(training$shadow_rate)
+
+	for h in 1:h
+		data_mod_3 <-(inflation gap = inflation forecasts[h],
+			output_gap = ouput_gap_forecast[h],
+			rate_lag = curren_rate_lag)
+
+		data_mod_4 <-(inflation gap = inflation forecasts[h],
+			output_gap = ouput_gap_forecast[h],
+			shadow_rate_lag = curren_shadow_rate_lag)
+
+		TR_prediction_3[h] <- pmax(predict(TR_model_3, data_mod_3), min(data$rat)
+			
+		TR_prediction_4[h] <- pmax(predict(TR_model_4, data_mod_4), min(data$rate)
+
+		**upadte the lags**
+		current_rate_lag <- TR_prediction_3[h]
+		current_shadow_rate_lag <- TR_prediction_4[h]
+		}
+
+	actual_rates <- testing[1:H)
+		
+	list(	f_tr1 = TR_Prediction_1
+		f_tr2 = TR_Prediction_2
+		f_tr3 = TR_Prediction_3
+		f_tr4 = TR_Prediction_4
+		f_bm = bm_prediction
+		actual = actual_rates
+		)
+		¨
+		!!!!! UPDATE this in code !!!!!
+
+
+stop cluster
+
+*Result Unpacking*
+----------------------
+*Results are nested lists -> unpack and order
+
+for 1:P
+	** This is for each forecast **
+	storage_index <-i
+	p_results <- worker_results[i] 
+	for h in 1:H{
+		** This is for each forecast Horizon **
+		actual_val <- p_results$actuals[h]		
+		f_tr1_val <- p_results$f_tr1[h]
+		f_tr2_val <- p_results$f_tr2[h]
+		f_tr3_val <- p_results$f_tr3[h]
+		f_tr4_val <- p_results$f_tr4[h]
+		f_bm_val <- p_results$f_bm[h]
+		
+		actuals[[h]][storage_index]
+
+		**Store FOrecasts**
+		F_TR_1[[h]][storage_index] <- f_tr1_val
+		F_TR_2[[h]][storage_index] <- f_tr2_val
+		F_TR_3[[h]][storage_index] <- f_tr3_val
+		F_TR_4[[h]][storage_index] <- f_tr4_val
+		F_BM[[h]][storage_index] <- f_bm_val
+
+		**Calculate Errors**
+
+		FE_TR_1[[h]][storage_index] <- f_tr1_val - actual_val
+		FE_TR_2[[h]][storage_index] <- f_tr2_val - actual_val
+		FE_TR_3[[h]][storage_index] <- f_tr3_val - actual_val
+		FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
+		FE_BM[[h]][storage_index] <- f_bm_val - actual_val
+
+
+
+		}
+	}
+
+
+		
+
+**--------------------------------------**
+Improvement: can we creat a function that Forecasts for 1 taylor rule?
+**--------------------------------------**
+
+The run DM and MZ test on each of the results
+-> Maybe can be looped
+
+
+***Actual Forecast***
+
+
+
+
+
+
+
+
+
+
+
+
+
