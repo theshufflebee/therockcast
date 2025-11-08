@@ -112,6 +112,8 @@ require(rdbnomics)
 require(doParallel) #for speed
 require(foreach) #for speedy loops
 require(car) #for MZ hypothesis test
+library(ggplot2) # Plotting
+
 
 getwd()
 setwd("...") 
@@ -865,6 +867,176 @@ display_forecasts(final_forecasts,
                   format = format)
  
 ```
+
+
+# Plotting
+
+Correct List
+Maybe this can be used in our code above
+
+```{r}
+forecast_to_df <- function(forecast_list, period) {
+  # Convert each element to numeric (benchmark is ts object, wich is bad)
+  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
+  
+  df <- as.data.frame(numeric_list)
+  
+  # Add period and horizon
+  df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
+  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponing to it.
+  
+  df
+}
+```
+
+
+```{r}
+#this essentially applies the above function to every list in the list
+#Since every list in the worker:results list is the forcast at one moment between R and T, we extract each on its own
+#so i determines the period we go along take out results i and give them period 1, go i =2 period 2 and so on
+
+
+df_all <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
+  forecast_to_df(worker_results[[i]], period = i)
+}))
+```
+
+
+
+
+```{r}
+
+df_all[] <- lapply(df_all, function(x) as.numeric(x))
+
+#Filter the length of the forecasting horizon
+df_all_2 <- df_all %>%
+  filter(horizon <= 8)
+
+# Select the model to plot
+model <- "f_tr4" 
+
+df_all_2$forecast_date <- df_all_2$period + df_all_2$horizon # is this correct choice?
+
+# Spaghetti plot
+ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period)) +
+  geom_line(color = "blue", alpha = 0.5) +
+  geom_point(color = "blue", alpha = 0.5) +
+  geom_line(aes(y = actuals), color = "black", size = 1) +
+  geom_point(aes(y = actuals), color = "black", alpha = 0.5, shape = 4) +
+  labs(
+    title = paste("Forecast of", model, "vs Actual Rate"),
+    x = "Period",
+    y = "Interest_Rate"
+  ) +
+  theme_minimal()
+
+```
+
+
+```{r}
+# Spaghetti plot with color per period
+ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period, color = factor(period))) +
+  geom_line(alpha = 0.7) +    # forecast lines
+  geom_point(shape = 2, alpha = 0.7) +
+  
+  # Actuals as black baseline
+  geom_line(aes(y = actuals), color = "black", size = 1) +
+  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
+  
+  labs(
+    title = paste("Forecast of", model, "vs Actual Rate"),
+    x = "Period",
+    y = "Interest Rate",
+    color = "Forecast Origin"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+df_all$forecast_date <- df_all$period + df_all$horizon
+
+# Spaghetti plot: line per period, points colored by horizon
+ggplot(df_all, aes(x = forecast_date, group = period)) +
+  # Forecast lines (semi-transparent)
+  geom_line(aes(y = .data[[model]]), color = "blue", alpha = 0.5) +
+  
+  # Forecast points colored by horizon -> factor gives each designation of horizon another color
+  geom_point(aes(y = .data[[model]], color = factor(horizon)), shape = 4, size = 2) +
+  
+  # Actuals line + points
+  geom_line(aes(y = actuals), color = "black", size = 1.2) +
+  geom_point(aes(y = actuals), color = "black", shape = 2, alpha = 0.5) +
+  
+  labs(
+    title = paste("Forecast of", model, "vs Actual Rate"),
+    x = "Each color is a __ Step ahead forecast",
+    y = "Interest Rate",
+    color = "Horizon"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+model <- "f_tr4"
+df_all_3 <- df_all_2
+
+# Compute forecast error
+df_all_3$forecast_error <- df_all_3[[model]] - df_all_3$actuals
+
+#compute forecast_date for x-axis
+df_all_3$forecast_date <- df_all_3$period + df_all_3$horizon
+
+ggplot(df_all_3, aes(x = forecast_date, group = period)) +
+  # Forecast error lines
+  geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
+  geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
+  
+  # Actuals line
+  geom_line(aes(y = actuals), color = "black", size = 1) +
+  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
+  
+  labs(
+    title = paste("Forecast Errors for", model),
+    x = "If Negative, forecast was too low if positive forecast too high",
+    y = "Interest Rate / Forecast Error (deviation from interest rate)"
+  ) +
+  theme_minimal()
+
+```
+
+
+```{r}
+h <- 6
+
+ggplot(df_all_3 %>% filter(horizon == h), aes(x = forecast_error)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(
+    title = paste("Density of Forecast Errors at Horizon", h),
+    x = "Forecast Error",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+#This just uses a built in ggplot function to inspect, not really needed but certainly good to look at. 
+```
+
+
+```{r}
+var_by_horizon <- df_all_3 %>%
+  group_by(horizon) %>%
+  summarize(
+    mean_fe = mean(forecast_error, na.rm = TRUE),
+    var_fe = mean((forecast_error - mean(forecast_error, na.rm = TRUE))^2, na.rm = TRUE),
+    n = n()
+  )
+
+var_by_horizon
+
+# This gives us the mean forecast eror for the x step ahead forecast
+```
+
 
 
 
