@@ -10,69 +10,6 @@ header-includes:
 ---
 \newpage
 
-# Communication
-
-## Instructions:
-
-### Data
-* Load data for: Deposit rate, Shadow rate, HICP inflation rate, and real GDP
-* Make all data quarterly
-* Use HP filter to estimate potential real GDP
-* Combine variables in one dataset
-* Modify dataset by computing inflation gap, output gap, and replacing shadowrate values 
-
-### Taylor Rule 
-* Preemptively estimate Taylor Rule to check coefficients
-* Do so with and without including a lag
-
-### Forecasting
-* Define number of different horizons to estimate (H)
-* Define evaluation sample (P, R)
-* For each horizon
-* For each step in evaluation sample
-* Select the data for training based on evaluation sample dates
-* Select the data for testing based on evaluation sample dates
-* Estimate Taylor Rule
-* Fit an ARIMA model for inflation gap and output gap
-* Forecast inflation gap and output gap for current horizon based on ARIMA
-* Put these forecasts in new dataset and call "forecast datsaset"
-* Use this new dataset to predict values of the interest rate based on the fitted taylor rule model
-* Remove predicted values below ZLB
-* Compute forecast errors by taking predicted rate minus the actual rate from the testing sample 
-* Fit a benchmark ARIMA model for interest rate
-* Forecast interest rate for current horizon based on ARIMA
-* Remove predicted values below ZLB
-* Compute forecast errors by taking forecasted rate minus the actual rate from the testing sample
-* Compute mean of these forecast errors for the current horizon
-* For each horizon compute run a DM test taking the MSFE of the TR model against the MSFE of the benchmark model
-* Create a table which compares the MSFE and pvalues for TR against benchmark
-
-
-## Step after instructions
-
-Predict interest rate Using forecast_dataset on TR model
-
-(last line in inst)
-For horizon, compute DM TEST
-Use MFSE of TR against benchmark 
-
-## Pseudo Code
-basically just python code
-
-
-Tips
--write functions for everything
--one function one task for modularity and also add the return line in R for explicit
--go multi file overleaf style
--use tidyverse more
--X13 arima-seats to correct for seasonality with {seasonal} package
--avoid setwd, use here() and make full code a one shot run multifile to make viktor happy
--NOT ALLOWED TO USE {forecast} PACKAGE ask maybe if we are allowed since we do TR
--for EVERY package function EXPLICITY call package::function (BRUH ask viktor to make sure)
--GDP download seasonally adjusted
-
-\newpage
-
 ```{r header}
 #explain what his script does and why and how to run code in readme file
 ```
@@ -138,7 +75,7 @@ format <- "html"
 # Data
 
 ## Main
-```{r data, message=FALSE, warning=FALSE}
+```{r data_main, message=FALSE, warning=FALSE}
 
 #REDO THE DATA LOADING USNING rdbnomics PACKAGE (combines all macro APIs)
 
@@ -224,6 +161,34 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
    inflation_exp, inflation_exp_q, monthly_shadow, quarterly_shadow, shadow_rate_daily)
 
 ```
+
+## Data Properties
+```{r data_prop, message=FALSE, warning=FALSE}
+
+# Interest rate is I(1)
+test1 = adf.test(data$rate, output=F)
+test1$type1
+
+# Inflation is I(1)
+test2 = adf.test(data$inflation, output=F)
+test2$type1
+
+# Output gap is I(0), likely from the "gap" part
+test3 = adf.test(data$output_gap, output=F)
+test3$type1
+
+# Cleanup
+rm(test1,test2,test3)
+
+# Are interest rates and inflation co-integrated?
+plot(merge(as.zoo(data$rate), as.zoo(data$inflation)), plot.type="single", col=c(2, 4), lwd=2, main="Rate vs. Inflation"); legend("topleft", c("Rate", "Inflation"), col=c(2, 4), lwd=2, bty="n")
+
+coint.test(data$rate, data$inflation)
+
+```
+
+
+
 \newpage
 
 # Taylor Rule Estimation
@@ -874,51 +839,52 @@ display_forecasts(final_forecasts,
 Correct List
 Maybe this can be used in our code above
 
-```{r}
+```{r Extracting Forecast Data}
+
+#Marcos: This chunk should probably go at the end of the estimation chunk
+
+
 forecast_to_df <- function(forecast_list, period) {
-  # Convert each element to numeric (benchmark is ts object, wich is bad)
+  # Convert each element to numeric (benchmark is ts object, which is bad)
   numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
   
   df <- as.data.frame(numeric_list)
   
   # Add period and horizon
   df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
-  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponing to it.
+  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponding to it
   
-  df
-}
-```
+  df}
 
 
-```{r}
+
 #this essentially applies the above function to every list in the list
-#Since every list in the worker:results list is the forcast at one moment between R and T, we extract each on its own
+#Since every list in the worker:results list is the forecast at one moment between R and T, we extract each on its own
 #so i determines the period we go along take out results i and give them period 1, go i =2 period 2 and so on
 
 
 df_all <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
   forecast_to_df(worker_results[[i]], period = i)
 }))
+
+df_all[] <- lapply(df_all, function(x) as.numeric(x))
+
 ```
 
 
 
 
-```{r}
-
-df_all[] <- lapply(df_all, function(x) as.numeric(x))
-
-#Filter the length of the forecasting horizon
-df_all_2 <- df_all %>%
-  filter(horizon <= 8)
+```{r Spaghetti plots}
 
 # Select the model to plot
 model <- "f_tr4" 
 
-df_all_2$forecast_date <- df_all_2$period + df_all_2$horizon # is this correct choice?
+# period = date the forecast was made
+# date_of_forecast = the future date we are predicting 
+df_all$date_of_forecast <- df_all$period + df_all$horizon # is this correct choice?
 
 # Spaghetti plot
-ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period)) +
+ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period)) +
   geom_line(color = "blue", alpha = 0.5) +
   geom_point(color = "blue", alpha = 0.5) +
   geom_line(aes(y = actuals), color = "black", size = 1) +
@@ -926,16 +892,16 @@ ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period)) +
   labs(
     title = paste("Forecast of", model, "vs Actual Rate"),
     x = "Period",
-    y = "Interest_Rate"
-  ) +
+    y = "Interest_Rate") +
   theme_minimal()
 
 ```
 
 
-```{r}
+```{r J4}
+
 # Spaghetti plot with color per period
-ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period, color = factor(period))) +
+ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
   geom_line(alpha = 0.7) +    # forecast lines
   geom_point(shape = 2, alpha = 0.7) +
   
@@ -947,17 +913,18 @@ ggplot(df_all_2, aes(x = forecast_date, y = .data[[model]], group = period, colo
     title = paste("Forecast of", model, "vs Actual Rate"),
     x = "Period",
     y = "Interest Rate",
-    color = "Forecast Origin"
-  ) +
+    color = "Forecast Origin") +
   theme_minimal()
+
 ```
 
 
-```{r}
-df_all$forecast_date <- df_all$period + df_all$horizon
+```{r J5}
+
+df_all$date_of_forecast <- df_all$period + df_all$horizon
 
 # Spaghetti plot: line per period, points colored by horizon
-ggplot(df_all, aes(x = forecast_date, group = period)) +
+ggplot(df_all, aes(x = date_of_forecast, group = period)) +
   # Forecast lines (semi-transparent)
   geom_line(aes(y = .data[[model]]), color = "blue", alpha = 0.5) +
   
@@ -975,20 +942,22 @@ ggplot(df_all, aes(x = forecast_date, group = period)) +
     color = "Horizon"
   ) +
   theme_minimal()
+
 ```
 
 
-```{r}
+```{r J6}
+
 model <- "f_tr4"
-df_all_3 <- df_all_2
+df_all_3 <- df_all
 
 # Compute forecast error
 df_all_3$forecast_error <- df_all_3[[model]] - df_all_3$actuals
 
-#compute forecast_date for x-axis
-df_all_3$forecast_date <- df_all_3$period + df_all_3$horizon
+#compute date_of_forecast for x-axis
+df_all_3$date_of_forecast <- df_all_3$period + df_all_3$horizon
 
-ggplot(df_all_3, aes(x = forecast_date, group = period)) +
+ggplot(df_all_3, aes(x = date_of_forecast, group = period)) +
   # Forecast error lines
   geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
   geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
@@ -1007,7 +976,8 @@ ggplot(df_all_3, aes(x = forecast_date, group = period)) +
 ```
 
 
-```{r}
+```{r J7}
+
 h <- 6
 
 ggplot(df_all_3 %>% filter(horizon == h), aes(x = forecast_error)) +
@@ -1015,26 +985,35 @@ ggplot(df_all_3 %>% filter(horizon == h), aes(x = forecast_error)) +
   labs(
     title = paste("Density of Forecast Errors at Horizon", h),
     x = "Forecast Error",
-    y = "Density"
-  ) +
+    y = "Density") +
   theme_minimal()
 
 #This just uses a built in ggplot function to inspect, not really needed but certainly good to look at. 
 ```
 
 
-```{r}
+```{r J8}
+
+# This gives us the mean forecast error for the h step ahead forecast
 var_by_horizon <- df_all_3 %>%
   group_by(horizon) %>%
   summarize(
     mean_fe = mean(forecast_error, na.rm = TRUE),
     var_fe = mean((forecast_error - mean(forecast_error, na.rm = TRUE))^2, na.rm = TRUE),
-    n = n()
-  )
+    n = n() )
 
 var_by_horizon
 
-# This gives us the mean forecast eror for the x step ahead forecast
+
+var_by_horizon <- df_all_3 %>%
+  group_by(horizon) %>%
+  summarize(
+    mean_fe = mean(forecast_error, na.rm=T),
+    var_fe = sd(forecast_error, na.rm=T)^2,
+    n = n() )
+
+var_by_horizon
+
 ```
 
 
