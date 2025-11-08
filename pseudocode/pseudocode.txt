@@ -116,11 +116,11 @@ Diebold Mariano
 Estimation
 --------------------------------------
 
-lenght of sample is T, Training data is R and testing is T-R
+length of overall sample is T, Training sample is of length R and evaluation sample of length P = T-R 
 
-R = __ (Training length
+Set R (Training length
 P = nrow(data) - R
-H = 12 (horizon)
+Set H (furthest horizon)
 
 Save all Taylor rule specification (copy from Above)
 formula1 rate ~ rate{-1} + exp_inflation + output_gap
@@ -132,10 +132,10 @@ formula4 w/shadow rate ~ w/shadow rate{-1} + exp_inflation + inflaton + output_g
 
 initialize df to store results
 
-Initialize_sorage_function(H, P)
+Initialize_storage_function(H, P)
 	list of len(H)
 		for 1:h add P NaN values
-(each testimg data observation Needs to get an empty container for each horizon
+(each testing data observation Needs to get an empty container for each horizon
 
 ***#Probably better to switch this (update)#***
 
@@ -147,7 +147,7 @@ F_TR_3 <- initialize_storage_function (H, P)
 F_TR_4 <- initialize_storage_function (H, P)
 F_BM <- initialize_storage_function (H, P)
 
-Genrate container for error$
+Generate container for error$
 
 ER_TR_1 <- initialize_storage_function (H, P)
 ER_TR_2 <- initialize_storage_function (H, P)
@@ -192,13 +192,13 @@ worker_function {load packages on cores, send data(observations, formulas, horiz
 	BM_pred <- predict <- predict(interest_rate_forecast)
 
 
-	*Lagged model must be iteratively forecast as forcasted value becomes lag -> loop in loop
+	*Lagged model must be iteratively forecast as forecasted value becomes lag -> loop in loop
 
 	make storage for TR prediction at each forecast horizon
 	TR_prediction_3 <- numeric(H)
 	TR_prediction_4 <- numeric(H)
 	
-	**Initialize the firt lag for the first forecast (it's in the training data)**
+	**Initialize the first lag for the first forecast (it's in the training data)**
 	current_rate_lag <- last(training$rate)
 	current_shadow_rate_lag <- last(training$shadow_rate)
 
@@ -211,11 +211,11 @@ worker_function {load packages on cores, send data(observations, formulas, horiz
 			output_gap = ouput_gap_forecast[h],
 			shadow_rate_lag = curren_shadow_rate_lag)
 
-		TR_prediction_3[h] <- pmax(predict(TR_model_3, data_mod_3), min(data$rat)
+		TR_prediction_3[h] <- pmax(predict(TR_model_3, data_mod_3), min(data$rate)
 			
 		TR_prediction_4[h] <- pmax(predict(TR_model_4, data_mod_4), min(data$rate)
 
-		**upadte the lags**
+		**update the lags**
 		current_rate_lag <- TR_prediction_3[h]
 		current_shadow_rate_lag <- TR_prediction_4[h]
 		}
@@ -254,7 +254,7 @@ for 1:P
 		
 		actuals[[h]][storage_index]
 
-		**Store FOrecasts**
+		**Store Forecasts**
 		F_TR_1[[h]][storage_index] <- f_tr1_val
 		F_TR_2[[h]][storage_index] <- f_tr2_val
 		F_TR_3[[h]][storage_index] <- f_tr3_val
@@ -278,7 +278,7 @@ for 1:P
 		
 
 **--------------------------------------**
-Improvement: can we creat a function that Forecasts for 1 taylor rule?
+Improvement: can we create a function that Forecasts for 1 taylor rule?
 **--------------------------------------**
 
 The run DM and MZ test on each of the results
