@@ -161,6 +161,22 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 
 ```
 
+## Raw Data Plots
+```{r data_plots, message=FALSE, warning=FALSE}
+
+ggplot(data, aes(x = date, color = series)) +
+  geom_line(aes(y = rate, color = "Rate"), linewidth = 1) +
+  geom_line(aes(y = inflation, color = "Inflation"), linewidth = 1) +
+  geom_line(aes(y = output_gap, color = "Output Gap"), linewidth = 1) +
+  labs(title = "Raw Data Plots", 
+       x = "", 
+       y = "", 
+       color = "Time Series") +
+  theme_minimal()
+
+```
+
+
 ## Data Properties
 ```{r data_prop, message=FALSE, warning=FALSE}
 
@@ -180,8 +196,6 @@ test3$type1
 rm(test1,test2,test3)
 
 # Are interest rates and inflation co-integrated?
-plot(merge(as.zoo(data$rate), as.zoo(data$inflation)), plot.type="single", col=c(2, 4), lwd=2, main="Rate vs. Inflation"); legend("topleft", c("Rate", "Inflation"), col=c(2, 4), lwd=2, bty="n")
-
 coint.test(data$rate, data$inflation)
 
 ```
