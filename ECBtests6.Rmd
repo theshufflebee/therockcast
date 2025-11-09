@@ -49,8 +49,7 @@ require(rdbnomics)
 require(doParallel) #for speed
 require(foreach) #for speedy loops
 require(car) #for MZ hypothesis test
-library(ggplot2) # Plotting
-
+require(ggridges) #for fancy density plots
 
 getwd()
 setwd("...") 
@@ -257,7 +256,7 @@ export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest,
 
 \newpage
 
-# Forecasting Model
+# Forecasting Model Evaluation
 
 ## Helpers
 ```{r helpers}
@@ -627,10 +626,156 @@ for (i in 1:P) {
     FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
     FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
 
+#-------------------------------------------------------------------
+# 5. RENDER RESULTS MORE INTUITIVE FOR FURTHER ANALYSIS
+#-------------------------------------------------------------------
+
+# Convert the forecast lists (F_TR_x) into single dataframes
+forecast_to_df <- function(forecast_list, period) {
+  # Convert each element to numeric (benchmark is ts object, which is bad)
+  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
+  df <- as.data.frame(numeric_list)
+  # Add period and horizon
+  df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
+  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponding to it
+  df}
+
+# Apply to all forecasting models
+df_all <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
+  forecast_to_df(worker_results[[i]], period = i) }))
+df_all[] <- lapply(df_all, function(x) as.numeric(x))
+
 ```
 
+## Spaghetti Plots
+```{r Spaghetti Plot, message=FALSE, warning=FALSE}
 
-## Efficiency
+# Select the model to plot
+model <- "f_tr3"
+
+# period = date the forecast was made
+# date_of_forecast = the future date we are predicting
+df_all$date_of_forecast <- df_all$period + df_all$horizon # is this correct choice?
+
+# Spaghetti plot with color per period
+ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
+  geom_line(alpha = 0.7) +    # forecast lines
+  geom_point(shape = 2, alpha = 0.7) +
+  
+  # Actuals as black baseline
+  geom_line(aes(y = actuals), color = "black", size = 1) +
+  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
+  
+  labs(
+    title = paste("Forecast of", model, "vs Actual Rate"),
+    x = "Period",
+    y = "Interest Rate",
+    color = "Forecast Origin") +
+  theme_minimal()
+
+```
+
+## Plots of FE
+```{r Plot of Forecast Errors, warning=FALSE, message=FALSE}
+
+df_all_3 <- df_all
+
+# Compute forecast error
+df_all_3$forecast_error <- df_all_3[[model]] - df_all_3$actuals
+
+#compute date_of_forecast for x-axis
+df_all_3$date_of_forecast <- df_all_3$period + df_all_3$horizon
+
+ggplot(df_all_3, aes(x = date_of_forecast, group = period)) +
+  # Forecast error lines
+  geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
+  geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
+  
+  # Actuals line
+  geom_line(aes(y = actuals), color = "black", size = 1) +
+  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
+  
+  labs(
+    title = paste("Forecast Errors for", model),
+    x = "Below Zero = forecast was too low ; Above Zero = forecast too high",
+    y = "Interest Rate and Forecast Error (deviation from interest rate)"
+  ) +
+  theme_minimal()
+
+```
+## Density of FE
+```{r Density of Forecast Errors}
+
+# Version 1: Non-Adjusted Scales
+plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
+  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
+  facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
+  labs(
+    title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
+    subtitle = "Comparing distribution shapes across 12 horizons",
+    x = "Forecast Error",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(fill = "#ecf0f1", color = NA), # Nice gray boxes for labels
+    strip.text = element_text(face = "bold"))
+print(plot_facet)
+
+# Version 2: Adjusted scales
+plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
+  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
+  facet_wrap(~horizon, ncol = 4, labeller = label_both) +
+  labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
+    subtitle = "Comparing distribution shapes across 12 horizons",
+    x = "Forecast Error",
+    y = "Density") +
+  theme_minimal() +
+  theme(strip.background = element_rect(fill = "#ecf0f1", color = NA), 
+    strip.text = element_text(face = "bold"))
+print(plot_facet)
+
+# Version 3: "Ridges"
+plot_ridge <- ggplot(df_all_3 %>% filter(horizon <= H),
+                       aes(x = forecast_error, y = as.factor(horizon), fill = stat(x))) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis_c(name = "Error", option = "C") +
+    labs(title = "Evolution of Forecast Error Densities",
+      subtitle = "Ridge plot showing widening variance over longer horizons",
+      x = "Forecast Error",
+      y = "Forecast Horizon") +
+    theme_minimal()
+
+print(plot_ridge)
+ 
+```
+
+## Variance of FE
+```{r Variance of Forecast Errors}
+
+# This gives us the mean forecast error for the h step ahead forecast
+var_by_horizon <- df_all_3 %>%
+  group_by(horizon) %>%
+  summarize(
+    mean_fe = mean(forecast_error, na.rm=T),
+    var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
+
+ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
+  geom_line(color = "#2c3e50", size = 1) +
+  geom_point(color = "#e74c3c", size = 3, alpha = 0.8) +
+  theme_minimal(base_size = 14) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title = "Variance of FE by Horizon",
+    x = "Forecast Horizon",
+    y = "Variance of FE",
+    caption = "Data source: df_all_3") +
+  theme(plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(color = "gray50"),
+        panel.grid.minor.x = element_blank() )
+
+```
+
+## Absolute Performance: Efficiency \& Bias
 ```{r forecast-model-efficiency, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Call MZ-test helper function 4 times.
@@ -685,7 +830,7 @@ list(
 ```
 
 
-## Performance (against benchmark)
+## Relative Performance (against benchmark)
 ```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Call DM-test helper function 4 times.
@@ -729,7 +874,7 @@ list(report_1, report_2, report_3, report_4)
 \newpage
 
 
-# Our Forecast
+# Actual Forecast Model
 
 ## Helpers
 ```{r our_helper, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
@@ -833,170 +978,15 @@ display_forecasts(final_forecasts,
 ```
 
 
-# Plotting
-
-Correct List
-Maybe this can be used in our code above
-
-```{r Extracting Forecast Data}
-
-#Marcos: This chunk should probably go at the end of the estimation chunk
-
-
-forecast_to_df <- function(forecast_list, period) {
-  # Convert each element to numeric (benchmark is ts object, which is bad)
-  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
-  
-  df <- as.data.frame(numeric_list)
-  
-  # Add period and horizon
-  df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
-  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponding to it
-  
-  df}
 
 
 
-#this essentially applies the above function to every list in the list
-#Since every list in the worker:results list is the forecast at one moment between R and T, we extract each on its own
-#so i determines the period we go along take out results i and give them period 1, go i =2 period 2 and so on
 
 
-df_all <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
-  forecast_to_df(worker_results[[i]], period = i) }))
-
-df_all[] <- lapply(df_all, function(x) as.numeric(x))
-
-```
 
 
-```{r Spaghetti Plot}
-
-# Select the model to plot
-model <- "f_tr3"
-
-# period = date the forecast was made
-# date_of_forecast = the future date we are predicting
-df_all$date_of_forecast <- df_all$period + df_all$horizon # is this correct choice?
-
-# Spaghetti plot with color per period
-ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
-  geom_line(alpha = 0.7) +    # forecast lines
-  geom_point(shape = 2, alpha = 0.7) +
-  
-  # Actuals as black baseline
-  geom_line(aes(y = actuals), color = "black", size = 1) +
-  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
-  
-  labs(
-    title = paste("Forecast of", model, "vs Actual Rate"),
-    x = "Period",
-    y = "Interest Rate",
-    color = "Forecast Origin") +
-  theme_minimal()
-
-```
 
 
-```{r Plot of Forecast Errors}
-
-df_all_3 <- df_all
-
-# Compute forecast error
-df_all_3$forecast_error <- df_all_3[[model]] - df_all_3$actuals
-
-#compute date_of_forecast for x-axis
-df_all_3$date_of_forecast <- df_all_3$period + df_all_3$horizon
-
-ggplot(df_all_3, aes(x = date_of_forecast, group = period)) +
-  # Forecast error lines
-  geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
-  geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
-  
-  # Actuals line
-  geom_line(aes(y = actuals), color = "black", size = 1) +
-  geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
-  
-  labs(
-    title = paste("Forecast Errors for", model),
-    x = "Below Zero = forecast was too low ; Above Zero = forecast too high",
-    y = "Interest Rate and Forecast Error (deviation from interest rate)"
-  ) +
-  theme_minimal()
-
-```
-
-
-```{r Density of Forecast Errors}
-
-# Version 1: Non-Adjusted Scales
-plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
-  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
-  facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
-  labs(
-    title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
-    subtitle = "Comparing distribution shapes across 12 horizons",
-    x = "Forecast Error",
-    y = "Density"
-  ) +
-  theme_minimal() +
-  theme(
-    strip.background = element_rect(fill = "#ecf0f1", color = NA), # Nice gray boxes for labels
-    strip.text = element_text(face = "bold"))
-print(plot_facet)
-
-# Version 2: Adjusted scales
-plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
-  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
-  facet_wrap(~horizon, ncol = 4, labeller = label_both) +
-  labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
-    subtitle = "Comparing distribution shapes across 12 horizons",
-    x = "Forecast Error",
-    y = "Density") +
-  theme_minimal() +
-  theme(strip.background = element_rect(fill = "#ecf0f1", color = NA), 
-    strip.text = element_text(face = "bold"))
-print(plot_facet)
-
-# Version 3: "Ridges"
-plot_ridge <- ggplot(df_all_3 %>% filter(horizon <= H),
-                       aes(x = forecast_error, y = as.factor(horizon), fill = stat(x))) +
-    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
-    scale_fill_viridis_c(name = "Error", option = "C") +
-    labs(title = "Evolution of Forecast Error Densities",
-      subtitle = "Ridge plot showing widening variance over longer horizons",
-      x = "Forecast Error",
-      y = "Forecast Horizon") +
-    theme_minimal()
-
-print(plot_ridge)
- 
-```
-
-
-```{r Variance of Forecast Errors}
-
-# This gives us the mean forecast error for the h step ahead forecast
-var_by_horizon <- df_all_3 %>%
-  group_by(horizon) %>%
-  summarize(
-    mean_fe = mean(forecast_error, na.rm=T),
-    var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
-
-ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
-  geom_line(color = "#2c3e50", size = 1) +
-  geom_point(color = "#e74c3c", size = 3, alpha = 0.8) +
-  theme_minimal(base_size = 14) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(title = "Variance of FE by Horizon",
-    x = "Forecast Horizon",
-    y = "Variance of FE",
-    caption = "Data source: df_all_3") +
-  theme(plot.title = element_text(face = "bold"),
-        plot.subtitle = element_text(color = "gray50"),
-        panel.grid.minor.x = element_blank() )
-
-```
 
 
 
