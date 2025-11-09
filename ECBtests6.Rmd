@@ -452,16 +452,16 @@ H = 12 #number of different horizons
 #-------------------------------------------------------------------
 
 # TR based on current inflation
-formula_1 <- shadowrate ~ inflation_gap + output_gap
-formula_2 <- rate ~ inflation_gap + output_gap
-formula_3 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
-formula_4 <- rate ~ rate_lag + inflation_gap + output_gap
+formula_1 <- rate ~ inflation_gap + output_gap
+formula_2 <- shadowrate ~ inflation_gap + output_gap
+formula_3 <- rate ~ rate_lag + inflation_gap + output_gap
+formula_4 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
 
 # TR based on current inflation expectations of inflation in 12 months
-#formula_1 <- shadowrate ~ exp_inflation_gap + output_gap
-#formula_2 <- rate ~ exp_inflation_gap + output_gap
-#formula_3 <- shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap
-#formula_4 <- rate ~ rate_lag + exp_inflation_gap + output_gap
+#formula_1 <- rate ~ exp_inflation_gap + output_gap
+#formula_2 <- shadowrate ~ exp_inflation_gap + output_gap
+#formula_3 <- rate ~ rate_lag + exp_inflation_gap + output_gap
+#formula_4 <- shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap
 
 #-------------------------------------------------------------------
 # 2. PRE-ALLOCATE STORAGE FOR ALL RESULTS
@@ -548,8 +548,8 @@ worker_results <- foreach(
   TR_preds_4 <- numeric(H)
   
   # b) Get the last known lag from the training set (lag for h=1 forecast)
+  current_rate_lag  <- last(training$rate)
   current_shadowrate_lag <- last(training$shadowrate)
-  current_rate_lag       <- last(training$rate)
 
   # Loop for iterative forecasting 
   for (h in 1:H) {
@@ -558,12 +558,12 @@ worker_results <- foreach(
       inflation_gap = inflation_forecasts[h],
       #exp_inflation_gap = exp_inflation_forecasts[h],
       output_gap = outputgap_forecasts[h],
-      shadowrate_lag = current_shadowrate_lag)
+      rate_lag = current_rate_lag)
     new_data_4_h <- data.frame(
       inflation_gap = inflation_forecasts[h],
       #exp_inflation_gap = exp_inflation_forecasts[h],
       output_gap = outputgap_forecasts[h],
-      rate_lag = current_rate_lag )
+      shadowrate_lag = current_shadowrate_lag )
     
     # Get the forecast values
     pred_3_h <- pmax(predict(TR_model_3, new_data_3_h), min(data$rate))
@@ -572,9 +572,8 @@ worker_results <- foreach(
     TR_preds_4[h] <- pred_4_h
     
     # Update lag for h+1 
-    current_shadowrate_lag <- pred_3_h
-    current_rate_lag <- pred_4_h
-    }
+    current_shadowrate_lag <- pred_4_h
+    current_rate_lag <- pred_3_h }
 
   # --- 7. Get actual values in evaluation sample  ---
   actual_rates <- testing$rate[1:H]
@@ -636,36 +635,36 @@ for (i in 1:P) {
 
 # Call MZ-test helper function 4 times.
 
-# MZ Report 1: Shadowrate, No Lag
+# MZ Report 1: Actual Rate, No Lag
 mz_report_1 <- generate_mincer_zarnowitz_report(
   F_model = F_TR_1,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: ShadowRate, No Lag",
-  format = format)
-
-# MZ Report 2: Actual Rate, No Lag
-mz_report_2 <- generate_mincer_zarnowitz_report(
-  F_model = F_TR_2,
   Actual_values = Actuals,
   H = H,
   model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
   format = format)
 
-# MZ Report 3: Shadowrate, with Lag
+# MZ Report 2: Shadow Rate, No Lag
+mz_report_2 <- generate_mincer_zarnowitz_report(
+  F_model = F_TR_2,
+  Actual_values = Actuals,
+  H = H,
+  model_caption = "Mincer-Zarnowitz Test: Shadow Rate, No Lag",
+  format = format)
+
+# MZ Report 3: Actual Rate, with Lag
 mz_report_3 <- generate_mincer_zarnowitz_report(
   F_model = F_TR_3,
   Actual_values = Actuals,
   H = H,
-  model_caption = "Mincer-Zarnowitz Test: ShadowRate, with Lag",
+  model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
   format = format)
 
-# MZ Report 4: Actual Rate, with Lag
+# MZ Report 4: Shadow Rate, with Lag
 mz_report_4 <- generate_mincer_zarnowitz_report(
   F_model = F_TR_4,
   Actual_values = Actuals,
   H = H,
-  model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
+  model_caption = "Mincer-Zarnowitz Test: Shadow Rate, with Lag",
   format = format)
 
 # MZ Report 5: Benchmark
@@ -691,36 +690,36 @@ list(
 
 # Call DM-test helper function 4 times.
 
-# Report 1: Shadowrate, No Lag
+# Report 1: Actual Rate, No Lag
 report_1 <- generate_report_table(
   FE_TR_model = FE_TR_1,
-  FE_BM_model = FE_BM,
-  H = H,
-  model_caption = "MSFE Comparison, Trained on ShadowRate, No Lag",
-  format = format)
-
-# Report 2: Actual Rate, No Lag
-report_2 <- generate_report_table(
-  FE_TR_model = FE_TR_2,
   FE_BM_model = FE_BM,
   H = H,
   model_caption = "MSFE Comparison, Trained on Actual Rate, No Lag",
   format = format)
 
-# Report 3: Shadowrate, with Lag
+# Report 2: Shadow Rate, No Lag
+report_2 <- generate_report_table(
+  FE_TR_model = FE_TR_2,
+  FE_BM_model = FE_BM,
+  H = H,
+  model_caption = "MSFE Comparison, Trained on Shadow Rate, No Lag",
+  format = format)
+
+# Report 3: Actual Rate, with Lag
 report_3 <- generate_report_table(
   FE_TR_model = FE_TR_3,
   FE_BM_model = FE_BM,
   H = H,
-  model_caption = "MSFE Comparison, Trained on ShadowRate, with Lag",
+  model_caption = "MSFE Comparison, Trained on Actual Rate, with Lag",
   format = format)
 
-# Report 4: Actual Rate, with Lag
+# Report 4: Shadow Rate, with Lag
 report_4 <- generate_report_table(
   FE_TR_model = FE_TR_4,
   FE_BM_model = FE_BM,
   H = H,
-  model_caption = "MSFE Comparison, Trained on Actual Rate, with Lag",
+  model_caption = "MSFE Comparison, Trained on Shadow Rate, with Lag",
   format = format)
 
 list(report_1, report_2, report_3, report_4)
@@ -825,7 +824,7 @@ our_predict <- function(data,formula,H){
   return(list(TR_Forecast = TR_preds, BM_Forecast = BM_preds))}
 
  
- final_forecasts <- our_predict(data = data, formula = formula_4, H = H)
+final_forecasts <- our_predict(data = data, formula = formula_3, H = H)
  
 display_forecasts(final_forecasts, 
                   caption = "",
@@ -877,7 +876,7 @@ df_all[] <- lapply(df_all, function(x) as.numeric(x))
 ```{r Spaghetti plots}
 
 # Select the model to plot
-model <- "f_tr4" 
+model <- "f_tr3" 
 
 # period = date the forecast was made
 # date_of_forecast = the future date we are predicting 
@@ -948,7 +947,6 @@ ggplot(df_all, aes(x = date_of_forecast, group = period)) +
 
 ```{r J6}
 
-model <- "f_tr4"
 df_all_3 <- df_all
 
 # Compute forecast error
