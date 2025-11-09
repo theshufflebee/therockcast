@@ -442,7 +442,7 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
 R = 54-28-8 #note: start of ZLB at R=54
 R = 54+28
 P = nrow(data) - R #but will effectively be: P = T-h-R
-H = 12 #number of different horizons
+H = 10 #number of different horizons
 
 #note: we are doing a recursive estimation scheme for out-of-sample tests
 #note: we are doing direct forecasts (check with Viktor)
@@ -863,41 +863,21 @@ forecast_to_df <- function(forecast_list, period) {
 
 
 df_all <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
-  forecast_to_df(worker_results[[i]], period = i)
-}))
+  forecast_to_df(worker_results[[i]], period = i) }))
 
 df_all[] <- lapply(df_all, function(x) as.numeric(x))
 
 ```
 
 
-
-
-```{r Spaghetti plots}
+```{r Spaghetti Plot}
 
 # Select the model to plot
-model <- "f_tr3" 
+model <- "f_tr3"
 
 # period = date the forecast was made
-# date_of_forecast = the future date we are predicting 
+# date_of_forecast = the future date we are predicting
 df_all$date_of_forecast <- df_all$period + df_all$horizon # is this correct choice?
-
-# Spaghetti plot
-ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period)) +
-  geom_line(color = "blue", alpha = 0.5) +
-  geom_point(color = "blue", alpha = 0.5) +
-  geom_line(aes(y = actuals), color = "black", size = 1) +
-  geom_point(aes(y = actuals), color = "black", alpha = 0.5, shape = 4) +
-  labs(
-    title = paste("Forecast of", model, "vs Actual Rate"),
-    x = "Period",
-    y = "Interest_Rate") +
-  theme_minimal()
-
-```
-
-
-```{r J4}
 
 # Spaghetti plot with color per period
 ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
@@ -918,34 +898,7 @@ ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, col
 ```
 
 
-```{r J5}
-
-df_all$date_of_forecast <- df_all$period + df_all$horizon
-
-# Spaghetti plot: line per period, points colored by horizon
-ggplot(df_all, aes(x = date_of_forecast, group = period)) +
-  # Forecast lines (semi-transparent)
-  geom_line(aes(y = .data[[model]]), color = "blue", alpha = 0.5) +
-  
-  # Forecast points colored by horizon -> factor gives each designation of horizon another color
-  geom_point(aes(y = .data[[model]], color = factor(horizon)), shape = 4, size = 2) +
-  
-  # Actuals line + points
-  geom_line(aes(y = actuals), color = "black", size = 1.2) +
-  geom_point(aes(y = actuals), color = "black", shape = 2, alpha = 0.5) +
-  
-  labs(
-    title = paste("Forecast of", model, "vs Actual Rate"),
-    x = "Each color is a __ Step ahead forecast",
-    y = "Interest Rate",
-    color = "Horizon"
-  ) +
-  theme_minimal()
-
-```
-
-
-```{r J6}
+```{r Plot of Forecast Errors}
 
 df_all_3 <- df_all
 
@@ -966,51 +919,82 @@ ggplot(df_all_3, aes(x = date_of_forecast, group = period)) +
   
   labs(
     title = paste("Forecast Errors for", model),
-    x = "If Negative, forecast was too low if positive forecast too high",
-    y = "Interest Rate / Forecast Error (deviation from interest rate)"
+    x = "Below Zero = forecast was too low ; Above Zero = forecast too high",
+    y = "Interest Rate and Forecast Error (deviation from interest rate)"
   ) +
   theme_minimal()
 
 ```
 
 
-```{r J7}
+```{r Density of Forecast Errors}
 
-h <- 6
-
-ggplot(df_all_3 %>% filter(horizon == h), aes(x = forecast_error)) +
-  geom_density(fill = "blue", alpha = 0.5) +
+# Version 1: Non-Adjusted Scales
+plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
+  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
+  facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
   labs(
-    title = paste("Density of Forecast Errors at Horizon", h),
+    title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
+    subtitle = "Comparing distribution shapes across 12 horizons",
+    x = "Forecast Error",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(fill = "#ecf0f1", color = NA), # Nice gray boxes for labels
+    strip.text = element_text(face = "bold"))
+print(plot_facet)
+
+# Version 2: Adjusted scales
+plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error)) +
+  geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
+  facet_wrap(~horizon, ncol = 4, labeller = label_both) +
+  labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
+    subtitle = "Comparing distribution shapes across 12 horizons",
     x = "Forecast Error",
     y = "Density") +
-  theme_minimal()
+  theme_minimal() +
+  theme(strip.background = element_rect(fill = "#ecf0f1", color = NA), 
+    strip.text = element_text(face = "bold"))
+print(plot_facet)
 
-#This just uses a built in ggplot function to inspect, not really needed but certainly good to look at. 
+# Version 3: "Ridges"
+plot_ridge <- ggplot(df_all_3 %>% filter(horizon <= H),
+                       aes(x = forecast_error, y = as.factor(horizon), fill = stat(x))) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis_c(name = "Error", option = "C") +
+    labs(title = "Evolution of Forecast Error Densities",
+      subtitle = "Ridge plot showing widening variance over longer horizons",
+      x = "Forecast Error",
+      y = "Forecast Horizon") +
+    theme_minimal()
+
+print(plot_ridge)
+ 
 ```
 
 
-```{r J8}
+```{r Variance of Forecast Errors}
 
 # This gives us the mean forecast error for the h step ahead forecast
 var_by_horizon <- df_all_3 %>%
   group_by(horizon) %>%
   summarize(
-    mean_fe = mean(forecast_error, na.rm = TRUE),
-    var_fe = mean((forecast_error - mean(forecast_error, na.rm = TRUE))^2, na.rm = TRUE),
-    n = n() )
-
-var_by_horizon
-
-
-var_by_horizon <- df_all_3 %>%
-  group_by(horizon) %>%
-  summarize(
     mean_fe = mean(forecast_error, na.rm=T),
-    var_fe = sd(forecast_error, na.rm=T)^2,
-    n = n() )
+    var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
 
-var_by_horizon
+ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
+  geom_line(color = "#2c3e50", size = 1) +
+  geom_point(color = "#e74c3c", size = 3, alpha = 0.8) +
+  theme_minimal(base_size = 14) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title = "Variance of FE by Horizon",
+    x = "Forecast Horizon",
+    y = "Variance of FE",
+    caption = "Data source: df_all_3") +
+  theme(plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(color = "gray50"),
+        panel.grid.minor.x = element_blank() )
 
 ```
 
