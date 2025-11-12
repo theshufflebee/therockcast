@@ -63,7 +63,7 @@ start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
 #load helper functions
-#source(here("auto_ARIMA_replic.R"))
+source(here("helpers/auto_ARIMA_replic.R"))
 
 set.seed(2025)
 format <- "html"
@@ -278,10 +278,10 @@ table4
 ```{r chowtest}
 
 # Start of ZLB in 2012 Q3
-breakpoint1 <- 55 
+breakpoint1 <- 55 #R = 55 in evaluation chunk
 
 # xxx
-breakpoint2 <- 85
+breakpoint2 <- 85 #R = 85 in evaluation chunk
 
 # Chow test (rejecting the null means there are structural breaks)
 chow_test1 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint1, data = data)
@@ -289,8 +289,8 @@ chow_test1 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow"
 chow_test2 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint2, data = data)
 
 chow_df <- data.frame(
-  "2012 Q3" = round(chow_test1$p.value, 4),
-  "2020 Q1" = round(chow_test2$p.value, 4),
+  "2012 Q3" = round(chow_test1$p.value, 4), 
+  "2020 Q1" = round(chow_test2$p.value, 4), 
   check.names = FALSE)
 
 kable(chow_df, digits = 4, format = format)%>%
@@ -566,10 +566,10 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
 ```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #parameters
-R = 54-28-8 #note: start of ZLB at R=54
-R = 54+28
+R = 85 #notes: structural breaks at R=55 and R=85
+cat("Evaluation sample starts after", as.character(data$quarter[R]))
 P = nrow(data) - R #but will effectively be: P = T-h-R
-H = 10 #number of different horizons
+H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 
 #note: we are doing a recursive estimation scheme for out-of-sample tests
 #note: we are doing direct forecasts 
@@ -638,17 +638,18 @@ worker_results <- foreach(
   training <- data[(1 + nrow(data) - R - p):(nrow(data) - p), ]
   testing <- data[(nrow(data) - (p - 1)):nrow(data), ]
   
-  # --- 2. Fit common models only once ---
-  inflation_arma <- auto.arima(training$inflation_gap, max.p=4, max.q=4, max.d=1)
-  #exp_inflation_arma <- auto.arima(training$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
-  outputgap_arma <- auto.arima(training$output_gap, max.p=4, max.q=4, max.d=1)
-  interest_arma <- auto.arima(training$rate, max.p=4, max.q=4, max.d=1) # Benchmark
+  # --- 2. Fit common models only once --- 
+  # note: d=1 for interest and inflation as non-stationary
+  inflation_arma <- my.auto.arima(training$inflation_gap, max.p=4, max.q=4, d=1)
+  #exp_inflation_arma <- my.auto.arima(training$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
+  outputgap_arma <- my.auto.arima(training$output_gap, max.p=4, max.q=4, d=0)
+  interest_arma <- my.auto.arima(training$rate, max.p=4, max.q=4, d=1) # Benchmark
   
   # --- 3. Get common forecasts only once (all H horizons) ---
-  inflation_forecasts <- forecast::forecast(inflation_arma, h = H)$mean
-  #exp_inflation_forecasts <- forecast::forecast(exp_inflation_arma, h = H)$mean
-  outputgap_forecasts <- forecast::forecast(outputgap_arma, h = H)$mean
-  BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
+  inflation_forecasts <- my.forecast(inflation_arma, h = H)
+  #exp_inflation_forecasts <- my.forecast(exp_inflation_arma, h = H)
+  outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
+  BMpredicted_rates <- my.forecast(interest_arma, h = H)
   
   # --- 4. Fit the 4 TR models ---
   TR_model_1 <- lm(formula_1, data = training)
@@ -783,7 +784,7 @@ model <- "f_tr3"
 
 # period = date the forecast was made
 # date_of_forecast = the future date we are predicting
-df_all$date_of_forecast <- df_all$period + df_all$horizon # is this correct choice?
+df_all$date_of_forecast <- df_all$period + df_all$horizon 
 
 # Spaghetti plot with color per period
 ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
@@ -794,11 +795,10 @@ ggplot(df_all, aes(x = date_of_forecast, y = .data[[model]], group = period, col
   geom_line(aes(y = actuals), color = "black", size = 1) +
   geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
   
-  labs(
-    title = paste("Forecast of", model, "vs Actual Rate"),
-    x = "Period",
-    y = "Interest Rate",
-    color = "Forecast Origin") +
+  labs(title = paste("Forecast of", model, "vs Actual Rate"),
+       x = "Period",
+       y = "Interest Rate",
+       color = "Forecast Origin") +
   theme_minimal()
 
 ```
@@ -1060,16 +1060,16 @@ display_forecasts <- function(forecast_list,
 our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
-   inflation_arma <- auto.arima(data$inflation_gap, max.p=4, max.q=4, max.d=1)
-   #exp_inflation_arma <- auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
-   outputgap_arma <- auto.arima(data$output_gap, max.p=4, max.q=4, max.d=1)
-   interest_arma <- auto.arima(data$rate, max.p=4, max.q=4, max.d=1) # Benchmark
+   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1)
+   #exp_inflation_arma <- my.auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
+   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0)
+   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1) # Benchmark
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
-   inflation_forecasts <- forecast::forecast(inflation_arma, h = H)$mean
-   #exp_inflation_forecasts <- forecast::forecast(exp_inflation_arma, h = H)$mean
-   outputgap_forecasts <- forecast::forecast(outputgap_arma, h = H)$mean
-   BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
+   inflation_forecasts <- my.forecast(inflation_arma, h = H)
+   #exp_inflation_forecasts <- my.forecast(exp_inflation_arma, h = H)
+   outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
+   BMpredicted_rates <- my.forecast(interest_arma, h = H)
   
   # --- 3. Fit TR model
    TR_model <- lm(formula, data = data)
@@ -1100,7 +1100,6 @@ our_predict <- function(data,formula,H){
      
    # --- 5. Compute forecast for BM ---
     BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25 
-
     
   return(list(TR_Forecast = TR_preds, 
                 BM_Forecast = BM_preds,
