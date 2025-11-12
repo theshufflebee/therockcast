@@ -25,6 +25,7 @@ require(forecast) #time series forecasting
 require(expm) #matrix exponents
 require(here) #directory finder
 require(dplyr) #data management
+require(tidyr) #also data
 require(lubridate) #data dates management
 require(zoo) #for lagging
 require(jtools) #tables
@@ -51,6 +52,7 @@ require(foreach) #for speedy loops
 require(car) #for MZ hypothesis test
 require(ggridges) #for fancy density plots
 require(strucchange) #Chow test for structural breaks
+require(transx) #for hamilton filter
 
 getwd()
 setwd("...") 
@@ -67,7 +69,7 @@ source(here("helpers/auto_ARIMA_replic.R"))
 
 set.seed(2025)
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 
 ```
 
@@ -130,7 +132,8 @@ gdp_q <- fredr(
 # The lambda value of 1600 is standard for quarterly data.
 hp_gdp <- hpfilter(gdp_q$log_real_gdp, freq = 1600)
 gdp_q$potential_gdp_log <- as.numeric(hp_gdp$trend)
-
+ham_gdp_cycle <- filter_hamilton(gdp_q$log_real_gdp, p = 4, horizon = 8)
+gdp_q$potential_gdp_log_ham <- gdp_q$log_real_gdp - ham_gdp_cycle
 
 # Combine all data into a single data frame
 data <- ecb_rate_q %>%
@@ -145,6 +148,7 @@ data <- data %>%
     inflation_gap = inflation - 2.0,
     exp_inflation_gap = exp_inflation -2.0,
     output_gap = 100 * (log_real_gdp - potential_gdp_log),
+    output_gap_ham = 100 * (log_real_gdp - potential_gdp_log_ham),
     rate_lag = lag(rate, 1),
     shadowrate = case_when(
       quarter < "2012 Q3" | quarter >= "2022 Q3" ~ rate,
@@ -166,7 +170,8 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 ggplot(data, aes(x = date, color = series)) +
   geom_line(aes(y = rate, color = "Rate"), linewidth = 1) +
   geom_line(aes(y = inflation, color = "Inflation"), linewidth = 1) +
-  geom_line(aes(y = output_gap, color = "Output Gap"), linewidth = 1) +
+  geom_line(aes(y = output_gap, color = "Output Gap (HP)"), linewidth = 1) +
+  geom_line(aes(y = output_gap_ham, color = "Output Gap (Hamilton)"), linewidth = 1) +
   labs(title = "Raw Data Plots", 
        x = "", 
        y = "", 
@@ -207,6 +212,14 @@ cat("\\clearpage")
 
 # Taylor Rule Estimation
 
+```{r ham, warning=FALSE, message=FALSE}
+
+#in order to use Hamilton filter for the rest of the code (enable or disable)
+data$output_gap = data$output_gap_ham
+
+```
+
+
 ## Without Lags
 $$
 \begin{aligned}
@@ -214,6 +227,7 @@ $$
       &= (1-\beta)\pi^* + \gamma(y_t-\bar{y_t}) + \beta \pi_t
 \end{aligned}
 $$
+
 ```{r Taylor Rule simple w/o lag}
 
 TR <- lm(rate ~ inflation_gap + output_gap, data = data)
@@ -330,7 +344,7 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
       x = "",
       y = "Coefficient Value") +
     theme_minimal() +
-    theme(plot.title = element_text(face = "bold", size = 16, margin = margin(b=5)),
+    theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
           plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
           axis.title = element_text(size = 12),
           axis.text = element_text(size = 10))
@@ -575,7 +589,7 @@ H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 #note: we are doing direct forecasts 
 
 #-------------------------------------------------------------------
-# 1. DEFINE THE FOUR TAYLOR RULE (TR) MODEL FORMULAS
+# 1. DEFINE THE TAYLOR RULE (TR) MODEL FORMULAS
 #-------------------------------------------------------------------
 
 # TR based on current inflation
@@ -1012,7 +1026,7 @@ cat("\\clearpage")
 ```{r our_helper, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #-------------------------------------------------------------------
-# Helper function for displaying our final forecast results
+# Helper function for displaying our final forecast results (table)
 #-------------------------------------------------------------------
 
 display_forecasts <- function(forecast_list, 
@@ -1050,6 +1064,67 @@ display_forecasts <- function(forecast_list,
     position = "center") %>%
   column_spec(1, bold = TRUE, border_right = TRUE)
     return(table_output) }
+
+
+
+#-------------------------------------------------------------------
+# Helper function for plotting our final forecast results
+#-------------------------------------------------------------------
+
+plot_forecasts <- function(forecast_list, 
+                           title = "Interest Rate and Component Forecasts") {
+  
+  # Create the data frame for plotting w/ numerical quarters
+  H <- length(forecast_list$TR_Forecast)
+  forecast_quarters_yearqtr <- seq(from = last(data$quarter) + 0.25, 
+                                     by = 0.25, 
+                                     length.out = H)
+  
+  # b) numeric version (for plotting)
+  forecast_quarters_numeric <- as.numeric(forecast_quarters_yearqtr)
+  
+  # c) character version (for labels)
+  forecast_quarters_labels <- as.character(forecast_quarters_yearqtr)
+  
+  forecast_df <- data.frame(
+    Quarter = forecast_quarters_numeric,
+    "Taylor Rule" = forecast_list$TR_Forecast,
+    "Benchmark ARIMA" = forecast_list$BM_Forecast,
+    "Inflation" = forecast_list$Inflation_Forecast,
+    "Output Gap" = forecast_list$OutputGap_Forecast,
+    check.names = FALSE )
+  
+  # Long format for ggplot 
+  forecast_long <- forecast_df %>%
+    pivot_longer(cols = -Quarter, 
+      names_to = "Forecast_Type",
+      values_to = "Value") %>%
+    mutate(Plot_Group = case_when(
+           Forecast_Type %in% c("Taylor Rule", "Benchmark ARIMA") ~ "Interest Rate Forecasts",
+           Forecast_Type %in% c("Inflation", "Output Gap") ~ "Model Input Forecasts"),
+      Plot_Group = factor(Plot_Group, levels = c("Interest Rate Forecasts", "Model Input Forecasts")),
+      Forecast_Type = factor(Forecast_Type, levels = c("Taylor Rule", "Benchmark ARIMA", "Inflation", "Output Gap")))
+
+  # Actual plot
+  plot <- ggplot(forecast_long, aes(x = Quarter, y = Value, color = Forecast_Type)) +
+    geom_line(linewidth = 1.1) +
+    geom_point(size = 2.5) +
+    facet_wrap(~ Plot_Group, ncol = 1, scales = "free_y") +
+    # Prettyness
+    labs(title = title,
+         x = "Quarter",
+         y = "Value (%)",
+         color = "Forecast Series") +
+    scale_x_continuous(breaks = forecast_quarters_numeric, 
+                       labels = forecast_quarters_labels) + 
+    theme_minimal(base_size = 14) +
+    theme(legend.position = "bottom",
+          plot.title = element_text(face = "bold", size = 14),
+          plot.subtitle = element_text(size = 12),
+          strip.text = element_text(face = "bold", size = 12), 
+          axis.text.x = element_text(angle = 45, hjust = 1)  ) +
+          scale_color_brewer(palette = "Set1") 
+  return(plot) }
 
 ```
 
@@ -1112,6 +1187,8 @@ final_forecasts <- our_predict(data = data, formula = formula_3, H = H)
 display_forecasts(final_forecasts, 
                   caption = "",
                   format = format)
+
+plot_forecasts(final_forecasts)
  
 ```
 
