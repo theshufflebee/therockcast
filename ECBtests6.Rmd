@@ -67,7 +67,7 @@ end_date <- Sys.Date()
 
 set.seed(2025)
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 
 ```
 
@@ -201,7 +201,9 @@ aTSA::coint.test(data$rate, data$inflation)
 
 
 
-\newpage
+```{r, echo=FALSE, results='asis'}
+cat("\\clearpage")
+```
 
 # Taylor Rule Estimation
 
@@ -325,7 +327,7 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
     # Aesthetic
     labs(title = paste("Rolling Coefficient Estimate:", var_name_title),
         subtitle = "with 95% confidence interval",
-      x = "Window End Date",
+      x = "",
       y = "Coefficient Value") +
     theme_minimal() +
     theme(plot.title = element_text(face = "bold", size = 16, margin = margin(b=5)),
@@ -377,7 +379,10 @@ plot_rolling_coefs(TR_roll, "output_gap", var_name_title="Output Gap")
 ```
 
 
-\newpage
+```{r, echo=FALSE, results='asis'}
+cat("\\clearpage")
+```
+
 
 # Forecasting Model Evaluation
 
@@ -826,6 +831,7 @@ ggplot(df_all_3, aes(x = date_of_forecast, group = period)) +
   theme_minimal()
 
 ```
+
 ## Density of FE
 ```{r Density of Forecast Errors}
 
@@ -994,7 +1000,10 @@ list(report_1, report_2, report_3, report_4)
 
 ```
 
-\newpage
+```{r, echo=FALSE, results='asis'}
+cat("\\clearpage")
+```
+
 
 
 # Actual Forecast Model
