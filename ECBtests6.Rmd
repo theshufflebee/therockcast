@@ -342,7 +342,7 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
 ```{r rolling TR, message=FALSE, warning=FALSE}
 
 # Set rolling window (in quarters) & Looping Parameter
-W = 40
+W = 30
 L = nrow(data) - W + 1
 formula = rate ~ rate_lag + inflation_gap + output_gap
 #formula = shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap
