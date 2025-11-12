@@ -205,21 +205,22 @@ aTSA::coint.test(data$rate, data$inflation)
 
 # Taylor Rule Estimation
 
-## Without Lag
+## Without Lags
 $$
 \begin{aligned}
   i_t &= \pi^* + \gamma(y_t-\bar{y_t}) + \beta(\pi_t-\pi^*) \\
       &= (1-\beta)\pi^* + \gamma(y_t-\bar{y_t}) + \beta \pi_t
 \end{aligned}
 $$
-
 ```{r Taylor Rule simple w/o lag}
 
 TR <- lm(rate ~ inflation_gap + output_gap, data = data)
 TRsr <- lm(shadowrate ~ inflation_gap + output_gap, data = data)
 
-export_summs(TR, TRsr, vcov = sandwich::NeweyWest, 
+table1 <- export_summs(TR, TRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
+huxtable::caption(table1) <- "No Lag, No Expectations"
+table1
 
 ```
 
@@ -230,13 +231,15 @@ TRsr_e <- lm(shadowrate ~ exp_inflation_gap + output_gap, data = data)
 TR_ie <- lm(rate ~ inflation_gap + exp_inflation_gap + output_gap, data = data)
 TRsr_ie <- lm(shadowrate ~ inflation_gap + exp_inflation_gap + output_gap, data = data)
 
-export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest, 
+table2 <- export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
+huxtable::caption(table2) <- "No Lag, with Inflation Expectations"
+table2
 
 ```
 
 
-## With Lag (interest rate smoothing)
+## Lagged Models 
 $$
 \begin{aligned}
       &= \phi i_{t-1} + (1-\beta)\pi^* + \gamma(y_t-\bar{y_t}) + \beta \pi_t
@@ -248,18 +251,24 @@ $$
 lTR <- lm(rate ~ rate_lag + inflation_gap + output_gap, data = data)
 lTRsr <- lm(shadowrate ~ shadowrate_lag + inflation_gap + output_gap, data = data)
 
-export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest, 
+table3 <- export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
+huxtable::caption(table3) <- "Interest Rate Lag, No Expectations"
+table3
 
 ```
+
 ```{r Taylor Rule simple w/ lag and inflation expectations}
 
 lTR_e <- lm(rate ~ rate_lag + exp_inflation_gap + output_gap, data = data)
 lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap, data = data)
 lTR_ie <- lm(rate ~ rate_lag + inflation_gap + exp_inflation_gap + output_gap, data = data)
-lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap, data = data)
-export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest, 
+lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap, data = data) 
+
+table4 <- export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
+huxtable::caption(table4) <- "Interest Rate Lag, with Inflation Expectations"
+table4
 
 ```
 
@@ -287,7 +296,85 @@ kable(chow_df, digits = 4, format = format)%>%
 
 ```
 
+## Rolling Estimation (for structural breaks)
+```{r plot helper, message=FALSE, warning=FALSE}
 
+# This function automatically plots the output from the rolling estimation loop
+plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
+  
+  # 1. Dynamically create the column names for CIs
+  lower_col <- paste0(var_name, "_lower")
+  upper_col <- paste0(var_name, "_upper")
+
+  # 2. Create the plot, using the .data[[]] pronoun to find the
+  # columns based on the variable names (modularity)
+  
+  plot <- ggplot(data, aes(x = date)) +
+    
+    # Add a dashed line at y=0 for reference
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.5) +
+    
+    # Add the 95% confidence interval ribbon
+    geom_ribbon(aes(ymin = .data[[lower_col]], ymax = .data[[upper_col]]),
+                fill = "dodgerblue", alpha = 0.3) +
+                
+    # Add the coefficient estimate line
+    geom_line(aes(y = .data[[var_name]]), 
+              color = "dodgerblue4", linewidth = 1) +
+    
+    # Aesthetic
+    labs(title = paste("Rolling Coefficient Estimate:", var_name_title),
+        subtitle = "with 95% confidence interval",
+      x = "Window End Date",
+      y = "Coefficient Value") +
+    theme_minimal() +
+    theme(plot.title = element_text(face = "bold", size = 16, margin = margin(b=5)),
+          plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+          axis.title = element_text(size = 12),
+          axis.text = element_text(size = 10))
+      return(plot) }
+
+```
+
+
+```{r rolling TR, message=FALSE, warning=FALSE}
+
+# Set rolling window (in quarters) & Looping Parameter
+W = 24
+L = nrow(data) - W + 1
+formula = rate ~ rate_lag + inflation_gap + output_gap
+#formula = shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap
+
+# Preparation of result data, dates, var names, and confidence intervals
+var_names <- attr(terms(formula), "term.labels")
+window_end_dates <- data$quarter[W:nrow(data)] # First window [1:W] ends at data$date[W]
+TR_roll <- data.frame(date = window_end_dates)
+TR_roll[var_names] <- NA
+lower_col_names <- paste0(var_names, "_lower")
+upper_col_names <- paste0(var_names, "_upper")
+
+# Looped estimation of TR, outputs coefficients and ICss
+for (l in 1:L) {
+  # 1. Define splits (with rolling scheme)
+  rolled_data <- data[l:(W + l - 1), ]
+  
+  # 2. Estimate TR on split data, using whatever formula is desired
+  TR_estimate <- lm(formula, data = rolled_data)
+
+  # 3. Pull out coefficients & compute confidence intervals
+  all_coefs <- coef(TR_estimate)
+  all_cis <- confint(TR_estimate)
+  
+  TR_roll[l, var_names] <- all_coefs[var_names] 
+  TR_roll[l, lower_col_names] <- all_cis[var_names, 1]
+  TR_roll[l, upper_col_names] <- all_cis[var_names, 2]   }
+
+# Plotting (note: this part is not modular, obviously)
+plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
+plot_rolling_coefs(TR_roll, "inflation_gap", var_name_title="Inflation (Gap)")
+plot_rolling_coefs(TR_roll, "output_gap", var_name_title="Output Gap")
+
+```
 
 
 \newpage
@@ -480,7 +567,7 @@ P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons
 
 #note: we are doing a recursive estimation scheme for out-of-sample tests
-#note: we are doing direct forecasts (check with Viktor)
+#note: we are doing direct forecasts 
 
 #-------------------------------------------------------------------
 # 1. DEFINE THE FOUR TAYLOR RULE (TR) MODEL FORMULAS
@@ -542,7 +629,7 @@ worker_results <- foreach(
   .export = c("data", "H", "formula_1", "formula_2", "formula_3", "formula_4")
 ) %dopar% {
   
-  # 1. Define splits ( with rolling scheme)
+  # 1. Define splits (with rolling scheme)
   training <- data[(1 + nrow(data) - R - p):(nrow(data) - p), ]
   testing <- data[(nrow(data) - (p - 1)):nrow(data), ]
   
@@ -935,15 +1022,18 @@ display_forecasts <- function(forecast_list,
   # Create a data frame for display
   forecast_df <- data.frame(
     Horizon_Quarter = horizon_quarter_label,
-    Taylor_Rule_Forecast = round(forecast_list$TR_Forecast,4),
-    Benchmark_ARIMA_Forecast = round(forecast_list$BM_Forecast,4))
+    Taylor_Rule_Forecast = round(forecast_list$TR_Forecast,2),
+    Benchmark_ARIMA_Forecast = round(forecast_list$BM_Forecast,2),
+    Inflation_Gap_Forecast = round(forecast_list$Inflation_Forecast,2),
+    Output_Gap_Forecast = round(forecast_list$OutputGap_Forecast,2))
   
   # Create the table
   table_output <- kable(
     forecast_df,
     format = format,
     digits = 4,
-    col.names = c("Horizon: Quarter", "Taylor Rule Forecast", "Benchmark Forecast"),
+    col.names = c("Horizon: Quarter", "Taylor Rule Forecast", "Benchmark Forecast",
+                  "Inflation Forecast", "Output Gap Forecast"),
     caption = caption,
     booktabs = TRUE) %>%
   kable_styling(
@@ -1003,7 +1093,10 @@ our_predict <- function(data,formula,H){
     BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25 
 
     
-  return(list(TR_Forecast = TR_preds, BM_Forecast = BM_preds))}
+  return(list(TR_Forecast = TR_preds, 
+                BM_Forecast = BM_preds,
+                Inflation_Forecast = inflation_forecasts + 2, #to add back target 
+                OutputGap_Forecast = outputgap_forecasts  ))}
 
  
 final_forecasts <- our_predict(data = data, formula = formula_3, H = H)
