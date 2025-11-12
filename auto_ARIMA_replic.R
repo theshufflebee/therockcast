@@ -3,9 +3,9 @@
 
 library(stats)
 
-my.auto.arima <- function(x, max.p, max.q, max.d)
+my.auto.arima <- function(y, max.p=5, max.q=5, max.d=5)
   {
-  T <- length(x)
+  T <- length(y)
   d <- 0
   max.p <- max.p
   max.d <- max.d
@@ -63,11 +63,14 @@ my.auto.arima <- function(x, max.p, max.q, max.d)
 }
 
 
-#Testing (to be removed in final version)
-data <- read.csv("https://raw.githubusercontent.com/jrenne/LaboSessionMacro/main/Data/dataLaboSession3a.csv")
-y <- data$V1
+## To replicate functionality of forecast function 
+my.forecast = function(model,h=1){
+  prediction_output = predict(object=model, n.ahead=h)
+  values <- as.vector(prediction_output$pred)
+  return(values)
+}
 
-my.auto.arima(y, 5, 5, 5)
 
-library(forecast)
-auto.arima(y, max.p = 5, max.q = 5, method = "ML")
+
+
+
