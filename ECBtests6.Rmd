@@ -77,8 +77,6 @@ format <- "html"
 ## Main
 ```{r data_main, message=FALSE, warning=FALSE}
 
-#REDO THE DATA LOADING USNING rdbnomics PACKAGE (combines all macro APIs)
-
 # --- 1. ECB Deposit Facility Rate & Shadow Rate ---
 ecb_rate_daily <- fredr(series_id = "ECBDFR", observation_start = as.Date(start_date))
 ecb_rate_q <- ecb_rate_daily %>%
