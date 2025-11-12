@@ -67,7 +67,7 @@ end_date <- Sys.Date()
 
 set.seed(2025)
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 
 ```
 
@@ -342,7 +342,7 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
 ```{r rolling TR, message=FALSE, warning=FALSE}
 
 # Set rolling window (in quarters) & Looping Parameter
-W = 24
+W = 40
 L = nrow(data) - W + 1
 formula = rate ~ rate_lag + inflation_gap + output_gap
 #formula = shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap
@@ -355,7 +355,7 @@ TR_roll[var_names] <- NA
 lower_col_names <- paste0(var_names, "_lower")
 upper_col_names <- paste0(var_names, "_upper")
 
-# Looped estimation of TR, outputs coefficients and ICss
+# Looped estimation of TR, outputs coefficients and CIs
 for (l in 1:L) {
   # 1. Define splits (with rolling scheme)
   rolled_data <- data[l:(W + l - 1), ]
