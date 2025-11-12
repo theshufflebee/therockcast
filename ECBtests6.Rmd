@@ -50,6 +50,7 @@ require(doParallel) #for speed
 require(foreach) #for speedy loops
 require(car) #for MZ hypothesis test
 require(ggridges) #for fancy density plots
+require(strucchange) #Chow test for structural breaks
 
 getwd()
 setwd("...") 
@@ -264,6 +265,29 @@ export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest,
 
 ```
 
+## Checking for structural breaks
+```{r chowtest}
+
+# Start of ZLB in 2012 Q3
+breakpoint1 <- 55 
+
+# xxx
+breakpoint2 <- 85
+
+# Chow test (rejecting the null means there are structural breaks)
+chow_test1 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint1, data = data)
+
+chow_test2 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint2, data = data)
+
+chow_df <- data.frame(
+  "2012 Q3" = round(chow_test1$p.value, 4),
+  "2020 Q1" = round(chow_test2$p.value, 4),
+  check.names = FALSE)
+
+kable(chow_df, digits = 4, format = format)%>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+
+```
 
 
 
@@ -520,8 +544,8 @@ worker_results <- foreach(
   .export = c("data", "H", "formula_1", "formula_2", "formula_3", "formula_4")
 ) %dopar% {
   
-  # 1. Define splits
-  training <- data[1:(nrow(data) - p), ]
+  # 1. Define splits ( with rolling scheme)
+  training <- data[(1 + nrow(data) - R - p):(nrow(data) - p), ]
   testing <- data[(nrow(data) - (p - 1)):nrow(data), ]
   
   # --- 2. Fit common models only once ---
@@ -549,9 +573,9 @@ worker_results <- foreach(
     #exp_inflation_gap = exp_inflation_forecasts,
     output_gap = outputgap_forecasts)
     
-  TR_preds_1 <- pmax(predict(TR_model_1, new_data_base), min(data$rate))
-  TR_preds_2 <- pmax(predict(TR_model_2, new_data_base), min(data$rate))
-  BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark
+  TR_preds_1 <- round(pmax(predict(TR_model_1, new_data_base), min(data$rate)) / 0.25) * 0.25
+  TR_preds_2 <- round(pmax(predict(TR_model_2, new_data_base), min(data$rate)) / 0.25) * 0.25
+  BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25
   
   # --- 6. Get forecasts for lagged models via iteration ---
   # We must loop 1 step at a time, feeding forecasts back in.   
@@ -578,11 +602,11 @@ worker_results <- foreach(
       output_gap = outputgap_forecasts[h],
       shadowrate_lag = current_shadowrate_lag )
     
-    # Get the forecast values
-    pred_3_h <- pmax(predict(TR_model_3, new_data_3_h), min(data$rate))
-    TR_preds_3[h] <- pred_3_h
-    pred_4_h <- pmax(predict(TR_model_4, new_data_4_h), min(data$rate))
-    TR_preds_4[h] <- pred_4_h
+    # Get the forecast values (keep for lag, and then round for actual prediction)
+    pred_3_h <- predict(TR_model_3, new_data_3_h)
+    TR_preds_3[h] <- round(pmax(pred_3_h, min(data$rate)) / 0.25) * 0.25
+    pred_4_h <- predict(TR_model_4, new_data_4_h)
+    TR_preds_4[h] <- round(pmax(pred_4_h, min(data$rate)) / 0.25) * 0.25
     
     # Update lag for h+1 
     current_shadowrate_lag <- pred_4_h
@@ -971,14 +995,15 @@ our_predict <- function(data,formula,H){
         rate_lag = current_rate_lag)
      
      # Get forecasted values
-     pred_h <- pmax(predict(TR_model, new_data_h), min(data$rate))
-     TR_preds[h] <- pred_h
+     pred_h <- predict(TR_model, new_data_h)
+     TR_preds[h] <- round(pmax(pred_h, min(data$rate)) / 0.25) * 0.25
      
      # Update the lag for h+1
      current_rate_lag <- pred_h }
      
    # --- 5. Compute forecast for BM ---
-    BM_preds   <- pmax(BMpredicted_rates, min(data$rate)) # Benchmark 
+    BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25 
+
     
   return(list(TR_Forecast = TR_preds, BM_Forecast = BM_preds))}
 
