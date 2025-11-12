@@ -155,7 +155,7 @@ data <- data %>%
       TRUE ~ shadowrate),
     shadowrate_lag = lag(shadowrate, 1))
 
-# Remove last row since no output
+# Remove last row since no output data
 data = subset(data, quarter < "2025 Q3")
 
 # Clean environment
