@@ -939,16 +939,16 @@ display_forecasts <- function(forecast_list,
 our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
-   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, max.d=1)
-   #exp_inflation_arma <- my.auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
-   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, max.d=1)
-   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, max.d=1) # Benchmark
+   inflation_arma <- auto.arima(data$inflation_gap, max.p=4, max.q=4, max.d=1)
+   #exp_inflation_arma <- auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
+   outputgap_arma <- auto.arima(data$output_gap, max.p=4, max.q=4, max.d=1)
+   interest_arma <- auto.arima(data$rate, max.p=4, max.q=4, max.d=1) # Benchmark
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
-   inflation_forecasts <- my.forecast(inflation_arma, h = H)
-   #exp_inflation_forecasts <- my.forecast(exp_inflation_arma, h = H)
-   outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
-   BMpredicted_rates <- my.forecast(interest_arma, h = H)
+   inflation_forecasts <- forecast::forecast(inflation_arma, h = H)$mean
+   #exp_inflation_forecasts <- forecast::forecast(exp_inflation_arma, h = H)$mean
+   outputgap_forecasts <- forecast::forecast(outputgap_arma, h = H)$mean
+   BMpredicted_rates <- forecast::forecast(interest_arma, h = H)$mean
   
   # --- 3. Fit TR model
    TR_model <- lm(formula, data = data)
