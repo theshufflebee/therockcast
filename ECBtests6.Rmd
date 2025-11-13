@@ -67,9 +67,13 @@ end_date <- Sys.Date()
 #load helper functions
 source(here("helpers/auto_ARIMA_replic.R"))
 
+#options
+USE_HAMILTON_FILTER <- TRUE
+USE_INFLATION_EXPECTATIONS <- FALSE
+
 set.seed(2025)
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 
 ```
 
@@ -99,7 +103,7 @@ monthly_shadow = aggregate(shadowrate ~ month, data=shadow_rate_daily, FUN=mean,
 inflation_data <- get_eurostat("prc_hicp_manr", filters = list(geo = "EA", coicop = "CP00"), type = "label")
 inflation_q <- inflation_data %>%
   filter(time >= start_date) %>%
-  select(date = time, inflation = values) %>%
+  dplyr::select(date = time, inflation = values) %>%
   mutate(quarter = as.yearqtr(date)) %>%
   group_by(quarter) %>%
   summarise(inflation = mean(inflation, na.rm = TRUE)) %>%
@@ -114,9 +118,9 @@ inflation_exp_q <- inflation_exp %>%
   summarise(exp_inflation = last(original_value)) %>%
   mutate(date = as.Date(quarter))
 
-#P12M
+#P12M : 12-month ahead forecasts
 inflation_q$exp_inflation = c(rep(NA,3),as.numeric(inflation_exp_q$exp_inflation),NA)
-#P24M
+#P24M : 24-month ahead forecasts
 #inflation_q$exp_inflation = c(rep(NA,7),as.numeric(inflation_exp_q$exp_inflation[1:101]))
 
 # --- 3. Real GDP and Estimated Output Gap ---
@@ -125,7 +129,7 @@ gdp_q <- fredr(
   series_id = "CLVMEURSCAB1GQEA19",
   observation_start = as.Date(start_date)) %>%
   mutate(quarter = as.yearqtr(date)) %>%
-  select(quarter, real_gdp = value) %>%
+  dplyr::select(quarter, real_gdp = value) %>%
   mutate(log_real_gdp = log(real_gdp)) 
 
 # b) Estimate Potential GDP (the trend) using the HP Filter on the log of real GDP.
@@ -137,7 +141,7 @@ gdp_q$potential_gdp_log_ham <- gdp_q$log_real_gdp - ham_gdp_cycle
 
 # Combine all data into a single data frame
 data <- ecb_rate_q %>%
-  select(quarter, rate) %>%
+  dplyr::select(quarter, rate) %>%
   left_join(inflation_q, by = "quarter") %>%
   left_join(gdp_q, by = "quarter") %>%
   left_join(quarterly_shadow, by = "quarter") 
@@ -145,9 +149,9 @@ data <- ecb_rate_q %>%
 # Create model variables
 data <- data %>%
   mutate(
-    inflation_gap = inflation - 2.0,
+    realised_inflation_gap = inflation - 2.0,
     exp_inflation_gap = exp_inflation -2.0,
-    output_gap = 100 * (log_real_gdp - potential_gdp_log),
+    output_gap_hp = 100 * (log_real_gdp - potential_gdp_log),
     output_gap_ham = 100 * (log_real_gdp - potential_gdp_log_ham),
     rate_lag = lag(rate, 1),
     shadowrate = case_when(
@@ -164,13 +168,48 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 
 ```
 
+## Data Configuration
+
+```{r data_config, message=TRUE, warning=FALSE}
+
+# Choices in setup chunk
+
+# --------- 1. Filter selection for output gap estimation ----------
+
+# TRUE  = Use Hamilton Filter (newer, arguably more robust)
+# FALSE = Use HP Filter (classic approach)
+
+# Applying selection
+if (USE_HAMILTON_FILTER) {
+    data$output_gap <- data$output_gap_ham
+  message(">> CONFIGURATION: Using Hamilton Filter for output gap estimation.")
+} else {
+  data$output_gap <- data$output_gap_hp 
+  message(">> CONFIGURATION: Using HP Filter for output gap estimation.") }
+
+# --------- 2. Inflation expectations choice ----------
+
+# TRUE  = Use inflation expectations from ECB survey of professional forecasts
+# FALSE = Use realised inflation
+
+# Applying selection
+if (USE_INFLATION_EXPECTATIONS) {
+    data$inflation_gap <- data$exp_inflation_gap
+  message(">> CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
+} else {
+  data$inflation_gap <- data$realised_inflation_gap 
+  message(">> CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") }
+
+```
+
 ## Raw Data Plots
 ```{r data_plots, message=FALSE, warning=FALSE}
 
 ggplot(data, aes(x = date, color = series)) +
   geom_line(aes(y = rate, color = "Rate"), linewidth = 1) +
-  geom_line(aes(y = inflation, color = "Inflation"), linewidth = 1) +
-  geom_line(aes(y = output_gap, color = "Output Gap (HP)"), linewidth = 1) +
+  geom_line(aes(y = inflation, color = "(Realised) Inflation"), linewidth = 1) +
+  geom_line(aes(y = exp_inflation, color = "(Expected) Inflation"), linewidth = 1) +
+  geom_line(aes(y = output_gap_hp, color = "Output Gap (HP)"), linewidth = 1) +
   geom_line(aes(y = output_gap_ham, color = "Output Gap (Hamilton)"), linewidth = 1) +
   labs(title = "Raw Data Plots", 
        x = "", 
@@ -179,7 +218,6 @@ ggplot(data, aes(x = date, color = series)) +
   theme_minimal()
 
 ```
-
 
 ## Data Properties
 ```{r data_prop, message=FALSE, warning=FALSE}
@@ -212,14 +250,6 @@ cat("\\clearpage")
 
 # Taylor Rule Estimation
 
-```{r ham, warning=FALSE, message=FALSE}
-
-#in order to use Hamilton filter for the rest of the code (enable or disable)
-data$output_gap = data$output_gap_ham
-
-```
-
-
 ## Without Lags
 $$
 \begin{aligned}
@@ -230,8 +260,8 @@ $$
 
 ```{r Taylor Rule simple w/o lag}
 
-TR <- lm(rate ~ inflation_gap + output_gap, data = data)
-TRsr <- lm(shadowrate ~ inflation_gap + output_gap, data = data)
+TR <- lm(rate ~ realised_inflation_gap + output_gap, data = data)
+TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
 
 table1 <- export_summs(TR, TRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
@@ -244,8 +274,8 @@ table1
 
 TR_e <- lm(rate ~ exp_inflation_gap + output_gap, data = data)
 TRsr_e <- lm(shadowrate ~ exp_inflation_gap + output_gap, data = data)
-TR_ie <- lm(rate ~ inflation_gap + exp_inflation_gap + output_gap, data = data)
-TRsr_ie <- lm(shadowrate ~ inflation_gap + exp_inflation_gap + output_gap, data = data)
+TR_ie <- lm(rate ~ realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
+TRsr_ie <- lm(shadowrate ~ realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
 
 table2 <- export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
@@ -264,8 +294,8 @@ $$
 
 ```{r Taylor Rule simple w/ lag}
 
-lTR <- lm(rate ~ rate_lag + inflation_gap + output_gap, data = data)
-lTRsr <- lm(shadowrate ~ shadowrate_lag + inflation_gap + output_gap, data = data)
+lTR <- lm(rate ~ rate_lag + realised_inflation_gap + output_gap, data = data)
+lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + output_gap, data = data)
 
 table3 <- export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
@@ -278,8 +308,8 @@ table3
 
 lTR_e <- lm(rate ~ rate_lag + exp_inflation_gap + output_gap, data = data)
 lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap, data = data)
-lTR_ie <- lm(rate ~ rate_lag + inflation_gap + exp_inflation_gap + output_gap, data = data)
-lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap, data = data) 
+lTR_ie <- lm(rate ~ rate_lag + realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
+lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + exp_inflation_gap + output_gap, data = data) 
 
 table4 <- export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
@@ -294,7 +324,7 @@ table4
 # Start of ZLB in 2012 Q3
 breakpoint1 <- 55 #R = 55 in evaluation chunk
 
-# xxx
+# Covid
 breakpoint2 <- 85 #R = 85 in evaluation chunk
 
 # Chow test (rejecting the null means there are structural breaks)
@@ -359,7 +389,6 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
 W = 30
 L = nrow(data) - W + 1
 formula = rate ~ rate_lag + inflation_gap + output_gap
-#formula = shadowrate ~ shadowrate_lag + inflation_gap + exp_inflation_gap + output_gap
 
 # Preparation of result data, dates, var names, and confidence intervals
 var_names <- attr(terms(formula), "term.labels")
@@ -598,12 +627,6 @@ formula_2 <- shadowrate ~ inflation_gap + output_gap
 formula_3 <- rate ~ rate_lag + inflation_gap + output_gap
 formula_4 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
 
-# TR based on current inflation expectations of inflation in 12 months
-#formula_1 <- rate ~ exp_inflation_gap + output_gap
-#formula_2 <- shadowrate ~ exp_inflation_gap + output_gap
-#formula_3 <- rate ~ rate_lag + exp_inflation_gap + output_gap
-#formula_4 <- shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap
-
 #-------------------------------------------------------------------
 # 2. PRE-ALLOCATE STORAGE FOR ALL RESULTS
 #-------------------------------------------------------------------
@@ -655,13 +678,11 @@ worker_results <- foreach(
   # --- 2. Fit common models only once --- 
   # note: d=1 for interest and inflation as non-stationary
   inflation_arma <- my.auto.arima(training$inflation_gap, max.p=4, max.q=4, d=1)
-  #exp_inflation_arma <- my.auto.arima(training$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
   outputgap_arma <- my.auto.arima(training$output_gap, max.p=4, max.q=4, d=0)
   interest_arma <- my.auto.arima(training$rate, max.p=4, max.q=4, d=1) # Benchmark
   
   # --- 3. Get common forecasts only once (all H horizons) ---
   inflation_forecasts <- my.forecast(inflation_arma, h = H)
-  #exp_inflation_forecasts <- my.forecast(exp_inflation_arma, h = H)
   outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
   BMpredicted_rates <- my.forecast(interest_arma, h = H)
   
@@ -675,7 +696,6 @@ worker_results <- foreach(
   # These are direct forecasts
   new_data_base <- data.frame(
     inflation_gap = inflation_forecasts,
-    #exp_inflation_gap = exp_inflation_forecasts,
     output_gap = outputgap_forecasts)
     
   TR_preds_1 <- round(pmax(predict(TR_model_1, new_data_base), min(data$rate)) / 0.25) * 0.25
@@ -698,12 +718,10 @@ worker_results <- foreach(
     # --- Prepare dataset for predictions ---
     new_data_3_h <- data.frame(
       inflation_gap = inflation_forecasts[h],
-      #exp_inflation_gap = exp_inflation_forecasts[h],
       output_gap = outputgap_forecasts[h],
       rate_lag = current_rate_lag)
     new_data_4_h <- data.frame(
       inflation_gap = inflation_forecasts[h],
-      #exp_inflation_gap = exp_inflation_forecasts[h],
       output_gap = outputgap_forecasts[h],
       shadowrate_lag = current_shadowrate_lag )
     
@@ -857,8 +875,7 @@ plot_facet <- ggplot(df_all_3 %>% filter(horizon <= H), aes(x = forecast_error))
     title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
     subtitle = "Comparing distribution shapes across 12 horizons",
     x = "Forecast Error",
-    y = "Density"
-  ) +
+    y = "Density") +
   theme_minimal() +
   theme(
     strip.background = element_rect(fill = "#ecf0f1", color = NA), # Nice gray boxes for labels
@@ -919,7 +936,7 @@ ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
 ```
 
 ## Absolute Performance: Efficiency \& Bias
-```{r forecast-model-efficiency, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
 # Call MZ-test helper function 4 times.
 
@@ -931,13 +948,20 @@ mz_report_1 <- generate_mincer_zarnowitz_report(
   model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
   format = format)
 
-# MZ Report 2: Shadow Rate, No Lag
-mz_report_2 <- generate_mincer_zarnowitz_report(
-  F_model = F_TR_2,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: Shadow Rate, No Lag",
-  format = format)
+# MZ Report 2: Shadow Rate, No Lag (
+#  Note: This report is wrapped in trycatch as it sometimes fails
+#         If it does fail, simply decrease R in order to have more 
+#          observations, thus no problem in multicolinearity.
+mz_report_2 <- tryCatch({
+  generate_mincer_zarnowitz_report(
+    F_model = F_TR_2,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Shadow Rate, No Lag",
+    format = format)}, error = function(e) {
+  message("⚠️ Error generating MZ Report (Shadow Rate, No Lag): ", e$message)
+  message(">> Skipping this report and continuing...")
+  return(NULL)})
 
 # MZ Report 3: Actual Rate, with Lag
 mz_report_3 <- generate_mincer_zarnowitz_report(
@@ -1136,13 +1160,11 @@ our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
    inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1)
-   #exp_inflation_arma <- my.auto.arima(data$exp_inflation_gap, max.p=4, max.q=4, max.d=1)
    outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0)
    interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1) # Benchmark
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
    inflation_forecasts <- my.forecast(inflation_arma, h = H)
-   #exp_inflation_forecasts <- my.forecast(exp_inflation_arma, h = H)
    outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
    BMpredicted_rates <- my.forecast(interest_arma, h = H)
   

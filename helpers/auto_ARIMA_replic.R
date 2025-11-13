@@ -80,11 +80,8 @@ my.auto.arima <- function(x, max.p, max.q, d) {
   return(final.model)}
 
 
-
-
 # Forecast 
 my.forecast = function(model, h = 1) {
   prediction_output = predict(object = model, n.ahead = h)
   values <- as.vector(prediction_output$pred)
-  return(values)
-}
+  return(values)  }
