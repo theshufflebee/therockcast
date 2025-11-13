@@ -211,10 +211,7 @@ ggplot(data, aes(x = date, color = series)) +
   geom_line(aes(y = exp_inflation, color = "(Expected) Inflation"), linewidth = 1) +
   geom_line(aes(y = output_gap_hp, color = "Output Gap (HP)"), linewidth = 1) +
   geom_line(aes(y = output_gap_ham, color = "Output Gap (Hamilton)"), linewidth = 1) +
-  labs(title = "Raw Data Plots", 
-       x = "", 
-       y = "", 
-       color = "Time Series") +
+  labs(title = "Raw Data Plots", x = "", y = "", color = "Time Series") +
   theme_minimal()
 
 ```
