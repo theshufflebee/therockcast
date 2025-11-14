@@ -1212,11 +1212,44 @@ plot_forecasts(final_forecasts)
  
 ```
 
+# PRediction Intervalls
+
+Prediction intervall pseudo code
+
+get sd of forecast errors
+define alpha = 0.05
+(1-alpha)/0.6827 = mult
+
+sd*mult +_ point forecast are the prediction intervalls
+
+store upper and lower 1-alpha in seperate columns and give identifying name so we can make a 50% and 95% forecast
 
 
+```{r prediction_intervalls, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+prediction <- var_by_horizon
+prediction$sd_fe <- sqrt(prediction$var_fe)
+
+final_intervall$sd <- prediction$sd_fe
+final_intervall$upper_1_sd <- final_intervall$sd + final_intervall$TR_Forecast
+final_intervall$lower_1_sd <- final_intervall$sd*(-1) + final_intervall$TR_Forecast
+
+final_intervall$upper_2_sd <- final_intervall$sd*2 + final_intervall$TR_Forecast
+final_intervall$lower_2_sd <- final_intervall$sd*2*(-1) + final_intervall$TR_Forecast
+
+final_intervall <- as.data.frame(final_intervall)
+```
 
 
-
+```{r prediction_intervalls_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+ggplot(final_intervall, aes(x = seq_len(nrow(final_intervall)), y = TR_Forecast, group = 1)) +
+  geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "lightgrey", alpha = 0.6) + # intervall 1 sd
+  geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "lightgrey", alpha = 0.2) + # intervall 2 sd
+  geom_line(color = "#1f78b4", size = 1) +  # line
+  geom_point(color = "#e31a1c", size = 3) + # points
+  labs(title = "Prelinimary Forecast plot", x = "h step ahead") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
 
 
