@@ -618,7 +618,8 @@ H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 # 1. DEFINE THE TAYLOR RULE (TR) MODEL FORMULAS
 #-------------------------------------------------------------------
 
-# TR based on current inflation
+# TR specifications (using either current inflation or inflation expectations
+#                    according to configuration, same with HP vs Hamilton)
 formula_1 <- rate ~ inflation_gap + output_gap
 formula_2 <- shadowrate ~ inflation_gap + output_gap
 formula_3 <- rate ~ rate_lag + inflation_gap + output_gap
