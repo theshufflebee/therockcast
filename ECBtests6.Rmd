@@ -1226,6 +1226,7 @@ store upper and lower 1-alpha in separate columns and give identifying name so w
 
 
 ```{r prediction_intervalls, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
 prediction <- var_by_horizon
 final_interval <- final_forecasts
 prediction$sd_fe <- sqrt(prediction$var_fe)
@@ -1238,10 +1239,12 @@ final_interval$upper_2_sd <- final_interval$sd*2 + final_interval$TR_Forecast
 final_interval$lower_2_sd <- final_interval$sd*2*(-1) + final_interval$TR_Forecast
 
 final_interval <- as.data.frame(final_interval)
+
 ```
 
 
 ```{r prediction_intervalls_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
 ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
   geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "lightgrey", alpha = 0.6) + # intervall 1 sd
   geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "lightgrey", alpha = 0.2) + # intervall 2 sd
@@ -1250,6 +1253,7 @@ ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, g
   labs(title = "Prelinimary Forecast plot", x = "h step ahead") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
 
 
