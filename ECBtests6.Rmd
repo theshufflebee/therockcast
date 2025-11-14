@@ -1212,17 +1212,17 @@ plot_forecasts(final_forecasts)
  
 ```
 
-# PRediction Intervalls
+# Prediction Intervals
 
-Prediction intervall pseudo code
+Prediction interval pseudo code
 
 get sd of forecast errors
 define alpha = 0.05
 (1-alpha)/0.6827 = mult
 
-sd*mult +_ point forecast are the prediction intervalls
+sd*mult +_ point forecast are the prediction intervals
 
-store upper and lower 1-alpha in seperate columns and give identifying name so we can make a 50% and 95% forecast
+store upper and lower 1-alpha in separate columns and give identifying name so we can make a 50% and 95% forecast
 
 
 ```{r prediction_intervalls, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
