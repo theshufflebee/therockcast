@@ -73,7 +73,7 @@ USE_INFLATION_EXPECTATIONS <- FALSE
 
 set.seed(2025)
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 
 ```
 
@@ -317,26 +317,68 @@ table4
 ## Checking for structural breaks
 ```{r chowtest}
 
-# Start of ZLB in 2012 Q3
-breakpoint1 = 55 #R = 55 in evaluation chunk
+# Formula to test for breaks
+break_formula = rate ~ rate_lag + inflation_gap + output_gap
 
-# Covid
-breakpoint2 = 85 #R = 85 in evaluation chunk
+# Suspected break: Start of ZLB in 2012 Q3
+breakpoint1_obs = 55 #R = 55 in evaluation chunk
+breakpoint1_date <- data$quarter[breakpoint1_obs]
+
+# Suspected break: Covid
+breakpoint2_obs = 85 #R = 85 in evaluation chunk
+breakpoint2_date <- data$quarter[breakpoint2_obs]
 
 # Chow test (rejecting the null means there are structural breaks)
-chow_test1 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint1, data = data)
+chow_test1 <- sctest(break_formula, type = "Chow", point = breakpoint1_obs, data = data)
+chow_test2 <- sctest(break_formula, type = "Chow", point = breakpoint2_obs, data = data)
 
-chow_test2 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint2, data = data)
 
+# Table with Chow results (for suspected breaks)
 chow_df <- data.frame(
-  "2012 Q3" = round(chow_test1$p.value, 4), 
-  "2020 Q1" = round(chow_test2$p.value, 4), 
-  check.names = FALSE)
+  Event = c("ZLB Start", "COVID-19 Start"),
+  Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
+  `p-value` = c(chow_test1$p.value, chow_test2$p.value),check.names = FALSE)
 
-kable(chow_df, digits = 4, format = format)%>%
+kable(chow_df, 
+      digits = 4, format = format,
+      caption = "Chow tests for suspected structural breaks") %>%
   kable_styling(bootstrap_options = "striped", full_width = FALSE)
 
 ```
+
+```{r bai-perron test}
+
+# Estimate Bai-Perron test & output results
+BP_test = breakpoints(break_formula, data = data)
+BP_test_res = summary(BP_test)
+
+# Optimal values (modular!)
+bic_values <- BP_test_res$RSS[2, ]
+optimal_m <- as.numeric(names(bic_values)[which.min(bic_values)])
+
+# Make a table out of results (also modular!)
+if (optimal_m == 0) {
+  bp_df <- data.frame(
+    `Detected Break Dates` = "No structural breaks detected",
+    check.names = FALSE)
+  } else {
+  break_obs <- na.omit(BP_test_res$breakpoints[optimal_m, ])
+  detected_dates <- data$quarter[break_obs]
+  bp_df <- data.frame(
+    `Detected Break Dates` = as.character(detected_dates),
+    check.names = FALSE) }
+
+kable(bp_df, format = format,
+  caption = "Bai-Perron test for multiple breaks") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
+# Note: breaks_obs shows in which row the BP breaks are 
+
+```
+
+
+
+
+
 
 ## Rolling Estimation (for structural breaks)
 ```{r plot helper, message=FALSE, warning=FALSE}
@@ -605,7 +647,7 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
 ```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #parameters
-R = 85 #notes: structural breaks at R=55 and R=85
+R = 85 # Chow: Structural breaks at R=55 and R=85 
 cat("Evaluation sample starts after", as.character(data$quarter[R]))
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
