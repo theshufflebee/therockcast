@@ -250,8 +250,7 @@ cat("\\clearpage")
 ## Without Lags
 $$
 \begin{aligned}
-  i_t &= \pi^* + \gamma(y_t-\bar{y_t}) + \beta(\pi_t-\pi^*) \\
-      &= (1-\beta)\pi^* + \gamma(y_t-\bar{y_t}) + \beta \pi_t
+  i_t &= \pi^* + \beta(\pi_t-\pi^*) + \gamma(y_t-\bar{y_t})  \\
 \end{aligned}
 $$
 
@@ -285,7 +284,7 @@ table2
 ## Lagged Models 
 $$
 \begin{aligned}
-      &= \phi i_{t-1} + (1-\beta)\pi^* + \gamma(y_t-\bar{y_t}) + \beta \pi_t
+     i_t &= \pi^* + \phi i_{t-1} + \beta (\pi_t-\pi^*) + \gamma(y_t-\bar{y_t}) 
 \end{aligned}
 $$
 
@@ -319,10 +318,10 @@ table4
 ```{r chowtest}
 
 # Start of ZLB in 2012 Q3
-breakpoint1 <- 55 #R = 55 in evaluation chunk
+breakpoint1 = 55 #R = 55 in evaluation chunk
 
 # Covid
-breakpoint2 <- 85 #R = 85 in evaluation chunk
+breakpoint2 = 85 #R = 85 in evaluation chunk
 
 # Chow test (rejecting the null means there are structural breaks)
 chow_test1 <- sctest(rate ~ rate_lag + inflation_gap + output_gap, type = "Chow", point = breakpoint1, data = data)
