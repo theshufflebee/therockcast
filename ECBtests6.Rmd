@@ -1214,18 +1214,7 @@ plot_forecasts(final_forecasts)
 
 # Prediction Intervals
 
-Prediction interval pseudo code
-
-get sd of forecast errors
-define alpha = 0.05
-(1-alpha)/0.6827 = mult
-
-sd*mult +_ point forecast are the prediction intervals
-
-store upper and lower 1-alpha in separate columns and give identifying name so we can make a 50% and 95% forecast
-
-
-```{r prediction_intervalls, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 prediction <- var_by_horizon
 final_interval <- final_forecasts
@@ -1243,7 +1232,7 @@ final_interval <- as.data.frame(final_interval)
 ```
 
 
-```{r prediction_intervalls_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+```{r prediction_intervals_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
   geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "lightgrey", alpha = 0.6) + # intervall 1 sd

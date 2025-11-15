@@ -292,6 +292,17 @@ The run DM and MZ test on each of the results
 
 
 
+# Prediction Intervals
+----------------------------------
+get sd of forecast errors
+define alpha = 0.05
+(1-alpha)/0.6827 = mult
+
+sd*mult +_ point forecast are the prediction intervals
+
+store upper and lower 1-alpha in separate columns and give identifying name so we can make a 50% and 95% forecast
+
+
 
 
 
