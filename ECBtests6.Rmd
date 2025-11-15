@@ -40,7 +40,7 @@ require(texreg) #arima tables
 require(future.apply) #parallel computation (speed)
 require(readxl) #for reading excel data
 require(R.matlab) #for loading matlab data (shadowrates)
-require(aTSA) #time series tests
+require(tseries) #time series tests
 require(eurostat) #eurostat data
 require(fredr) #fredr data
 require(mFilter) #HP filter
@@ -51,7 +51,7 @@ require(doParallel) #for speed
 require(foreach) #for speedy loops
 require(car) #for MZ hypothesis test
 require(ggridges) #for fancy density plots
-require(strucchange) #Chow test for structural breaks
+require(strucchange) #Chow & BP tests for structural breaks
 require(transx) #for hamilton filter
 
 getwd()
@@ -217,28 +217,99 @@ ggplot(data, aes(x = date, color = series)) +
 ```
 
 ## Data Properties
-```{r data_prop, message=FALSE, warning=FALSE}
+```{r stationarity tests helper}
 
-# Interest rate is I(1)
-test1 = aTSA::adf.test(data$rate, output=F)
-test1$type1
+# Helper function to run ADF and KPSS tests and return dataframe fit for table
 
-# Inflation is I(1)
-test2 = aTSA::adf.test(data$inflation, output=F)
-test2$type1
+check_stationarity <- function(y, var_name) {
+  
+  # Running tests and getting pvalues
+  adf_result <- tseries::adf.test(y, alternative = "stationary")
+  kpss_result <- tseries::kpss.test(y, null = "Level")
+  adf_p <- adf_result$p.value
+  kpss_p <- kpss_result$p.value
+  
+  # Automatically assign interpretation (yes, modular!)
+  interpretation <- ""
+  if (adf_p < 0.05 && kpss_p > 0.05) {
+    interpretation <- "Stationary I(0): ADF rejects unit root, KPSS confirms stationarity." } 
+  else if (adf_p > 0.05 && kpss_p < 0.05) {
+    interpretation <- "Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity." } 
+  else if (adf_p > 0.05 && kpss_p > 0.05) {
+    interpretation <- "Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity." } 
+  else { # adf_p < 0.05 && kpss_p < 0.05
+    interpretation <- "Conflicting Results: ADF rejects unit root, while KPSS rejects stationarity." }
+  
+  # Export results
+  data.frame(Variable = var_name,
+            `ADF p-value` = adf_p,
+            `KPSS p-value` = kpss_p,
+             Result = interpretation, check.names = FALSE) }
 
-# Output gap is I(0), likely from the "gap" part
-test3 = aTSA::adf.test(data$output_gap, output=F)
-test3$type1
 
-# Cleanup
-rm(test1,test2,test3)
-
-# Are interest rates and inflation co-integrated?
-aTSA::coint.test(data$rate, data$inflation)
+# Similar helper function, but for cointegration tests
+check_coint <- function(y1,y2, var_name1, var_name2){ 
+  
+  # Run test and get pvalue
+  coint_test <- aTSA::coint.test(y1, y2, output = FALSE)
+  p_value <- coint_test[1, 3] #type 1
+  
+  # Again, modular(!) interpretation
+  interpretation <- ""
+  if (p_value < 0.05) {
+    interpretation <- "Cointegrated"} 
+  else {
+    interpretation <- "Not Cointegrated" }
+  
+  # Export results
+  data.frame(Variables = paste(var_name1, "&", var_name2),
+             `p-value` = p_value,
+             Result = interpretation, check.names = FALSE) }
 
 ```
 
+```{r data_prop, message=FALSE, warning=FALSE}
+
+# -----  Run Tests -----
+
+# Use helper to run stationarity checks for our main variables
+test_rate <- check_stationarity(data$rate, "Interest Rate")
+test_inflation <- check_stationarity(data$inflation, "Inflation")
+test_output_gap <- check_stationarity(na.omit(data$output_gap), "Output Gap")
+
+# Given results for rate and inflation, run tests on 1st diffs
+test_rate_diff <- check_stationarity(diff(data$rate), "Interest Rate (1st Diff)")
+test_inflation_diff <- check_stationarity(diff(data$inflation), "Inflation (1st Diff)")
+
+# Since rate and inflation are I(1), run a cointegration test
+coint_test = check_coint(data$rate, data$inflation, 
+            var_name1 = "Interest Rate", var_name2 = "Inflation")
+
+
+# ----- Print Results -----
+
+# Combine stationarity results 
+all_stationarity_results <- rbind(test_rate, 
+                                  test_inflation, 
+                                  test_output_gap,
+                                  test_rate_diff,
+                                  test_inflation_diff)
+
+# Tables
+kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE, 
+      caption = "Summary of Stationarity Tests (ADF \\& KPSS)") %>%
+      kable_styling(latex_options = "scale_down",
+      position = "center") %>%
+        column_spec(1, border_right = TRUE) %>%
+        column_spec(4, width = "6cm")
+
+kable(coint_test, digits = 4, format = format, booktabs = TRUE,
+      caption = "Cointegration Test Results") %>%
+      kable_styling(latex_options = "scale_down",
+      position = "center") %>%
+        column_spec(1, border_right = TRUE)
+
+```
 
 
 ```{r, echo=FALSE, results='asis'}
@@ -339,10 +410,11 @@ chow_df <- data.frame(
   Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
   `p-value` = c(chow_test1$p.value, chow_test2$p.value),check.names = FALSE)
 
-kable(chow_df, 
-      digits = 4, format = format,
+kable(chow_df, digits = 4, format = format, booktabs = TRUE,
       caption = "Chow tests for suspected structural breaks") %>%
-  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+      kable_styling(latex_options = "scale_down",
+      position = "center") %>%
+        column_spec(1, border_right = TRUE)
 
 ```
 
@@ -368,9 +440,11 @@ if (optimal_m == 0) {
     `Detected Break Dates` = as.character(detected_dates),
     check.names = FALSE) }
 
-kable(bp_df, format = format,
+kable(bp_df, format = format, booktabs=TRUE,
   caption = "Bai-Perron test for multiple breaks") %>%
-  kable_styling(bootstrap_options = "striped", full_width = FALSE, position = "left")
+  kable_styling(latex_options = "scale_down",
+      position = "center") %>%
+        column_spec(1, border_right = TRUE)
 # Note: breaks_obs shows in which row the BP breaks are 
 
 ```
