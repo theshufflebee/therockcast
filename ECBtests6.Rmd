@@ -73,7 +73,7 @@ USE_INFLATION_EXPECTATIONS <- FALSE
 
 set.seed(2025)
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 
 ```
 
