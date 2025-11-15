@@ -443,8 +443,7 @@ if (optimal_m == 0) {
 kable(bp_df, format = format, booktabs=TRUE,
   caption = "Bai-Perron test for multiple breaks") %>%
   kable_styling(latex_options = "scale_down",
-      position = "center") %>%
-        column_spec(1, border_right = TRUE)
+      position = "center")
 # Note: breaks_obs shows in which row the BP breaks are 
 
 ```
