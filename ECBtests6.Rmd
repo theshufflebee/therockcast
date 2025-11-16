@@ -7,6 +7,8 @@ output:
     latex_engine: lualatex
 header-includes:
   - \usepackage{amsmath}
+  - \usepackage[backend=biber,style=authoryear]{biblatex}  # load biblatex
+  - \addbibresource{citations.bib}  # your BibTeX file
 ---
 \newpage
 
@@ -79,6 +81,19 @@ format <- "html"
 
 
 # Data
+
+The Data from Fred come from here:
+European Central Bank, ECB Deposit Facility Rate for Euro Area [ECBDFR], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/ECBDFR. The data is the Deposit Facility and is directly reprinted from the ECB. It's in Percent and not seasonally adjusted. The ECB Monetary Policy is steered through this rate
+
+
+The Shadow rate was developed by \cite{wuTimeVaryingLowerBound2017} and does quantify a hypothetical removal of the ZLB. The rate does not track 1:1 on the deposit facility in the data before the ZLB, instead being clser to the refinancing rate. (maybe need to adjust)
+
+The GDP Data is real GDP in 2010 Euros in million retrived from FRED via Eurostat. The data is seasonally adjusted.
+
+The Inflationdata is from Eurostat and called HICP. It's the index the ECB uses for Inflation and isn't seasonally adjusted.
+
+Expected Inflation is the ECBs survey of professional forecasters. It forecasts the HICP 12 months in advance.
+
 
 ## Main
 ```{r data_main, message=FALSE, warning=FALSE}
@@ -169,6 +184,7 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 ```
 
 ## Data Configuration
+
 
 ```{r data_config, message=TRUE, warning=FALSE}
 
