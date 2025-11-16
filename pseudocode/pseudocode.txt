@@ -103,13 +103,33 @@ format_p_values_with_stars
 	p < 0.10 -> *
 
 Mincer Zarnowitz 
+	extract actal and forecast values
+	Need h > 2 ( to have enough values to run Regression
+	for h in H
+		set up regression: Regress actual values on fiorecasted ones for each h>2
+		then save coefficients (intercept / slope)
+		output Table
+		apply HC error if h ==1
+		apply Newey-West if H>1
+		test hypothesis if it is linear -> intercept 0 slope 1 (45 Degree line) with F Test
+		save results in df
+	if H<=2 NA value
+	
+	summarize results for table
+	add p value stars
 
-	output Table
+	build Table
 
 
 Diebold Mariano 
+	take 2 different models and their FE Errors as input
+	for all horizons quare error of each model then take the mean of suqared Errors of horizon
+	Keep this on the side
 
-	output Table
+	dm.test takes input as Vector of Errors, then compares both models for one and 2 sided tests (x1, x2,x3)
+	calculate and round p values, make stars
+
+	output Table according to specified formatting
 
 
 
