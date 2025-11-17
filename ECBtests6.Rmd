@@ -67,11 +67,11 @@ source(here("helpers/auto_ARIMA_replic.R"))
 #options
 USE_HAMILTON_FILTER <- TRUE
 USE_INFLATION_EXPECTATIONS <- FALSE
-USE_FORMULA <- formula_3
+USE_FORMULA <- "Formula 3"
 
 set.seed(2025)
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 
 ```
 
@@ -732,7 +732,6 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
       symbol_title = "DM Test Alternative Hypotheses (H_A):",
       footnote_as_chunk = TRUE,
       threeparttable = TRUE)
-
   return(table_output)}
 
 ```
@@ -946,21 +945,22 @@ eval_all_models[] <- lapply(eval_all_models, function(x) as.numeric(x))
 ```{r Spaghetti Plot, message=FALSE, warning=FALSE}
 
 # Select the model to plot based on initial option
-if (USE_FORMULA == formula_1) {
+if (USE_FORMULA == "Formula 1") {
   model <- "F_TR_FORMULA_1"
+  model_formula <- formula_1
   model_name <- "Taylor Rule Formula 1"
-} else if (USE_FORMULA == formula_2) {
+} else if (USE_FORMULA == "Formula 2") {
   model <- "F_TR_FORMULA_2"
+  model_formula <- formula_2
   model_name <- "Taylor Rule Formula 2"
-} else if (USE_FORMULA == formula_3) {
+} else if (USE_FORMULA == "Formula 3") {
   model <- "F_TR_FORMULA_3"
+  model_formula <- formula_3
   model_name <- "Taylor Rule Formula 3"
-} else if (USE_FORMULA == formula_4) {
+} else if (USE_FORMULA == "Formula 4") {
   model <- "F_TR_FORMULA_4"
-  model_name <- "Taylor Rule Formula 4"
-} else  {
-  model <- "F_BM" 
-  model_name <- "Benchmark ARIMA"}
+  model_formula <- formula_4
+  model_name <- "Taylor Rule Formula 4" }
 
 # period = date the forecast was made
 # date_of_forecast = the future date we are predicting
@@ -1351,7 +1351,7 @@ our_predict <- function(data,formula,H){
                 OutputGap_Forecast = outputgap_forecasts  ))}
 
  
-final_forecasts <- our_predict(data = data, formula = USE_FORMULA, H = H)
+final_forecasts <- our_predict(data = data, formula = model_formula, H = H)
  
 display_forecasts(final_forecasts, 
                   caption = paste("For model based on:", model_name),
