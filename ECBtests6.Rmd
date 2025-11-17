@@ -8,73 +8,80 @@ output:
 header-includes:
   - \usepackage{amsmath}
   - \usepackage[backend=biber,style=authoryear]{biblatex}  # load biblatex
-  - \addbibresource{citations.bib}  # your BibTeX file
+  - \addbibresource{citations.bib}  # BibTeX file
 ---
 \newpage
 
-```{r library_setup, results=FALSE, warning=FALSE, message=FALSE, echo=FALSE}
-rm(list=ls())
-require(tinytex) #LaTeX
-require(ggplot2) #plots
-require(AEC) #JP-Renne functions
-require(AER) #NW formula
-require(forecast) #time series forecasting
-require(expm) #matrix exponents
-require(here) #directory finder
-require(dplyr) #data management
-require(tidyr) #also data
-require(lubridate) #data dates management
-require(zoo) #for lagging
-require(jtools) #tables
-require(huxtable) #tables
-require(lmtest) #reg tests
-require(vroom) #for loading data
-require(data.table) #for data filtering
-require(sysid) #for ARMA-X modeling
-require(sandwich) #regression errors
-require(stargazer) #nice reg tables
-require(texreg) #arima tables
-require(future.apply) #parallel computation (speed)
-require(readxl) #for reading excel data
-require(R.matlab) #for loading matlab data (shadowrates)
-require(tseries) #time series tests
-require(eurostat) #eurostat data
-require(fredr) #fredr data
-require(mFilter) #HP filter
-require(knitr) #tables
-require(kableExtra) #tables extra
-require(rdbnomics)
-require(doParallel) #for speed
-require(foreach) #for speedy loops
-require(car) #for MZ hypothesis test
-require(ggridges) #for fancy density plots
-require(strucchange) #Chow & BP tests for structural breaks
-require(transx) #for hamilton filter
+# Preliminaries
 
+## Setup
+```{r setup, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
+
+# Clear memory 
+rm(list=ls())
+
+# Load here package to enable finding script loading other packages
+require(here)
+
+# Set directory
 getwd()
 setwd("...") 
 
-#api for data
+# Load packages & helper functions
+source(here("helpers/packages.R"))
+source(here("helpers/auto_ARIMA_replic.R"))
+
+# Api key for data
 fredr_set_key("e0169694a62c1337f1969e3872605eca")
 
-#dates
+# Dates (to automatically get the latest data from API calls)
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
-#load helper functions
-source(here("helpers/auto_ARIMA_replic.R"))
+# For replication 
+set.seed(2025)
 
-#options
+```
+
+## Interactive Option Selection
+
+* Use Hamilton Filter: 
+  + TRUE: Selects Hamilton method for output gap estimation
+  + FALSE: Selects Hodrick-Prescott method for output gap estimation
+
+* Use Inflation Expectations:
+  + TRUE: The models used for forecasting will use 12-month ahead inflation
+          expectations from the ECB survey of professional forecasts (average).
+  + FALSE: The models used for forecasting will use realised inflation
+  
+* Use Formula
+  + Formula 1: Actual interest rate regressed on inflation and output gaps  
+  + Formula 2: Shadow interest rate regressed on inflation and output gaps
+  + Formula 3: Actual interest rate regressed on the one-quarter lag of the interest
+                rate and on inflation and output gaps
+  + Formula 4: Shadow interest rate regressed on the one-quarter lag of the shadow 
+                interest rate and on inflation and output gaps
+                
+* Format:
+  + html: For outputting in console or knitting to html
+  + latex: For knitting to pdf
+
+```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
+
+# Related to Analysis
 USE_HAMILTON_FILTER <- TRUE
 USE_INFLATION_EXPECTATIONS <- FALSE
 USE_FORMULA <- "Formula 3"
 
-set.seed(2025)
+# Related to Document Output
 format <- "html"
 #format <- "latex" 
 
 ```
 
+```{r, echo=FALSE, results='asis'}
+cat("\\clearpage")
+```
 
 # Data
 
@@ -180,8 +187,6 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 ```
 
 ## Data Configuration
-
-
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
 # Choices in setup chunk
