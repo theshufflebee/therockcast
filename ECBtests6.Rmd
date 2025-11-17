@@ -453,13 +453,13 @@ optimal_m <- as.numeric(names(bic_values)[which.min(bic_values)])
 # Make a table out of results (also modular!)
 if (optimal_m == 0) {
   bp_df <- data.frame(
-    `Detected Break Dates` = "No structural breaks detected",
+    `Detected Breaks` = "No structural breaks detected",
     check.names = FALSE)
   } else {
   break_obs <- na.omit(BP_test_res$breakpoints[optimal_m, ])
   detected_dates <- data$quarter[break_obs]
   bp_df <- data.frame(
-    `Detected Break Dates` = as.character(detected_dates),
+    `Detected Breaks` = as.character(detected_dates),
     check.names = FALSE) }
 
 kable(bp_df, format = format, booktabs=TRUE,
