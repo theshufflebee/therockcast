@@ -85,20 +85,33 @@ cat("\\clearpage")
 
 # Data
 
-The Data from Fred come from here:
-European Central Bank, ECB Deposit Facility Rate for Euro Area [ECBDFR], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/ECBDFR. The data is the Deposit Facility and is directly reprinted from the ECB. It's in Percent and not seasonally adjusted. The ECB Monetary Policy is steered through this rate
+## Sources \& Explanations
+
+* FRED Data Source: European Central Bank, ECB Deposit Facility Rate for Euro 
+                    Area [ECBDFR], retrieved from FRED, Federal Reserve Bank of 
+                    St. Louis; https://fred.stlouisfed.org/series/ECBDFR. 
+                    The data is the Deposit Facility and is directly reprinted 
+                    from the ECB. It's in Percent and not seasonally adjusted. 
+                    The ECB Monetary Policy is steered through this rate
+
+* Shadow Interest Rate: The Shadow rate was developed by 
+                        \cite{wuTimeVaryingLowerBound2017} and does quantify 
+                        a hypothetical removal of the ZLB. The rate does not 
+                        track 1:1 on the deposit facility in the data before 
+                        the ZLB, instead being closer to the refinancing rate. 
+                        (maybe need to adjust)
+
+* GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
+       via Eurostat. The data is seasonally adjusted.
+
+* Inflation:
+  + Realised: The Inflation data is from Eurostat and called HICP. It's the 
+    index the ECB uses for Inflation and is not seasonally adjusted.
+  + Expectations: Expected Inflation is the ECB's survey of professional 
+    forecasters. It forecasts the HICP 12 months in advance.
 
 
-The Shadow rate was developed by \cite{wuTimeVaryingLowerBound2017} and does quantify a hypothetical removal of the ZLB. The rate does not track 1:1 on the deposit facility in the data before the ZLB, instead being closer to the refinancing rate. (maybe need to adjust)
-
-The GDP Data is real GDP in 2010 Euros in million retrieved from FRED via Eurostat. The data is seasonally adjusted.
-
-The Inflation data is from Eurostat and called HICP. It's the index the ECB uses for Inflation and isn't seasonally adjusted.
-
-Expected Inflation is the ECB's survey of professional forecasters. It forecasts the HICP 12 months in advance.
-
-
-## Main
+## Loading \& Preparation Data 
 ```{r data_main, message=FALSE, warning=FALSE}
 
 # --- 1. ECB Deposit Facility Rate & Shadow Rate ---
@@ -186,7 +199,7 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 
 ```
 
-## Data Configuration
+## Options Configuration
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
 # Choices in setup chunk
@@ -434,7 +447,6 @@ breakpoint2_date <- data$quarter[breakpoint2_obs]
 chow_test1 <- sctest(break_formula, type = "Chow", point = breakpoint1_obs, data = data)
 chow_test2 <- sctest(break_formula, type = "Chow", point = breakpoint2_obs, data = data)
 
-
 # Table with Chow results (for suspected breaks)
 chow_df <- data.frame(
   Event = c("ZLB Start", "COVID-19 Start"),
@@ -494,15 +506,14 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
   lower_col <- paste0(var_name, "_lower")
   upper_col <- paste0(var_name, "_upper")
 
-  # 2. Create the plot, using the .data[[]] pronoun to find the
-  # columns based on the variable names (modularity)
-  
+  # 2. Create the plot, using .data[[]] to find the
+  #     columns based on the variable names (modularity)
   plot <- ggplot(data, aes(x = date)) +
     
     # Add a dashed line at y=0 for reference
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.5) +
     
-    # Add the 95% confidence interval ribbon
+    # Add 95% confidence interval ribbon
     geom_ribbon(aes(ymin = .data[[lower_col]], ymax = .data[[upper_col]]),
                 fill = "dodgerblue", alpha = 0.3) +
                 
@@ -747,11 +758,15 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
 
 
 ## Estimation
+
+Pseudo-out of sample recursive estimation scheme of direct forecasts for all
+Taylor Rule formulas and a benchmark ARIMA specification. 
+
 ```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #parameters
 R = 85 # Chow: Structural breaks at R=55 and R=85 
-cat("Evaluation sample starts after", as.character(data$quarter[R]))
+cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 
@@ -983,7 +998,6 @@ ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = pe
   # Actuals as black baseline
   geom_line(aes(y = actuals), color = "black", size = 1) +
   geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
-  
   labs(title = "Evaluation Sample Forecasts vs Realised Values",
        x = "Period",
        y = "Interest Rate",
@@ -1014,7 +1028,6 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
   # Actual rates line
   geom_line(aes(y = actuals), color = "black", size = 1) +
   geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
-  
   labs(title = "Evaluation Sample Forecast Errors",
        x = "Below Zero = forecast was too low ; Above Zero = forecast too high",
        y = "Interest Rate and Forecast Error (deviation from interest rate)",
@@ -1034,11 +1047,10 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
 plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
-  labs(
-    title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
-    subtitle = paste("For model based on:", model_name),
-    x = "Forecast Error",
-    y = "Density") +
+  labs(title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
+       subtitle = paste("For model based on:", model_name),
+       x = "Forecast Error",
+       y = "Density") +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
         plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
@@ -1053,9 +1065,9 @@ plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both) +
   labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
-    subtitle = paste("For model based on:", model_name),
-    x = "Forecast Error",
-    y = "Density") +
+       subtitle = paste("For model based on:", model_name),
+       x = "Forecast Error",
+       y = "Density") +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
         plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
@@ -1071,15 +1083,14 @@ plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
     geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
     scale_fill_viridis_c(name = "Error", option = "C") +
     labs(title = "Density of Forecast Errors by Horizon",
-    subtitle = paste("For model based on:", model_name),
-      x = "Forecast Error",
-      y = "Forecast Horizon") +
+         subtitle = paste("For model based on:", model_name),
+         x = "Forecast Error",
+         y = "Forecast Horizon") +
     theme_minimal() +
   theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
       plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
-
 print(plot_ridge)
  
 ```
@@ -1115,19 +1126,23 @@ ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
 ```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
 # Call MZ-test helper function 4 times.
+#  Note: These reports is wrapped in trycatch as it sometimes fails
+#         If it does fail, simply decrease R in order to have more 
+#          observations, removing potential multicolinearity.
 
 # MZ Report 1: Actual Rate, No Lag
-mz_report_1 <- generate_mincer_zarnowitz_report(
-  F_model = F_TR_1,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
-  format = format)
+mz_report_1 <- tryCatch({
+  generate_mincer_zarnowitz_report(
+    F_model = F_TR_1,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
+    format = format)}, error = function(e) {
+  message("Error generating MZ Report (Actual Rate, No Lag): ", e$message)
+  message("Skipping this report and continuing...")
+  return(NULL)})
 
 # MZ Report 2: Shadow Rate, No Lag (
-#  Note: This report is wrapped in trycatch as it sometimes fails
-#         If it does fail, simply decrease R in order to have more 
-#          observations, thus no problem in multicolinearity.
 mz_report_2 <- tryCatch({
   generate_mincer_zarnowitz_report(
     F_model = F_TR_2,
@@ -1135,33 +1150,45 @@ mz_report_2 <- tryCatch({
     H = H,
     model_caption = "Mincer-Zarnowitz Test: Shadow Rate, No Lag",
     format = format)}, error = function(e) {
-  message("⚠️ Error generating MZ Report (Shadow Rate, No Lag): ", e$message)
-  message(">> Skipping this report and continuing...")
+  message("Error generating MZ Report (Shadow Rate, No Lag): ", e$message)
+  message("Skipping this report and continuing...")
   return(NULL)})
 
 # MZ Report 3: Actual Rate, with Lag
-mz_report_3 <- generate_mincer_zarnowitz_report(
-  F_model = F_TR_3,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
-  format = format)
+mz_report_3 <- tryCatch({
+  generate_mincer_zarnowitz_report(
+    F_model = F_TR_3,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
+    format = format)}, error = function(e) {
+  message("Error generating MZ Report (Actual Rate, with Lag): ", e$message)
+  message("Skipping this report and continuing...")
+  return(NULL)})
 
 # MZ Report 4: Shadow Rate, with Lag
-mz_report_4 <- generate_mincer_zarnowitz_report(
-  F_model = F_TR_4,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: Shadow Rate, with Lag",
-  format = format)
+mz_report_4 <- tryCatch({
+  generate_mincer_zarnowitz_report(
+    F_model = F_TR_4,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Shadow Rate, with Lag",
+    format = format)}, error = function(e) {
+  message("Error generating MZ Report (Shadow Rate, with Lag): ", e$message)
+  message("Skipping this report and continuing...")
+  return(NULL)})
 
 # MZ Report 5: Benchmark
-mz_report_BM <- generate_mincer_zarnowitz_report(
-  F_model = F_BM,
-  Actual_values = Actuals,
-  H = H,
-  model_caption = "Mincer-Zarnowitz Test: Benchmark ARIMA",
-  format = format)
+mz_report_BM <- tryCatch({
+  generate_mincer_zarnowitz_report(
+    F_model = F_BM,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Benchmark ARIMA",
+    format = format)}, error = function(e) {
+  message("Error generating MZ Report (Benchmark ARIMA): ", e$message)
+  message("Skipping this report and continuing...")
+  return(NULL)})
 
 list(
   mz_report_1, 
