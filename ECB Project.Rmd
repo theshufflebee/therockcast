@@ -5,6 +5,7 @@ output:
     toc: true
     fig_caption: yes
     latex_engine: lualatex
+    keep_tex: false
 header-includes:
   - \usepackage{amsmath}
   - \usepackage[backend=biber,style=authoryear]{biblatex}  # load biblatex
