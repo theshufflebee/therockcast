@@ -232,8 +232,12 @@ ggplot(plot_data, aes(x = date, y = value)) +
   scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
   labs(title = "Raw Data Plots", subtitle = "Y axis in %", x = "", y = "") +
   theme_minimal() + theme(
-    legend.position = "none",
-    panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
+     plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+     plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+     axis.title = element_text(size = 12),
+     axis.text = element_text(size = 10),
+     legend.position = "none",
+     panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
 rm(plot_data)
 
 ```
@@ -980,7 +984,11 @@ ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = pe
        y = "Interest Rate",
        color = "Forecast Origin",
     subtitle = paste("For model based on:", model_name)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+      plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10))
 
 ```
 
@@ -1006,7 +1014,11 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
        x = "Below Zero = forecast was too low ; Above Zero = forecast too high",
        y = "Interest Rate and Forecast Error (deviation from interest rate)",
     subtitle = paste("For model based on:", model_name))  +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+      plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10))
 
 ```
 
@@ -1023,9 +1035,12 @@ plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_
     x = "Forecast Error",
     y = "Density") +
   theme_minimal() +
-  theme(
-    strip.background = element_rect(fill = "#ecf0f1", color = NA), # Nice gray boxes for labels
-    strip.text = element_text(face = "bold"))
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        strip.background = element_rect(fill = "#ecf0f1", color = NA), 
+        strip.text = element_text(face = "bold"))
 print(plot_facet)
 
 # Version 2: Adjusted scales
@@ -1037,8 +1052,12 @@ plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_
     x = "Forecast Error",
     y = "Density") +
   theme_minimal() +
-  theme(strip.background = element_rect(fill = "#ecf0f1", color = NA), 
-    strip.text = element_text(face = "bold"))
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        strip.background = element_rect(fill = "#ecf0f1", color = NA), 
+        strip.text = element_text(face = "bold"))
 print(plot_facet)
 
 # Version 3: "Ridges"
@@ -1050,7 +1069,11 @@ plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
     subtitle = paste("For model based on:", model_name),
       x = "Forecast Error",
       y = "Forecast Horizon") +
-    theme_minimal()
+    theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+      plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10))
 
 print(plot_ridge)
  
@@ -1075,8 +1098,10 @@ ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
     subtitle = paste("For model based on:", model_name),
     x = "Forecast Horizon",
     y = "Variance of FE") +
-  theme(plot.title = element_text(face = "bold"),
-        plot.subtitle = element_text(color = "gray50"),
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
         panel.grid.minor.x = element_blank() )
 
 ```
@@ -1290,8 +1315,10 @@ plot_forecasts <- function(forecast_list,
                        labels = forecast_quarters_labels) + 
     theme_minimal(base_size = 14) +
     theme(legend.position = "bottom",
-          plot.title = element_text(face = "bold", size = 14),
-          plot.subtitle = element_text(size = 12),
+          plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+          plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+          axis.title = element_text(size = 12),
+          axis.text = element_text(size = 10),
           strip.text = element_text(face = "bold", size = 12), 
           axis.text.x = element_text(angle = 45, hjust = 1)  ) +
           scale_color_brewer(palette = "Set1") 
@@ -1392,7 +1419,11 @@ ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, g
        x = "h step ahead",
     subtitle = paste("For model based on:", model_name)) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
+      plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10),
+      axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
