@@ -12,11 +12,6 @@ header-includes:
 ---
 \newpage
 
-```{r header}
-#explain what his script does and why and how to run code in readme file
-```
-
-
 ```{r library_setup, results=FALSE, warning=FALSE, message=FALSE, echo=FALSE}
 rm(list=ls())
 require(tinytex) #LaTeX
@@ -86,13 +81,13 @@ The Data from Fred come from here:
 European Central Bank, ECB Deposit Facility Rate for Euro Area [ECBDFR], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/ECBDFR. The data is the Deposit Facility and is directly reprinted from the ECB. It's in Percent and not seasonally adjusted. The ECB Monetary Policy is steered through this rate
 
 
-The Shadow rate was developed by \cite{wuTimeVaryingLowerBound2017} and does quantify a hypothetical removal of the ZLB. The rate does not track 1:1 on the deposit facility in the data before the ZLB, instead being clser to the refinancing rate. (maybe need to adjust)
+The Shadow rate was developed by \cite{wuTimeVaryingLowerBound2017} and does quantify a hypothetical removal of the ZLB. The rate does not track 1:1 on the deposit facility in the data before the ZLB, instead being closer to the refinancing rate. (maybe need to adjust)
 
-The GDP Data is real GDP in 2010 Euros in million retrived from FRED via Eurostat. The data is seasonally adjusted.
+The GDP Data is real GDP in 2010 Euros in million retrieved from FRED via Eurostat. The data is seasonally adjusted.
 
-The Inflationdata is from Eurostat and called HICP. It's the index the ECB uses for Inflation and isn't seasonally adjusted.
+The Inflation data is from Eurostat and called HICP. It's the index the ECB uses for Inflation and isn't seasonally adjusted.
 
-Expected Inflation is the ECBs survey of professional forecasters. It forecasts the HICP 12 months in advance.
+Expected Inflation is the ECB's survey of professional forecasters. It forecasts the HICP 12 months in advance.
 
 
 ## Main
@@ -221,14 +216,24 @@ if (USE_INFLATION_EXPECTATIONS) {
 ## Raw Data Plots
 ```{r data_plots, message=FALSE, warning=FALSE}
 
-ggplot(data, aes(x = date, color = series)) +
-  geom_line(aes(y = rate, color = "Rate"), linewidth = 1) +
-  geom_line(aes(y = inflation, color = "(Realised) Inflation"), linewidth = 1) +
-  geom_line(aes(y = exp_inflation, color = "(Expected) Inflation"), linewidth = 1) +
-  geom_line(aes(y = output_gap_hp, color = "Output Gap (HP)"), linewidth = 1) +
-  geom_line(aes(y = output_gap_ham, color = "Output Gap (Hamilton)"), linewidth = 1) +
-  labs(title = "Raw Data Plots", x = "", y = "", color = "Time Series") +
-  theme_minimal()
+# Data must be in long format for a faceted plot
+plot_data <- data %>%
+  pivot_longer(cols = c(rate, inflation, exp_inflation, output_gap_hp, output_gap_ham),
+               names_to = "series",
+               values_to = "value") %>%
+  mutate(series = factor(series, 
+    levels = c("rate", "inflation", "exp_inflation", "output_gap_hp", "output_gap_ham"),
+    labels = c("Deposit Rate", "(Realised) Inflation", "(Expected) Inflation", "Output Gap (HP)", "Output Gap (Hamilton)")))
+
+ggplot(plot_data, aes(x = date, y = value)) +
+  geom_line(aes(color = series), linewidth = 1) +
+  facet_wrap(~ series, scales = "free_y", ncol = 2) +
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
+  labs(title = "Raw Data Plots", subtitle = "Y axis in %", x = "", y = "") +
+  theme_minimal() + theme(
+    legend.position = "none",
+    panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
+rm(plot_data)
 
 ```
 
