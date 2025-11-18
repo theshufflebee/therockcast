@@ -1,0 +1,30 @@
+\begin{table}
+\centering
+\caption{Mincer-Zarnowitz Test: Benchmark ARIMA}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{threeparttable}
+\begin{tabular}[t]{>{}r|rr>{}l}
+\toprule
+h & Alpha & Beta & pv(Joint)\\
+\midrule
+\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{0.1403} & \cellcolor{gray!10}{0.9439} & \ttfamily{\cellcolor{gray!10}{0.4025}}\\
+\textbf{2} & 0.3980 & 0.8509 & \ttfamily{0.1991}\\
+\textbf{\cellcolor{gray!10}{3}} & \cellcolor{gray!10}{0.7262} & \cellcolor{gray!10}{0.7193} & \ttfamily{\cellcolor{gray!10}{0.2696}}\\
+\textbf{4} & 1.0868 & 0.5906 & \ttfamily{0.3892}\\
+\textbf{\cellcolor{gray!10}{5}} & \cellcolor{gray!10}{1.4665} & \cellcolor{gray!10}{0.4339} & \ttfamily{\cellcolor{gray!10}{0.2697}}\\
+\addlinespace
+\textbf{6} & 1.8291 & 0.3006 & \ttfamily{0.1350}\\
+\textbf{\cellcolor{gray!10}{7}} & \cellcolor{gray!10}{2.1804} & \cellcolor{gray!10}{0.1495} & \ttfamily{\cellcolor{gray!10}{0.3461}}\\
+\textbf{8} & 2.4846 & 0.0308 & \ttfamily{0.0078 ***}\\
+\textbf{\cellcolor{gray!10}{9}} & \cellcolor{gray!10}{2.7628} & \cellcolor{gray!10}{-0.1282} & \ttfamily{\cellcolor{gray!10}{0.0000 ***}}\\
+\textbf{10} & 2.9597 & -0.3873 & \ttfamily{0.0000 ***}\\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[para]
+\item \textit{Note:} 
+\item pv(Joint) is the p-value for the joint hypothesis H\_0: (Alpha, Beta) = (0, 1). A high p-value means we fail to reject the null hypothesis of an unbiased, efficient forecast.
+\item[*] Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1
+\end{tablenotes}
+\end{threeparttable}}
+\end{table}

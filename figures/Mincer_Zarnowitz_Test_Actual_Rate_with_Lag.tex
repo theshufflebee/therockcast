@@ -1,0 +1,30 @@
+\begin{table}
+\centering
+\caption{Mincer-Zarnowitz Test: Actual Rate, with Lag}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{threeparttable}
+\begin{tabular}[t]{>{}r|rr>{}l}
+\toprule
+h & Alpha & Beta & pv(Joint)\\
+\midrule
+\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{0.0568} & \cellcolor{gray!10}{1.0019} & \ttfamily{\cellcolor{gray!10}{0.7940}}\\
+\textbf{2} & 0.2189 & 0.9525 & \ttfamily{0.7692}\\
+\textbf{\cellcolor{gray!10}{3}} & \cellcolor{gray!10}{0.4630} & \cellcolor{gray!10}{0.8861} & \ttfamily{\cellcolor{gray!10}{0.7036}}\\
+\textbf{4} & 0.7537 & 0.8270 & \ttfamily{0.6691}\\
+\textbf{\cellcolor{gray!10}{5}} & \cellcolor{gray!10}{1.1378} & \cellcolor{gray!10}{0.6906} & \ttfamily{\cellcolor{gray!10}{0.5505}}\\
+\addlinespace
+\textbf{6} & 1.4947 & 0.5933 & \ttfamily{0.4541}\\
+\textbf{\cellcolor{gray!10}{7}} & \cellcolor{gray!10}{1.9075} & \cellcolor{gray!10}{0.4131} & \ttfamily{\cellcolor{gray!10}{0.1574}}\\
+\textbf{8} & 2.3049 & 0.2375 & \ttfamily{0.0148 **}\\
+\textbf{\cellcolor{gray!10}{9}} & \cellcolor{gray!10}{2.7110} & \cellcolor{gray!10}{0.0277} & \ttfamily{\cellcolor{gray!10}{0.0010 ***}}\\
+\textbf{10} & 3.0873 & -0.1496 & \ttfamily{0.0003 ***}\\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[para]
+\item \textit{Note:} 
+\item pv(Joint) is the p-value for the joint hypothesis H\_0: (Alpha, Beta) = (0, 1). A high p-value means we fail to reject the null hypothesis of an unbiased, efficient forecast.
+\item[*] Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1
+\end{tablenotes}
+\end{threeparttable}}
+\end{table}

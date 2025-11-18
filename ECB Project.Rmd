@@ -77,6 +77,7 @@ USE_FORMULA <- "Formula 3"
 # Related to Document Output
 format <- "html"
 #format <- "latex" 
+save_figures <- FALSE #note: format has to be set to latex
 
 ```
 
@@ -258,9 +259,9 @@ raw_plot = ggplot(plot_data, aes(x = date, y = value)) +
      legend.position = "none",
      panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
 raw_plot
-ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)
+if (save_figures) {
+  ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)}
 rm(plot_data)
-
 
 ```
 
@@ -344,20 +345,24 @@ all_stationarity_results <- rbind(test_rate,
                                   test_inflation_diff)
 
 # Tables
-kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE, 
+stat_table <- kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE, 
       caption = "Summary of Stationarity Tests (ADF \\& KPSS)") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
         column_spec(1, border_right = TRUE) %>%
-        column_spec(4, width = "6cm") %>%
-      save_kable("figures/staionarity_results.png")
+        column_spec(4, width = "6cm")  
+stat_table
+if (save_figures) {
+  save_kable(stat_table, "figures/staionarity_results.tex")}
 
-kable(coint_test, digits = 4, format = format, booktabs = TRUE,
+coint_table <- kable(coint_test, digits = 4, format = format, booktabs = TRUE,
       caption = "Cointegration Test Results") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
-        column_spec(1, border_right = TRUE) %>%
-      save_kable("figures/cointegration_results.png")
+        column_spec(1, border_right = TRUE) 
+coint_table
+if (save_figures) {
+  save_kable(coint_table, "figures/cointegration_results.tex")}
 
 ```
 
@@ -383,6 +388,8 @@ TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
 table1 <- export_summs(TR, TRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table1) <- "No Lag, No Expectations"
+if (save_figures) {
+  huxtable::quick_latex(table1, file = "figures/TR_no_lag_no_expectations.tex")}
 table1
 
 ```
@@ -397,6 +404,8 @@ TRsr_ie <- lm(shadowrate ~ realised_inflation_gap + exp_inflation_gap + output_g
 table2 <- export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table2) <- "No Lag, with Inflation Expectations"
+if (save_figures) {
+  huxtable::quick_latex(table2, file = "figures/TR_no_lag_w_expectations.tex")}
 table2
 
 ```
@@ -417,6 +426,8 @@ lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + output_gap, d
 table3 <- export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table3) <- "Interest Rate Lag, No Expectations"
+if (save_figures) {
+  huxtable::quick_latex(table3, file = "figures/TR_w_lag_no_expectations.tex")}
 table3
 
 ```
@@ -431,6 +442,8 @@ lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + exp_inflat
 table4 <- export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest, 
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table4) <- "Interest Rate Lag, with Inflation Expectations"
+if (save_figures) {
+  huxtable::quick_latex(table4, file = "figures/TR_w_lag_w_expectations.tex")}
 table4
 
 ```
@@ -459,12 +472,14 @@ chow_df <- data.frame(
   Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
   `p-value` = c(chow_test1$p.value, chow_test2$p.value),check.names = FALSE)
 
-kable(chow_df, digits = 4, format = format, booktabs = TRUE,
+chow_table <- kable(chow_df, digits = 4, format = format, booktabs = TRUE,
       caption = "Chow tests for suspected structural breaks") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
-        column_spec(1, border_right = TRUE) %>%
-      save_kable("figures/chow_breaks.png")
+        column_spec(1, border_right = TRUE) 
+chow_table
+if (save_figures) {
+  save_kable(chow_table, "figures/chow_breaks.tex")}
 
 ```
 
@@ -490,11 +505,13 @@ if (optimal_m == 0) {
     `Detected Breaks` = as.character(detected_dates),
     check.names = FALSE) }
 
-kable(bp_df, format = format, booktabs=TRUE,
+bp_table <- kable(bp_df, format = format, booktabs=TRUE,
   caption = "Bai-Perron test for multiple breaks") %>%
   kable_styling(latex_options = "scale_down",
-      position = "center") %>%
-      save_kable("figures/bp_breaks.png")
+      position = "center") 
+bp_table
+if (save_figures) {
+  save_kable(bp_table, "figures/bp_breaks.tex")}
 # Note: breaks_obs shows in which row the BP breaks are 
 
 ```
@@ -517,20 +534,15 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
   # 2. Create the plot, using .data[[]] to find the
   #     columns based on the variable names (modularity)
   plot <- ggplot(data, aes(x = date)) +
-    
     # Add a dashed line at y=0 for reference
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.5) +
-    
     # Add 95% confidence interval ribbon
     geom_ribbon(aes(ymin = .data[[lower_col]], ymax = .data[[upper_col]]),
                 fill = "dodgerblue", alpha = 0.3) +
-                
     # Add the coefficient estimate line
     geom_line(aes(y = .data[[var_name]]), 
               color = "dodgerblue4", linewidth = 1) +
-    
-    # Aesthetic
-    labs(title = paste("Rolling Coefficient Estimate:", var_name_title),
+     labs(title = paste("Rolling Coefficient Estimate:", var_name_title),
         subtitle = "with 95% confidence interval",
       x = "",
       y = "Coefficient Value") +
@@ -539,6 +551,8 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
           plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
           axis.title = element_text(size = 12),
           axis.text = element_text(size = 10))
+  if (save_figures) {
+  ggsave(filename = paste0("roll_coef_",var_name_title, ".png"), path = "figures/", plot=plot)}
       return(plot) }
 
 ```
@@ -577,11 +591,8 @@ for (l in 1:L) {
 
 # Plotting (note: this part is not modular, obviously)
 plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
-ggsave(filename = "roll_coef_rate_plot.png", path = "figures/")
 plot_rolling_coefs(TR_roll, "inflation_gap", var_name_title="Inflation (Gap)")
-ggsave(filename = "roll_coef_inflation_plot.png", path = "figures/")
 plot_rolling_coefs(TR_roll, "output_gap", var_name_title="Output Gap")
-ggsave(filename = "roll_coef_output_plot.png", path = "figures/")
 
 ```
 
@@ -693,8 +704,13 @@ generate_mincer_zarnowitz_report <- function(F_model,
       general_title = "Note:",
       symbol_title = "",
       footnote_as_chunk = TRUE,
-      threeparttable = TRUE) %>%
-      save_kable(paste("figures/", model_caption, ".png", sep=""))
+      threeparttable = TRUE)
+  if (save_figures) {
+    safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
+    safe_name <- gsub("_+", "_", safe_name)
+    safe_name <- substr(safe_name, 1, 50)
+    safe_name <- gsub("_$", "", safe_name)
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"))}
   return(table_output) }
 
 
@@ -763,8 +779,13 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
       general_title = "Note:",
       symbol_title = "DM Test Alternative Hypotheses (H_A):",
       footnote_as_chunk = TRUE,
-      threeparttable = TRUE) %>%
-      save_kable(paste("figures/", model_caption, ".png", sep="")) 
+      threeparttable = TRUE) 
+  if (save_figures) {
+    safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
+    safe_name <- gsub("_+", "_", safe_name)
+    safe_name <- substr(safe_name, 1, 50)
+    safe_name <- gsub("_$", "", safe_name)
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"))}
   return(table_output)}
 
 ```
@@ -1004,7 +1025,7 @@ if (USE_FORMULA == "Formula 1") {
 eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$horizon 
 
 # Spaghetti plot with color per period
-ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
+spag_plot1 <- ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
   geom_line(alpha = 0.7) +    # forecast lines
   geom_point(shape = 2, alpha = 0.7) +
   # Actuals as black baseline
@@ -1020,7 +1041,10 @@ ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = pe
       plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
-ggsave(filename = "spaghetti_plot.png", path = "figures/")
+spag_plot1
+if (save_figures) {
+  ggsave(filename = "spaghetti_plot.png", path = "figures/", plot=spag_plot1)}
+
 
 ```
 
@@ -1033,7 +1057,7 @@ eval_all_models$forecast_error <- eval_all_models[[model]] - eval_all_models$act
 #compute date_of_forecast for x-axis
 eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$horizon
 
-ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
+spag_plot2 <- ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
   # Forecast error lines
   geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
   geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
@@ -1050,7 +1074,9 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
       plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
-ggsave(filename = "spaghetti_errors_plot.png", path = "figures/")
+spag_plot2
+if (save_figures) {
+  ggsave(filename = "spaghetti_errors_plot.png", path = "figures/", plot=spag_plot2)}
 
 ```
 
@@ -1073,7 +1099,8 @@ plot_facet1 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
 print(plot_facet1)
-ggsave(filename = "density_plot.png", path = "figures/", plot = plot_facet1)
+if (save_figures) {
+  ggsave(filename = "density_plot.png", path = "figures/", plot = plot_facet1)}
 
 # Version 2: Adjusted scales
 plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
@@ -1091,7 +1118,8 @@ plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
 print(plot_facet2)
-ggsave(filename = "density_scaled_plot.png", path = "figures/", plot = plot_facet2)
+if (save_figures) {
+  ggsave(filename = "density_scaled_plot.png", path = "figures/", plot = plot_facet2)}
 
 # Version 3: "Ridges"
 plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
@@ -1108,7 +1136,8 @@ plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
 print(plot_ridge)
-ggsave(filename = "densityridge_plot.png", path = "figures/", plot = plot_ridge) 
+if (save_figures) {
+  ggsave(filename = "densityridge_plot.png", path = "figures/", plot = plot_ridge)}
 
 ```
 
@@ -1122,7 +1151,7 @@ var_by_horizon <- eval_all_models %>%
     mean_fe = mean(forecast_error, na.rm=T),
     var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
 
-ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
+fe_var_plot <- ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
   geom_line(color = "#2c3e50", size = 1) +
   geom_point(color = "#e74c3c", size = 3, alpha = 0.8) +
   theme_minimal(base_size = 14) +
@@ -1136,7 +1165,9 @@ ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
         axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
         panel.grid.minor.x = element_blank() )
-ggsave(filename = "FE_var_plot.png", path = "figures/") 
+fe_var_plot
+if (save_figures) {
+  ggsave(filename = "FE_var_plot.png", path = "figures/", plot=fe_var_plot)}
 
 ```
 
@@ -1208,12 +1239,7 @@ mz_report_BM <- tryCatch({
   message("Skipping this report and continuing...")
   return(NULL)})
 
-list(
-  mz_report_1, 
-  mz_report_2, 
-  mz_report_3, 
-  mz_report_4, 
-  mz_report_BM)
+list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 
 ```
 
@@ -1308,9 +1334,9 @@ display_forecasts <- function(forecast_list,
     latex_options = "striped",
     position = "center") %>%
   column_spec(1, bold = TRUE, border_right = TRUE)
-    return(table_output) %>%
-      save_kable(paste("figures/", caption, ".png", sep=""))}
-
+  if (save_figures) {
+    save_kable(table_output, paste0("figures/", caption, ".tex"))} 
+    return(table_output) }
 
 
 #-------------------------------------------------------------------
@@ -1434,8 +1460,10 @@ display_forecasts(final_forecasts,
                   caption = paste("For model based on:", model_name),
                   format = format)
 
-plot_forecasts(final_forecasts)
-ggsave(filename = "actual_forecasts_plot.png", path = "figures/") 
+final_fc_plot1 <- plot_forecasts(final_forecasts)
+final_fc_plot1
+if (save_figures) {
+  ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=final_fc_plot1)}
  
 ```
 
@@ -1461,7 +1489,7 @@ final_interval <- as.data.frame(final_interval)
 
 ```{r prediction_intervals_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
+final_fc_plot2 <- ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
   geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "lightgrey", alpha = 0.6) + # intervall 1 sd
   geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "lightgrey", alpha = 0.2) + # intervall 2 sd
   geom_line(color = "#1f78b4", size = 1) +  # line
@@ -1475,7 +1503,8 @@ ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, g
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10),
       axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave(filename = "actual_forecast_intervals_plot.png", path = "figures/") 
+if (save_figures) {
+  ggsave(filename = "actual_forecast_intervals_plot.png", path = "figures/", plot=final_fc_plot2)} 
 
 ```
 
