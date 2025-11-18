@@ -213,10 +213,10 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 # Applying selection
 if (USE_HAMILTON_FILTER) {
     data$output_gap <- data$output_gap_ham
-  cat(">> CONFIGURATION: Using Hamilton Filter for output gap estimation.")
+  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.")
 } else {
   data$output_gap <- data$output_gap_hp 
-  cat(">> CONFIGURATION: Using HP Filter for output gap estimation.") }
+  cat("* CONFIGURATION: Using HP Filter for output gap estimation.") }
 
 # --------- 2. Inflation expectations choice ----------
 
