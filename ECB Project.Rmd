@@ -245,7 +245,7 @@ plot_data <- data %>%
     levels = c("rate", "inflation", "exp_inflation", "output_gap_hp", "output_gap_ham"),
     labels = c("Deposit Rate", "(Realised) Inflation", "(Expected) Inflation", "Output Gap (HP)", "Output Gap (Hamilton)")))
 
-ggplot(plot_data, aes(x = date, y = value)) +
+raw_plot = ggplot(plot_data, aes(x = date, y = value)) +
   geom_line(aes(color = series), linewidth = 1) +
   facet_wrap(~ series, scales = "free_y", ncol = 2) +
   scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
@@ -257,7 +257,10 @@ ggplot(plot_data, aes(x = date, y = value)) +
      axis.text = element_text(size = 10),
      legend.position = "none",
      panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
+raw_plot
+ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)
 rm(plot_data)
+
 
 ```
 
@@ -570,8 +573,11 @@ for (l in 1:L) {
 
 # Plotting (note: this part is not modular, obviously)
 plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
+ggsave(filename = "roll_coef_rate_plot.png", path = "figures/")
 plot_rolling_coefs(TR_roll, "inflation_gap", var_name_title="Inflation (Gap)")
+ggsave(filename = "roll_coef_inflation_plot.png", path = "figures/")
 plot_rolling_coefs(TR_roll, "output_gap", var_name_title="Output Gap")
+ggsave(filename = "roll_coef_output_plot.png", path = "figures/")
 
 ```
 
@@ -995,7 +1001,6 @@ eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$hor
 ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
   geom_line(alpha = 0.7) +    # forecast lines
   geom_point(shape = 2, alpha = 0.7) +
-  
   # Actuals as black baseline
   geom_line(aes(y = actuals), color = "black", size = 1) +
   geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
@@ -1009,6 +1014,7 @@ ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = pe
       plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
+ggsave(filename = "spaghetti_plot.png", path = "figures/")
 
 ```
 
@@ -1038,6 +1044,7 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
       plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
+ggsave(filename = "spaghetti_errors_plot.png", path = "figures/")
 
 ```
 
@@ -1045,7 +1052,7 @@ ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
 ```{r Density of Forecast Errors}
 
 # Version 1: Non-Adjusted Scales
-plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
+plot_facet1 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
   labs(title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
@@ -1059,10 +1066,11 @@ plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_
         axis.text = element_text(size = 10),
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
-print(plot_facet)
+print(plot_facet1)
+ggsave(filename = "density_plot.png", path = "figures/", plot = plot_facet1)
 
 # Version 2: Adjusted scales
-plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
+plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both) +
   labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
@@ -1076,7 +1084,8 @@ plot_facet <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_
         axis.text = element_text(size = 10),
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
-print(plot_facet)
+print(plot_facet2)
+ggsave(filename = "density_scaled_plot.png", path = "figures/", plot = plot_facet2)
 
 # Version 3: "Ridges"
 plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
@@ -1093,7 +1102,8 @@ plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
 print(plot_ridge)
- 
+ggsave(filename = "densityridge_plot.png", path = "figures/", plot = plot_ridge) 
+
 ```
 
 ## Variance of FE
@@ -1120,6 +1130,7 @@ ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
         axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
         panel.grid.minor.x = element_blank() )
+ggsave(filename = "FE_var_plot.png", path = "figures/") 
 
 ```
 
@@ -1417,6 +1428,7 @@ display_forecasts(final_forecasts,
                   format = format)
 
 plot_forecasts(final_forecasts)
+ggsave(filename = "actual_forecasts_plot.png", path = "figures/") 
  
 ```
 
@@ -1456,6 +1468,7 @@ ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, g
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10),
       axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave(filename = "actual_forecast_intervals_plot.png", path = "figures/") 
 
 ```
 
