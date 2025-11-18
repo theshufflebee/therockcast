@@ -349,13 +349,15 @@ kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE,
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
         column_spec(1, border_right = TRUE) %>%
-        column_spec(4, width = "6cm")
+        column_spec(4, width = "6cm") %>%
+      save_kable("figures/staionarity_results.png")
 
 kable(coint_test, digits = 4, format = format, booktabs = TRUE,
       caption = "Cointegration Test Results") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
-        column_spec(1, border_right = TRUE)
+        column_spec(1, border_right = TRUE) %>%
+      save_kable("figures/cointegration_results.png")
 
 ```
 
@@ -461,7 +463,8 @@ kable(chow_df, digits = 4, format = format, booktabs = TRUE,
       caption = "Chow tests for suspected structural breaks") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
-        column_spec(1, border_right = TRUE)
+        column_spec(1, border_right = TRUE) %>%
+      save_kable("figures/chow_breaks.png")
 
 ```
 
@@ -490,7 +493,8 @@ if (optimal_m == 0) {
 kable(bp_df, format = format, booktabs=TRUE,
   caption = "Bai-Perron test for multiple breaks") %>%
   kable_styling(latex_options = "scale_down",
-      position = "center")
+      position = "center") %>%
+      save_kable("figures/bp_breaks.png")
 # Note: breaks_obs shows in which row the BP breaks are 
 
 ```
@@ -689,7 +693,8 @@ generate_mincer_zarnowitz_report <- function(F_model,
       general_title = "Note:",
       symbol_title = "",
       footnote_as_chunk = TRUE,
-      threeparttable = TRUE)
+      threeparttable = TRUE) %>%
+      save_kable(paste("figures/", model_caption, ".png", sep=""))
   return(table_output) }
 
 
@@ -758,7 +763,8 @@ generate_report_table <- function(FE_TR_model, FE_BM_model, H, model_caption, fo
       general_title = "Note:",
       symbol_title = "DM Test Alternative Hypotheses (H_A):",
       footnote_as_chunk = TRUE,
-      threeparttable = TRUE)
+      threeparttable = TRUE) %>%
+      save_kable(paste("figures/", model_caption, ".png", sep="")) 
   return(table_output)}
 
 ```
@@ -1302,7 +1308,8 @@ display_forecasts <- function(forecast_list,
     latex_options = "striped",
     position = "center") %>%
   column_spec(1, bold = TRUE, border_right = TRUE)
-    return(table_output) }
+    return(table_output) %>%
+      save_kable(paste("figures/", caption, ".png", sep=""))}
 
 
 

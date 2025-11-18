@@ -36,3 +36,5 @@ require(car) #for MZ hypothesis test
 require(ggridges) #for fancy density plots
 require(strucchange) #Chow & BP tests for structural breaks
 require(transx) #for hamilton filter
+require(webshot2) #for png tables
+
