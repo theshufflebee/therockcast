@@ -76,7 +76,7 @@ USE_FORMULA <- "Formula 3"
 
 # Related to Document Output
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 save_figures <- FALSE #note: format has to be set to latex
 
 ```
