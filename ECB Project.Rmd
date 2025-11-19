@@ -1494,7 +1494,7 @@ final_fc_plot2 <- ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), 
   geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "lightgrey", alpha = 0.2) + # intervall 2 sd
   geom_line(color = "#1f78b4", size = 1) +  # line
   geom_point(color = "#e31a1c", size = 3) + # points
-  labs(title = "Prelinimary Forecast plot", 
+  labs(title = "Preliminary Forecast plot", 
        x = "h step ahead",
     subtitle = paste("For model based on:", model_name)) +
   theme_minimal() +
@@ -1503,6 +1503,7 @@ final_fc_plot2 <- ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), 
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10),
       axis.text.x = element_text(angle = 45, hjust = 1))
+final_fc_plot2
 if (save_figures) {
   ggsave(filename = "actual_forecast_intervals_plot.png", path = "figures/", plot=final_fc_plot2)} 
 
