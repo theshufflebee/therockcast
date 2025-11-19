@@ -76,7 +76,7 @@ USE_FORMULA <- "Formula 3"
 
 # Related to Document Output
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 save_figures <- FALSE #note: format has to be set to latex
 
 ```
@@ -105,6 +105,14 @@ cat("\\clearpage")
 
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
+
+* Potential GDP: Either estimated with the Hodrick-Prescott filter, or the Hamilton filter, based on the formulae below:
+    $$
+      \begin{aligned}
+      \text{HP Filter:} \quad & \min_{\tau} \left( \sum_{t=1}^{T} (y_t - \tau_t)^2 + \lambda \sum_{t=2}^{T-1} \left[ (\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1}) \right]^2 \right) \\
+      \text{Hamilton:} \quad & y_t = \beta_0 + \sum_{j=1}^{p} \beta_j y_{t-h-j+1} + v_t \quad \text{(where } v_t \text{ is the cycle)}
+      \end{aligned}
+    $$
 
 * Inflation:
   + Realised: The Inflation data is from Eurostat and called HICP. It's the 
