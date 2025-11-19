@@ -1,8 +1,31 @@
+# This first small function just enables easy automatic interpretations of
+#   the final selected models.
+explain_arima <- function(model_object, var_name) {
+  
+  var_name = var_name
+  
+  # Extract the resulting model
+  vec <- model_object$arma
+  
+  # Get the specification for p,d,q and put in string
+  p <- vec[1]
+  q <- vec[2]
+  d <- vec[6]
+  spec_str <- paste0("ARIMA(", p, ", ", d, ", ", q, ")")
+  
+  # Make it legible 
+  result <- paste0(
+    "This model is fitted to the variable '", var_name, 
+    "' specified as ", spec_str, ".")
+  return(result) }
+
+
+
 # This function searches for the best p and q for a *fixed* d (unnecessary 
 #   in our project since we either set d=0 for output gap or d=1 for interest
 #     and inflation)
 
-my.auto.arima <- function(x, max.p, max.q, d) {
+my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
   
   # Get the length of the time series
   # We use n = length(x) - d as the effective sample size for BIC/AICc
@@ -74,7 +97,7 @@ my.auto.arima <- function(x, max.p, max.q, d) {
   final.model <- arima(x, order = parameters, method = "ML")
   
   # Print the model summary
-  #print(final.model)
+  print(explain_arima(final.model, var_name = var_name))
   
   # Return a list with all the results
   return(final.model)}

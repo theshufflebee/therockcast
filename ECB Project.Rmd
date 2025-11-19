@@ -1418,9 +1418,9 @@ plot_forecasts <- function(forecast_list,
 our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
-   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1)
-   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0)
-   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1) # Benchmark
+   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1, var_name="Inflation Gap")
+   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0, var_name="Output Gap")
+   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1, var_name="Interest Rate") # Benchmark
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
    inflation_forecasts <- my.forecast(inflation_arma, h = H)
@@ -1459,7 +1459,10 @@ our_predict <- function(data,formula,H){
   return(list(TR_Forecast = TR_preds, 
                 BM_Forecast = BM_preds,
                 Inflation_Forecast = inflation_forecasts + 2, #to add back target 
-                OutputGap_Forecast = outputgap_forecasts  ))}
+                OutputGap_Forecast = outputgap_forecasts,  
+                inflation_gap_arma = inflation_arma,
+                output_gap_arma = outputgap_arma,
+                benchmark_arma = interest_arma))}
 
  
 final_forecasts <- our_predict(data = data, formula = model_formula, H = H)
