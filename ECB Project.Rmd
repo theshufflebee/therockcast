@@ -4,6 +4,7 @@ output:
   pdf_document: 
     toc: true
     fig_caption: yes
+    toc_depth: 3
     latex_engine: lualatex
     keep_tex: false
 header-includes:
@@ -1055,8 +1056,9 @@ if (save_figures) {
 
 
 ```
+## Forecast Errors 
 
-## Plots of FE
+### Plots of FE
 ```{r Plot of Forecast Errors, warning=FALSE, message=FALSE}
 
 # Compute forecast error
@@ -1088,7 +1090,7 @@ if (save_figures) {
 
 ```
 
-## Density of FE
+### Density of FE
 ```{r Density of Forecast Errors}
 
 # Version 1: Non-Adjusted Scales
@@ -1149,7 +1151,7 @@ if (save_figures) {
 
 ```
 
-## Variance of FE
+### Variance of FE
 ```{r Variance of Forecast Errors}
 
 # This gives us the mean forecast error for the h step ahead forecast
@@ -1503,63 +1505,50 @@ final_interval <- as.data.frame(final_interval)
 
 
 ```{r prediction_intervals_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
 # PIMPed forecast plot
 final_fc_plot2 <- ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
   
-  # --- 1. Confidence/Prediction Intervals (Better Colors) ---
+  # --- 1. Confidence/Prediction Intervals ---
   # 2-Standard Deviation Band (e.g., ~95% Interval for Normal Errors)
   geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "#b3cde3", alpha = 0.5) +
   # 1-Standard Deviation Band (e.g., ~68% Interval)
   geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "#8856a7", alpha = 0.3) +
-  
-  # --- 2. Forecast Line and Points ---
-  # Forecast Line (Center)
   geom_line(color = "#4c78a8", size = 1.2, linetype = "solid") +
-  # Forecast Points (Slightly smaller, matching line color)
   geom_point(color = "#4c78a8", size = 3, shape = 21, fill = "white", stroke = 1) + 
-  
-  # --- 3. Labels and Theme ---
-  labs(
-    title = "Monetary Policy Rate Forecast with Uncertainty Bands",
-    subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
-    caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
-    x = "Forecast Horizon (h-steps ahead)",
-    y = "Interest Rate (%)"
-  ) +
-  
-  # --- 4. Scale and Aesthetics ---
-  # Add a horizontal line at 0 or a key policy rate for reference
-  # geom_hline(yintercept = 0, linetype = "dashed", color = "red", alpha = 0.7) +
-  
-  theme_light() + # Use a cleaner, professional theme
-  theme(
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(b=7)),
-    plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5, margin = margin(b=5)),
-    plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
-    axis.title.x = element_text(size = 12, margin = margin(t=10)),
-    axis.title.y = element_text(size = 12, margin = margin(r=10)),
-    panel.grid.major.x = element_blank(), # Remove vertical grid lines for clarity
-    panel.grid.minor.x = element_blank(),
-    axis.text.x = element_text(angle = 0, hjust = 0.5) # Resetting angle for cleaner look
-  )
-
+  labs(title = "Monetary Policy Rate Forecast with Uncertainty Bands",
+       subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
+       caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
+       x = "Forecast Horizon (h-steps ahead)", y = "Interest Rate (%)") +
+  theme_light() +
+  theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(b=7)),
+        plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5, margin = margin(b=5)),
+        plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
+        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+        axis.title.y = element_text(size = 12, margin = margin(r=10)),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 0.5) )
 final_fc_plot2
 
 ```
 
 
 
-```{r}
-# get last observation
+```{r temporary prediction interval}
+
+# ce graph c est le old ou le new? 
+
+# Get last observation
 H <- length(final_interval$TR_Forecast)
 forecast_quarters_yearqtr <- seq(from = last(data$quarter) + 0.25, 
                                  by = 0.25, 
                                  length.out = H)
  
-# get numeric values
+# Get numeric values
 forecast_quarters_numeric <- as.numeric(forecast_quarters_yearqtr)
  
-# turn into characters
+# Turn into characters
 forecast_quarters_labels <- as.character(forecast_quarters_yearqtr)
 
 # Plot the forecast plot
@@ -1578,31 +1567,19 @@ final_fc_plot2 <- ggplot(final_interval, aes(x = forecast_quarters_numeric, y = 
     # Use the calculated numeric quarters for breaks
     breaks = forecast_quarters_numeric,
     # Use the calculated Year-Quarter strings for labels
-    labels = forecast_quarters_labels
-  ) +
-  
-
-  
-    # Label
-  labs(
-    title = "ECB Deposit Facility Rate Forecast",
-    subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
-    caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
-    y = "Interest Rate (%)",
-    x = ""
-  ) +
-  
+    labels = forecast_quarters_labels) +
+    labs(title = "ECB Deposit Facility Rate Forecast",
+         subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
+         caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
+         y = "Interest Rate (%)", x = "") +
   theme_light() +
-  theme(
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
-    plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5),
-    axis.title.x = element_text(size = 12, margin = margin(t=10)),
-    axis.title.y = element_text(size = 12, margin = margin(r=10)),
-    plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
-    panel.grid.major.x = element_blank(), 
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10) 
-  )
-
+  theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+        plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5),
+        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+        axis.title.y = element_text(size = 12, margin = margin(r=10)),
+        plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
+        panel.grid.major.x = element_blank(), 
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 10))
 final_fc_plot2
 
 ```
@@ -1612,8 +1589,9 @@ final_fc_plot2
 
 
 
+### Horizon 1 Autocorrelation of FE
+```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-```{r Durbin_Watson_Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 #Durbin Watson tests for first autocorrelation at h=1
 
 # Select Forecast Columns
@@ -1629,7 +1607,7 @@ for (model_name in formula_cols) {
 
   h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
 
-  #Regres errors
+  #Regress errors
   temp_model <- lm(h1_errors_vector ~ 1)
 
   #Durbin-Watson Test
@@ -1638,17 +1616,15 @@ for (model_name in formula_cols) {
   # Print output
   cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", model_name))
   print(dw_test_result)
-  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))
-}
-
-
+  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
 
 ```
 
-```{r Ljung_Box_Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
-#Ljung Box Test
 
-# Columns & max lags set in chunk above
+### Overall Autocorrelation of FE
+```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+#Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
 
 # loop through each TR
 for (model_name in formula_cols) {
@@ -1675,11 +1651,9 @@ for (model_name in formula_cols) {
         
         #Print Results
         cat(sprintf("Horizon h=%d (N=%d, Lags=%d): Q=%.2f, p-value=%.3f\n", 
-                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))
-    }
-    
-    cat("\n")
-}
+                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))}
+        cat("\n")}
+
 ```
 
 
