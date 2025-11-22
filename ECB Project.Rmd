@@ -1181,6 +1181,72 @@ if (save_figures) {
 
 ```
 
+### Horizon 1 Autocorrelation of FE
+```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+#Durbin Watson tests for first autocorrelation at h=1
+
+# Select Forecast Columns
+formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
+
+# automatically set max horizon for loop
+max_h <- max(eval_all_models$horizon)
+
+# Loop for each model
+for (model_name in formula_cols) {
+
+  # Extract and regress errors
+  all_forecast_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+  h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
+  temp_model <- lm(h1_errors_vector ~ 1)
+
+  #Durbin-Watson Test
+  dw_test_result <- durbinWatsonTest(temp_model)
+
+  # Print output
+  cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", model_name))
+  print(dw_test_result)
+  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
+
+```
+
+
+### Overall Autocorrelation of FE
+```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+#Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
+
+# loop through each TR
+for (model_name in formula_cols) {
+    
+    cat(sprintf("--- Checking Errors for Model: %s ---\n", model_name))
+    
+    # Calculate the errors of the model
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+    
+    # Loop over all forecast horizons to test for autocorrelation
+    for (h in 1:max_h){
+        
+        # select errors for each horizon
+        h_errors <- all_errors[eval_all_models$horizon == h]
+            
+        # max lag according to slides around sqrt T
+        T_errors <- length(h_errors)
+        max_lag <- 4 #round(sqrt(T_errors)) # use 4 or 5 chose 4 because 1 year has 4 quarters
+        
+        # Ljung-Box Test
+        lb_test_result <- Box.test(h_errors, 
+                                   lag = max_lag, 
+                                   type = "Ljung-Box")
+        
+        #Print Results
+        cat(sprintf("Horizon h=%d (N=%d, Lags=%d): Q=%.2f, p-value=%.3f\n", 
+                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))}
+        cat("\n")}
+
+```
+
+
 ## Absolute Performance: Efficiency \& Bias
 ```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
@@ -1589,72 +1655,7 @@ final_fc_plot2
 
 
 
-### Horizon 1 Autocorrelation of FE
-```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#Durbin Watson tests for first autocorrelation at h=1
-
-# Select Forecast Columns
-formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
-
-# automatically set max horizon for loop
-max_h <- max(eval_all_models$horizon)
-
-# Loop for each model
-for (model_name in formula_cols) {
-
-  all_forecast_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
-
-  h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
-
-  #Regress errors
-  temp_model <- lm(h1_errors_vector ~ 1)
-
-  #Durbin-Watson Test
-  dw_test_result <- durbinWatsonTest(temp_model)
-
-  # Print output
-  cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", model_name))
-  print(dw_test_result)
-  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
-
-```
-
-
-### Overall Autocorrelation of FE
-```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
-
-#Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
-
-# loop through each TR
-for (model_name in formula_cols) {
-    
-    cat(sprintf("--- Checking Errors for Model: %s ---\n", model_name))
-    
-    # Calculate the errors of the model
-    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
-    
-    # Loop over all forecast horizons to test for autocorrelation
-    for (h in 1:max_h){
-        
-        # select errors for each horizon
-        h_errors <- all_errors[eval_all_models$horizon == h]
-            
-        # max lag according to slides arround sqrt T
-        T_errors <- length(h_errors)
-        max_lag <- 4 #round(sqrt(T_errors)) # use 4 or 5 chose 4 because 1 year has 4 quarters
-        
-        # Ljung-Box Test
-        lb_test_result <- Box.test(h_errors, 
-                                   lag = max_lag, 
-                                   type = "Ljung-Box")
-        
-        #Print Results
-        cat(sprintf("Horizon h=%d (N=%d, Lags=%d): Q=%.2f, p-value=%.3f\n", 
-                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))}
-        cat("\n")}
-
-```
 
 
 
