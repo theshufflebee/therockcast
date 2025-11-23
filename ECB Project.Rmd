@@ -120,8 +120,8 @@ cat("\\clearpage")
     $$
 
 * Inflation:
-  + Realised: The Inflation data is from Eurostat and called HICP. It's the 
-    index the ECB uses for Inflation and is not seasonally adjusted.
+  + Realised: The Inflation data is from Eurostat and measures HICP monthly data (annual rate of change). It's the index that the ECB uses for Inflation and is not seasonally adjusted, but the 
+    fact that it represents the year-on-year change in prices implies there is no seasonality.
   + Expectations: Expected Inflation is the ECB's survey of professional 
     forecasters. It forecasts the HICP 12 months in advance.
 
