@@ -1,29 +1,10 @@
-# This first small function just enables easy automatic interpretations of
-#   the final selected models.
-explain_arima <- function(model_object, var_name) {
-  
-  var_name = var_name
-  
-  # Extract the resulting model
-  vec <- model_object$arma
-  
-  # Get the specification for p,d,q and put in string
-  p <- vec[1]
-  q <- vec[2]
-  d <- vec[6]
-  spec_str <- paste0("ARIMA(", p, ", ", d, ", ", q, ")")
-  
-  # Make it legible 
-  result <- paste0(
-    "This model is fitted to the variable '", var_name, 
-    "' specified as ", spec_str, ".")
-  return(result) }
-
-
+#--------------------------------------------------------------------------------
+#-----------------                     1                        -----------------
+#--------------------------------------------------------------------------------
 
 # This function searches for the best p and q for a *fixed* d (unnecessary 
-#   in our project since we either set d=0 for output gap or d=1 for interest
-#     and inflation)
+#   to loop over d in our project since we either set d=0 for output gap 
+#    or d=1 for interest and inflation)
 
 my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
   
@@ -103,8 +84,44 @@ my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
   return(final.model)}
 
 
-# Forecast 
+
+#--------------------------------------------------------------------------------
+#-----------------                     2                        -----------------
+#--------------------------------------------------------------------------------
+
+# This function produces forecasts from the my.auto.arima output
+
 my.forecast = function(model, h = 1) {
   prediction_output = predict(object = model, n.ahead = h)
   values <- as.vector(prediction_output$pred)
   return(values)  }
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     3                        -----------------
+#--------------------------------------------------------------------------------
+
+# This first small function just enables easy automatic interpretations of
+#   the final selected models.
+explain_arima <- function(model_object, var_name) {
+  
+  var_name = var_name
+  
+  # Extract the resulting model
+  vec <- model_object$arma
+  
+  # Get the specification for p,d,q and put in string
+  p <- vec[1]
+  q <- vec[2]
+  d <- vec[6]
+  spec_str <- paste0("ARIMA(", p, ", ", d, ", ", q, ")")
+  
+  # Make it legible 
+  result <- paste0(
+    "This model is fitted to the variable '", var_name, 
+    "' specified as ", spec_str, ".")
+  return(result) }
+
+
+
+#--------------------------------------------------------------------------------

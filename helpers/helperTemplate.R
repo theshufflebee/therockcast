@@ -1,5 +1,4 @@
-# This file contains all functions related downloading and then importing 
-#chunks of data
+
 
 
 #--------------------------------------------------------------------------------
