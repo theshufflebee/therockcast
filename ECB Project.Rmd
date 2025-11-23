@@ -77,7 +77,7 @@ USE_FORMULA <- "Formula 3"
 
 # Related to Document Output
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 save_figures <- FALSE #note: format has to be set to latex
 
 ```
@@ -1056,6 +1056,7 @@ if (save_figures) {
 
 
 ```
+
 ## Forecast Errors 
 
 ### Plots of FE
@@ -1193,10 +1194,10 @@ formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
 max_h <- max(eval_all_models$horizon)
 
 # Loop for each model
-for (model_name in formula_cols) {
+for (e_model_name in formula_cols) {
 
   # Extract and regress errors
-  all_forecast_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+  all_forecast_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
   h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
   temp_model <- lm(h1_errors_vector ~ 1)
 
@@ -1204,7 +1205,7 @@ for (model_name in formula_cols) {
   dw_test_result <- durbinWatsonTest(temp_model)
 
   # Print output
-  cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", model_name))
+  cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", e_model_name))
   print(dw_test_result)
   cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
 
@@ -1217,12 +1218,12 @@ for (model_name in formula_cols) {
 #Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
 
 # loop through each TR
-for (model_name in formula_cols) {
+for (e_model_name in formula_cols) {
     
-    cat(sprintf("--- Checking Errors for Model: %s ---\n", model_name))
+    cat(sprintf("--- Checking Errors for Model: %s ---\n", e_model_name))
     
     # Calculate the errors of the model
-    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
     
     # Loop over all forecast horizons to test for autocorrelation
     for (h in 1:max_h){
