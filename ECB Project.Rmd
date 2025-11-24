@@ -586,7 +586,7 @@ FE_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
 #-------------------------------------------------------------------
 # 3. SETUP & RUN THE PARALLEL BACKTESTING LOOP
 #-------------------------------------------------------------------
-num_cores <- detectCores() - 1 
+num_cores <- detectCores() / 4 
 cl <- makeCluster(num_cores)
 registerDoParallel(cl)
 
