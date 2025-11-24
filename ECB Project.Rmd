@@ -781,7 +781,6 @@ spag_plot1
 if (save_figures) {
   ggsave(filename = "spaghetti_plot.png", path = "figures/", plot=spag_plot1)}
 
-
 ```
 
 ## Forecast Errors 
@@ -792,14 +791,13 @@ if (save_figures) {
 # Compute forecast error
 eval_all_models$forecast_error <- eval_all_models[[model]] - eval_all_models$actuals
 
-#compute date_of_forecast for x-axis
+# Compute date_of_forecast for x-axis
 eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$horizon
 
 spag_plot2 <- ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
   # Forecast error lines
   geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
   geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
-  
   # Actual rates line
   geom_line(aes(y = actuals), color = "black", size = 1) +
   geom_point(aes(y = actuals), color = "black", shape = 4, alpha = 0.5) +
@@ -917,7 +915,7 @@ if (save_figures) {
 # Select Forecast Columns
 formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
 
-# automatically set max horizon for loop
+# Automatically set max horizon for loop
 max_h <- max(eval_all_models$horizon)
 
 # Loop for each model
@@ -928,7 +926,7 @@ for (e_model_name in formula_cols) {
   h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
   temp_model <- lm(h1_errors_vector ~ 1)
 
-  #Durbin-Watson Test
+  # Durbin-Watson Test
   dw_test_result <- durbinWatsonTest(temp_model)
 
   # Print output
@@ -944,7 +942,7 @@ for (e_model_name in formula_cols) {
 
 #Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
 
-# loop through each TR
+# Loop through each TR
 for (e_model_name in formula_cols) {
     
     cat(sprintf("--- Checking Errors for Model: %s ---\n", e_model_name))
@@ -1100,7 +1098,8 @@ cat("\\clearpage")
 ## Forecasting
 ```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-# Formula 4 seems to work best
+# Function to make our actual forecast, including forecasts of our inputs,
+#  and also outputting the ARIMA coefficients and models used
 our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
