@@ -111,7 +111,7 @@ cat("\\clearpage")
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
 
-* Potential GDP: Either estimated with the Hodrick-Prescott filter, or the Hamilton filter, based on the formulae below:
+* Potential GDP: Either estimated with the Hodrick-Prescott filter or the Hamilton filter, based on the formula below:
     $$
       \begin{aligned}
       \text{HP Filter:} \quad & \min_{\tau} \left( \sum_{t=1}^{T} (y_t - \tau_t)^2 + \lambda \sum_{t=2}^{T-1} \left[ (\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1}) \right]^2 \right) \\
@@ -532,19 +532,16 @@ cat("\\clearpage")
 
 ## Estimation
 
-Pseudo-out of sample recursive estimation scheme of direct forecasts for all
+Pseudo-out of sample rolling estimation scheme of direct forecasts for all
 Taylor Rule formulas and a benchmark ARIMA specification. 
 
 ```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#parameters
+# Parameters
 R = 85 # Chow: Structural breaks at R=55 and R=85 
 cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
-
-#note: we are doing a recursive estimation scheme for out-of-sample tests
-#note: we are doing direct forecasts 
 
 #-------------------------------------------------------------------
 # 1. DEFINE THE TAYLOR RULE (TR) MODEL FORMULAS
