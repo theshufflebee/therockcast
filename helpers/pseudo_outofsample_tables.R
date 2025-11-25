@@ -10,7 +10,8 @@ format_p_values_with_stars <- function(p) {
     p < 0.05 ~ "**",
     p < 0.10 ~ "*",
     TRUE     ~ "")
-  paste0(format(round(p, 3), nsmall = 3), " ", stars)}
+  paste0(format(round(p, 3), nsmall = 3), " ", stars)
+}
 
 
 #--------------------------------------------------------------------------------
@@ -58,18 +59,22 @@ generate_mincer_zarnowitz_report <- function(F_model,
           sandwich::vcovHC(mz_reg, type = "HC3")
         } else {
           # h>1: Use Newey-West, manually setting lag = h-1
-          sandwich::NeweyWest(mz_reg, lag = h - 1)}
+          sandwich::NeweyWest(mz_reg, lag = h - 1)
+        }
       
       # 4. Test Joint Hypothesis H0: Alpha = 0 AND Beta = 1 and store pvalues
       test_joint <- linearHypothesis(mz_reg,
-                                     c("(Intercept) = 0", "forecasts = 1"), vcov. = v_matrix)
+                                     c("(Intercept) = 0", "forecasts = 1"), 
+                                     vcov. = v_matrix)
       mz_results$P_Value_Joint_Test[h] <- test_joint$"Pr(>F)"[2]
       
     } else {
       # Not enough data to run regression for this horizon
       mz_results$Alpha[h] <- NA_real_
       mz_results$Beta[h]  <- NA_real_
-      mz_results$P_Value_Joint_Test[h] <- NA_real_ } }
+      mz_results$P_Value_Joint_Test[h] <- NA_real_ 
+    }
+  }
   
   # Format the results for the table
   mz_results <- mz_results %>%
@@ -104,8 +109,10 @@ generate_mincer_zarnowitz_report <- function(F_model,
     safe_name <- gsub("_+", "_", safe_name)
     safe_name <- substr(safe_name, 1, 50)
     safe_name <- gsub("_$", "", safe_name)
-    save_kable(table_output, paste0("figures/", safe_name, ".tex"))}
-  return(table_output) }
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"))
+  }
+  return(table_output) 
+}
 
 
 
@@ -127,7 +134,8 @@ for (h in 1:H) {
   fe2 <- na.omit(FE_BM_model[[h]])
   
   MSFE_TR[h] = mean((fe1)^2)
-  MSFE_BM[h] = mean((fe2)^2)}
+  MSFE_BM[h] = mean((fe2)^2)
+}
 
 # Run DM Tests
 DMpvalues = matrix(, nrow = H, ncol = 3)
@@ -140,7 +148,8 @@ for (h in 1:H){
   x3 = dm.test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, alternative = "less")
   DMpvalues[h, 1] = round(x1$p.value, digits = 4)
   DMpvalues[h, 2] = round(x2$p.value, digits = 4)
-  DMpvalues[h, 3] = round(x3$p.value, digits = 4)}
+  DMpvalues[h, 3] = round(x3$p.value, digits = 4)
+}
 
 # Create final table data
 forecast_comparison <- data.frame(
@@ -177,13 +186,15 @@ table_output <- kable(
     symbol_title = "DM Test Alternative Hypotheses (H_A):",
     footnote_as_chunk = TRUE,
     threeparttable = TRUE) 
-if (save_figures) {
-  safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
-  safe_name <- gsub("_+", "_", safe_name)
-  safe_name <- substr(safe_name, 1, 50)
-  safe_name <- gsub("_$", "", safe_name)
-  save_kable(table_output, paste0("figures/", safe_name, ".tex"))}
-return(table_output)}
+  if (save_figures) {
+    safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
+    safe_name <- gsub("_+", "_", safe_name)
+    safe_name <- substr(safe_name, 1, 50)
+    safe_name <- gsub("_$", "", safe_name)
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"))
+  }
+  return(table_output)
+}
 
 
 

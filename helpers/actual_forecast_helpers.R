@@ -40,8 +40,10 @@ display_forecasts <- function(forecast_list,
       position = "center") %>%
     column_spec(1, bold = TRUE, border_right = TRUE)
   if (save_figures) {
-    save_kable(table_output, paste0("figures/", caption, ".tex"))} 
-  return(table_output) } 
+    save_kable(table_output, paste0("figures/", caption, ".tex"))
+  } 
+  return(table_output) 
+} 
 
 
 #--------------------------------------------------------------------------------
@@ -99,16 +101,17 @@ plot_forecasts <- function(forecast_list,
                        labels = forecast_quarters_labels) + 
     theme_minimal(base_size = 14) +
     theme(legend.position = "bottom",
-          plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-          plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+          plot.title = element_text(face = "bold", size = 14, 
+                                    margin = margin(b=5)),
+          plot.subtitle = element_text(size = 12, color = "grey30", 
+                                       margin = margin(b=10)),
           axis.title = element_text(size = 12),
           axis.text = element_text(size = 10),
           strip.text = element_text(face = "bold", size = 12), 
           axis.text.x = element_text(angle = 45, hjust = 1)  ) +
     scale_color_brewer(palette = "Set1") 
-  return(plot) }
-
-
+  return(plot) 
+}
 
 
 #--------------------------------------------------------------------------------

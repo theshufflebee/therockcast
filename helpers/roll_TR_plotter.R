@@ -25,12 +25,16 @@ plot_rolling_coefs <- function(data, var_name, var_name_title=var_name) {
          x = "",
          y = "Coefficient Value") +
     theme_minimal() +
-    theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-          plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+    theme(plot.title = element_text(face = "bold", size = 14, 
+                                    margin = margin(b=5)),
+          plot.subtitle = element_text(size = 12, color = "grey30", 
+                                       margin = margin(b=10)),
           axis.title = element_text(size = 12),
           axis.text = element_text(size = 10))
   if (save_figures) {
-    ggsave(filename = paste0("roll_coef_",var_name_title, ".png"), path = "figures/", plot=plot)}
-  return(plot) }
+    ggsave(filename = paste0("roll_coef_",var_name_title, ".png"), path = "figures/", plot=plot)
+  }
+  return(plot) 
+}
 
 #--------------------------------------------------------------------------------
