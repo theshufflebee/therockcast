@@ -86,15 +86,15 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
       )
       
       # Print Kable table
-      print(
-        results %>%
-          kable(
-            format = "markdown",
-            caption = spec$caption,
-            digits = 4
-          ) %>%
-          kable_styling(full_width = FALSE)
-      )
+
+      table_output <- kable(results,
+                            format = "markdown",
+                            caption = spec$caption,
+                            digits = 4) %>%
+                          kable_styling(full_width = FALSE)
+      print(table_output)
+      if (save_figures) {
+        save_kable(table_output, paste0("figures/", spec$caption, ".tex"))} 
       
       # Return the results
       results
