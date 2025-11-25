@@ -1278,7 +1278,7 @@ final_fc_plot2 <- ggplot() +
        #subtitle = paste("Model:", model_name),
        y = "Interest Rate (%)",
        x = "",
-       caption = "Shaded areas: ±1 S.D. (light) / ±2 S.D. (darker)") +
+       caption = "Shaded areas: ±1 S.D. (dark) / ±2 S.D. (light)") +
   
   # Theme settings
   theme_minimal() +
