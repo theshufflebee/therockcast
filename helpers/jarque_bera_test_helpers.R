@@ -85,8 +85,7 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
         max_h = max_h
       )
       
-      # Print Kable table
-
+      # Make Kable table
       table_output <- kable(results,
                             format = "markdown",
                             caption = spec$caption,
