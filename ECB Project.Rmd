@@ -989,51 +989,6 @@ format_jb_table(jb_results)
 ```
 
 
-```{r}
-format_jb_table <- function(jb_results_list) {
-  
-  # Start with horizon column from the first model
-  horizons <- jb_results_list[[1]]$horizon
-  
-  # Combine all models
-  combined <- data.frame(horizon = horizons)
-  
-  for(model_name in names(jb_results_list)) {
-    df <- jb_results_list[[model_name]] %>%
-      mutate(
-        display = ifelse(
-          is.na(X_squared),
-          NA,
-          paste0(round(X_squared, 4), " ",
-            "(", format_p_values_with_stars(p_value), ")")
-        )
-      ) %>%
-      select(horizon, display)
-    
-    combined <- combined %>%
-      left_join(df, by = "horizon")
-    
-    # rename last column to model name
-    names(combined)[ncol(combined)] <- model_name
-  }
-  
-  # print nicely with kable
-  combined %>%
-    kable(format = "markdown", align = "c", caption = "Jarque–Bera Test Results") %>%
-    kable_styling(full_width = FALSE)
-}
-
-# Example usage:
-format_jb_table(jb_results)
-
-```
-
-
-
-
-
-
-
 
 
 ## Absolute Performance: Efficiency \& Bias
@@ -1231,6 +1186,7 @@ if (save_figures) {
 
 ## Prediction Intervals
 
+Prepare Data
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Preparing data with point forecasts and variance
@@ -1247,85 +1203,82 @@ final_interval$upper_2_sd <- final_interval$sd*2 + final_interval$TR_Forecast
 final_interval$lower_2_sd <- final_interval$sd*2*(-1) + final_interval$TR_Forecast
 
 final_interval <- as.data.frame(final_interval)
-
-# Plotting our actual forecast including said intervals
-final_fc_plot2 <- ggplot(final_interval, aes(x = seq_len(nrow(final_interval)), y = TR_Forecast, group = 1)) +
-  
-  # --- 1. Confidence/Prediction Intervals ---
-  # 2-Standard Deviation Band (e.g., ~95% Interval for Normal Errors)
-  geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "#b3cde3", alpha = 0.5) +
-  # 1-Standard Deviation Band (e.g., ~68% Interval)
-  geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "#8856a7", alpha = 0.3) +
-  geom_line(color = "#4c78a8", size = 1.2, linetype = "solid") +
-  geom_point(color = "#4c78a8", size = 3, shape = 21, fill = "white", stroke = 1) + 
-  labs(title = "Monetary Policy Rate Forecast with Uncertainty Bands",
-       subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
-       caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
-       x = "Forecast Horizon (h-steps ahead)", y = "Interest Rate (%)") +
-  theme_light() +
-  theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(b=7)),
-        plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5, margin = margin(b=5)),
-        plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
-        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-        axis.title.y = element_text(size = 12, margin = margin(r=10)),
-        panel.grid.major.x = element_blank(), 
-        panel.grid.minor.x = element_blank(),
-        axis.text.x = element_text(angle = 0, hjust = 0.5) )
-final_fc_plot2
-
 ```
 
 
 
-```{r temporary prediction interval}
+### Prediction interval Plot
 
-# ce graph c est le old ou le new? 
+```{r}
+# Get last 4 years of actual data -> show trend over past
+last_obs <- data %>%
+  filter(quarter > max(quarter) - 4) %>%  # last 4 years
+  select(quarter, rate) %>%
+  rename(Value = rate)
 
-# Get last observation
-H <- length(final_interval$TR_Forecast)
+# Prepare forecast data
+H <- nrow(final_interval)
 forecast_quarters_yearqtr <- seq(from = last(data$quarter) + 0.25, 
                                  by = 0.25, 
                                  length.out = H)
- 
-# Get numeric values
-forecast_quarters_numeric <- as.numeric(forecast_quarters_yearqtr)
- 
-# Turn into characters
-forecast_quarters_labels <- as.character(forecast_quarters_yearqtr)
 
-# Plot the forecast plot
-final_fc_plot2 <- ggplot(final_interval, aes(x = forecast_quarters_numeric, y = TR_Forecast, group = 1)) +
+# This df is for the forecast part to make the band
+forecast_df <- final_interval %>%
+  mutate(
+    quarter = forecast_quarters_yearqtr,
+    quarter_numeric = as.numeric(quarter),
+    Value = TR_Forecast
+  ) %>%
+  select(quarter, quarter_numeric, Value, lower_1_sd, upper_1_sd, lower_2_sd, upper_2_sd)
 
-  #Prediction INtervall
-  geom_ribbon(aes(ymin = lower_2_sd, ymax = upper_2_sd), fill = "#C0C0C0", alpha = 0.5) +
-  geom_ribbon(aes(ymin = lower_1_sd, ymax = upper_1_sd), fill = "#A9A9A9", alpha = 0.3) +
+# Combine last actuals and forecast for plotting
+plot_df <- bind_rows(
+  last_obs %>% mutate(lower_1_sd = NA, upper_1_sd = NA, lower_2_sd = NA, upper_2_sd = NA),
+  forecast_df
+)
+
+# Numeric and label for x-axis
+plot_df <- plot_df %>%
+  mutate(
+    quarter_numeric = as.numeric(quarter),
+    quarter_label = as.character(quarter)
+  )
+
+# Plot
+final_fc_plot2 <- ggplot(plot_df, aes(x = quarter_numeric, y = Value, group = 1)) +
   
-  # Forecast Line
-  geom_line(color = "#3A3A66", size = 1.2, linetype = "solid") +
-  # Forecast Points (Slightly smaller, matching line color)
+  # Prediction interval (forecast only)
+  geom_ribbon(aes(x = quarter_numeric, ymin = lower_2_sd, ymax = upper_2_sd), fill = "#C0C0C0", alpha = 0.5, data = forecast_df) +
+  geom_ribbon(aes(x = quarter_numeric, ymin = lower_1_sd, ymax = upper_1_sd), fill = "#A9A9A9", alpha = 0.3, data = forecast_df) +
   
-  # update the x axis with quarters
+  # Line for actual + forecast
+  geom_line(color = "#3A3A66", size = 1.2) +
+  
+  # X-axis formatting
   scale_x_continuous(
-    # Use the calculated numeric quarters for breaks
-    breaks = forecast_quarters_numeric,
-    # Use the calculated Year-Quarter strings for labels
-    labels = forecast_quarters_labels) +
-    labs(title = "ECB Deposit Facility Rate Forecast",
-         subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
-         caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
-         y = "Interest Rate (%)", x = "") +
+    breaks = plot_df$quarter_numeric,
+    labels = plot_df$quarter_label
+  ) +
+  
+  labs(title = "ECB Deposit Facility Rate Forecast",
+       subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
+       caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
+       y = "Interest Rate (%)", x = "") +
+  
   theme_light() +
-  theme(plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
-        plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5),
-        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-        axis.title.y = element_text(size = 12, margin = margin(r=10)),
-        plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
-        panel.grid.major.x = element_blank(), 
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 10))
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5),
+    axis.title.x = element_text(size = 12, margin = margin(t=10)),
+    axis.title.y = element_text(size = 12, margin = margin(r=10)),
+    plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
+    panel.grid.major.x = element_blank(), 
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10)
+  )
+
 final_fc_plot2
 
 ```
-
 
 
 
