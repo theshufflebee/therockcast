@@ -139,9 +139,14 @@ format_jb_table <- function(jb_results_list) {
   }
   
   # print with kable for niece display
-  combined %>%
-    kable(format = "markdown", align = "c", caption = "Jarque–Bera Test Results") %>%
-    kable_styling(full_width = FALSE)
+  table_output2 <- kable(combined, 
+                         format = "markdown", 
+                         align = "c", 
+                         caption = "Jarque–Bera Test Results") %>%
+              kable_styling(full_width = FALSE)
+  print(table_output2)
+  if (save_figures) {
+    save_kable(table_output2, paste0("figures/", spec$caption, ".tex"))} 
 }
 
 
