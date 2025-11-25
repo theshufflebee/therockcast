@@ -205,7 +205,8 @@ data <- data %>%
     shadowrate = case_when(
       quarter < "2012 Q3" | quarter >= "2022 Q3" ~ rate,
       TRUE ~ shadowrate),
-    shadowrate_lag = lag(shadowrate, 1))
+    shadowrate_lag = lag(shadowrate, 1)
+  )
 
 # Remove last row since no output data
 data = subset(data, quarter < "2025 Q3")
@@ -229,10 +230,11 @@ rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
 # Applying selection
 if (USE_HAMILTON_FILTER) {
     data$output_gap <- data$output_gap_ham
-  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.")
-} else {
-  data$output_gap <- data$output_gap_hp 
-  cat("* CONFIGURATION: Using HP Filter for output gap estimation.") }
+    cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.")
+    } else {
+    data$output_gap <- data$output_gap_hp 
+    cat("* CONFIGURATION: Using HP Filter for output gap estimation.") 
+}
 
 # --------- 2. Inflation expectations choice ----------
 
@@ -242,10 +244,11 @@ if (USE_HAMILTON_FILTER) {
 # Applying selection
 if (USE_INFLATION_EXPECTATIONS) {
     data$inflation_gap <- data$exp_inflation_gap
-  cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
-} else {
-  data$inflation_gap <- data$realised_inflation_gap 
-  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") }
+    cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
+    } else {
+    data$inflation_gap <- data$realised_inflation_gap 
+    cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.")
+}
 
 ```
 
@@ -254,12 +257,17 @@ if (USE_INFLATION_EXPECTATIONS) {
 
 # Data must be in long format for a faceted plot
 plot_data <- data %>%
-  pivot_longer(cols = c(rate, inflation, exp_inflation, output_gap_hp, output_gap_ham),
+  pivot_longer(cols = c(rate, inflation, exp_inflation, 
+                        output_gap_hp, output_gap_ham),
                names_to = "series",
                values_to = "value") %>%
   mutate(series = factor(series, 
-    levels = c("rate", "inflation", "exp_inflation", "output_gap_hp", "output_gap_ham"),
-    labels = c("Deposit Rate", "(Realised) Inflation", "(Expected) Inflation", "Output Gap (HP)", "Output Gap (Hamilton)")))
+                         levels = c("rate", "inflation", "exp_inflation", 
+                                   "output_gap_hp", "output_gap_ham"),
+                         labels = c("Deposit Rate", "(Realised) Inflation", 
+                                   "(Expected) Inflation", "Output Gap (HP)", 
+                                   "Output Gap (Hamilton)"))
+  )
 
 raw_plot = ggplot(plot_data, aes(x = date, y = value)) +
   geom_line(aes(color = series), linewidth = 1) +
@@ -275,7 +283,8 @@ raw_plot = ggplot(plot_data, aes(x = date, y = value)) +
      panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
 raw_plot
 if (save_figures) {
-  ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)}
+  ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)
+}
 rm(plot_data)
 
 ```
@@ -296,7 +305,8 @@ test_inflation_diff <- check_stationarity(diff(data$inflation), "Inflation (1st 
 
 # Since rate and inflation are I(1), run a cointegration test
 coint_test = check_coint(data$rate, data$inflation, 
-            var_name1 = "Interest Rate", var_name2 = "Inflation")
+                          var_name1 = "Interest Rate", 
+                          var_name2 = "Inflation")
 
 
 # ----- Print Results -----
@@ -309,7 +319,8 @@ all_stationarity_results <- rbind(test_rate,
                                   test_inflation_diff)
 
 # Tables
-stat_table <- kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE, 
+stat_table <- kable(all_stationarity_results, digits = 4, 
+      format = format, booktabs = TRUE, 
       caption = "Summary of Stationarity Tests (ADF \\& KPSS)") %>%
       kable_styling(latex_options = "scale_down",
       position = "center") %>%
@@ -317,7 +328,8 @@ stat_table <- kable(all_stationarity_results, digits = 4, format = format, bookt
         column_spec(4, width = "6cm")  
 stat_table
 if (save_figures) {
-  save_kable(stat_table, "figures/staionarity_results.tex")}
+  save_kable(stat_table, "figures/staionarity_results.tex")
+}
 
 coint_table <- kable(coint_test, digits = 4, format = format, booktabs = TRUE,
       caption = "Cointegration Test Results") %>%
@@ -326,7 +338,8 @@ coint_table <- kable(coint_test, digits = 4, format = format, booktabs = TRUE,
         column_spec(1, border_right = TRUE) 
 coint_table
 if (save_figures) {
-  save_kable(coint_table, "figures/cointegration_results.tex")}
+  save_kable(coint_table, "figures/cointegration_results.tex")
+}
 
 ```
 
@@ -353,7 +366,8 @@ table1 <- export_summs(TR, TRsr, vcov = sandwich::NeweyWest,
           model.names = c("TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table1) <- "No Lag, No Expectations"
 if (save_figures) {
-  huxtable::quick_latex(table1, file = "figures/TR_no_lag_no_expectations.tex")}
+  huxtable::quick_latex(table1, file = "figures/TR_no_lag_no_expectations.tex")
+}
 table1
 
 ```
@@ -369,7 +383,8 @@ table2 <- export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest,
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table2) <- "No Lag, with Inflation Expectations"
 if (save_figures) {
-  huxtable::quick_latex(table2, file = "figures/TR_no_lag_w_expectations.tex")}
+  huxtable::quick_latex(table2, file = "figures/TR_no_lag_w_expectations.tex")
+}
 table2
 
 ```
@@ -391,7 +406,8 @@ table3 <- export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest,
           model.names = c("TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table3) <- "Interest Rate Lag, No Expectations"
 if (save_figures) {
-  huxtable::quick_latex(table3, file = "figures/TR_w_lag_no_expectations.tex")}
+  huxtable::quick_latex(table3, file = "figures/TR_w_lag_no_expectations.tex")
+}
 table3
 
 ```
@@ -407,7 +423,8 @@ table4 <- export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWe
           model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
 huxtable::caption(table4) <- "Interest Rate Lag, with Inflation Expectations"
 if (save_figures) {
-  huxtable::quick_latex(table4, file = "figures/TR_w_lag_w_expectations.tex")}
+  huxtable::quick_latex(table4, file = "figures/TR_w_lag_w_expectations.tex")
+}
 table4
 
 ```
@@ -427,13 +444,14 @@ breakpoint2_obs = 85 #R = 85 in evaluation chunk
 breakpoint2_date <- data$quarter[breakpoint2_obs]
 
 # Chow test (rejecting the null means there are structural breaks)
-chow_test1 <- sctest(break_formula, type = "Chow", point = breakpoint1_obs, data = data)
-chow_test2 <- sctest(break_formula, type = "Chow", point = breakpoint2_obs, data = data)
+chow_test1 <- sctest(break_formula, type = "Chow", 
+                     point = breakpoint1_obs, data = data)
+chow_test2 <- sctest(break_formula, type = "Chow", 
+                     point = breakpoint2_obs, data = data)
 
 # Table with Chow results (for suspected breaks)
-chow_df <- data.frame(
-  Event = c("ZLB Start", "COVID-19 Start"),
-  Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
+chow_df <- data.frame(Event = c("ZLB Start", "COVID-19 Start"),
+   Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
   `p-value` = c(chow_test1$p.value, chow_test2$p.value),check.names = FALSE)
 
 chow_table <- kable(chow_df, digits = 4, format = format, booktabs = TRUE,
@@ -443,7 +461,8 @@ chow_table <- kable(chow_df, digits = 4, format = format, booktabs = TRUE,
         column_spec(1, border_right = TRUE) 
 chow_table
 if (save_figures) {
-  save_kable(chow_table, "figures/chow_breaks.tex")}
+  save_kable(chow_table, "figures/chow_breaks.tex")
+}
 
 ```
 
@@ -467,7 +486,8 @@ if (optimal_m == 0) {
   detected_dates <- data$quarter[break_obs]
   bp_df <- data.frame(
     `Detected Breaks` = as.character(detected_dates),
-    check.names = FALSE) }
+    check.names = FALSE) 
+}
 
 bp_table <- kable(bp_df, format = format, booktabs=TRUE,
   caption = "Bai-Perron test for multiple breaks") %>%
@@ -475,7 +495,8 @@ bp_table <- kable(bp_df, format = format, booktabs=TRUE,
       position = "center") 
 bp_table
 if (save_figures) {
-  save_kable(bp_table, "figures/bp_breaks.tex")}
+  save_kable(bp_table, "figures/bp_breaks.tex")
+}
 # Note: breaks_obs shows in which row the BP breaks are 
 
 ```
@@ -515,7 +536,8 @@ for (l in 1:L) {
   
   TR_roll[l, var_names] <- all_coefs[var_names] 
   TR_roll[l, lower_col_names] <- all_cis[var_names, 1]
-  TR_roll[l, upper_col_names] <- all_cis[var_names, 2]   }
+  TR_roll[l, upper_col_names] <- all_cis[var_names, 2]   
+}
 
 # Plotting (note: this part is not modular, obviously)
 plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
@@ -541,7 +563,8 @@ Taylor Rule formulas and a benchmark ARIMA specification.
 
 # Parameters
 R = 85 # Chow: Structural breaks at R=55 and R=85 
-cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
+cat("Evaluation sample starts after ",
+    as.character(data$quarter[R]),".",sep="")
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 
@@ -565,7 +588,8 @@ init_storage_list <- function(H, P) {
   storage <- vector("list", length = H)
   for (h in 1:H) {
     storage[[h]] <- rep(NA_real_, P)}
-  return(storage)}
+  return(storage)
+}
 
 # Storage for realised values 
 Actuals <- init_storage_list(H, P)
@@ -608,7 +632,7 @@ worker_results <- foreach(
   # note: d=1 for interest and inflation as non-stationary
   inflation_arma <- my.auto.arima(training$inflation_gap, max.p=4, max.q=4, d=1)
   outputgap_arma <- my.auto.arima(training$output_gap, max.p=4, max.q=4, d=0)
-  interest_arma <- my.auto.arima(training$rate, max.p=4, max.q=4, d=1) # Benchmark
+  interest_arma <- my.auto.arima(training$rate, max.p=4, max.q=4, d=1)
   
   # --- 3. Get common forecasts only once (all H horizons) ---
   inflation_forecasts <- my.forecast(inflation_arma, h = H)
@@ -627,9 +651,12 @@ worker_results <- foreach(
     inflation_gap = inflation_forecasts,
     output_gap = outputgap_forecasts)
     
-  TR_preds_1 <- round(pmax(predict(TR_model_1, new_data_base), min(data$rate)) / 0.25) * 0.25
-  TR_preds_2 <- round(pmax(predict(TR_model_2, new_data_base), min(data$rate)) / 0.25) * 0.25
-  BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25
+  TR_preds_1 <- round(pmax(predict(TR_model_1, new_data_base), 
+                           min(data$rate)) / 0.25) * 0.25
+  TR_preds_2 <- round(pmax(predict(TR_model_2, new_data_base), 
+                           min(data$rate)) / 0.25) * 0.25
+  BM_preds <- round(pmax(BMpredicted_rates, 
+                           min(data$rate)) / 0.25) * 0.25
   
   # --- 6. Get forecasts for lagged models via iteration ---
   # We must loop 1 step at a time, feeding forecasts back in.   
@@ -662,7 +689,8 @@ worker_results <- foreach(
     
     # Update lag for h+1 
     current_shadowrate_lag <- pred_4_h
-    current_rate_lag <- pred_3_h }
+    current_rate_lag <- pred_3_h 
+  }
 
   # --- 7. Get actual values in evaluation sample  ---
   actual_rates <- testing$rate[1:H]
@@ -673,7 +701,8 @@ worker_results <- foreach(
        F_TR_FORMULA_3 = TR_preds_3,
        F_TR_FORMULA_4 = TR_preds_4,
        F_BM  = BM_preds,
-       actuals = actual_rates) }
+       actuals = actual_rates) 
+}
     
 # --- Stop the Cluster ---
 stopCluster(cl)
@@ -714,7 +743,9 @@ for (i in 1:P) {
     FE_TR_2[[h]][storage_index] <- f_tr2_val - actual_val
     FE_TR_3[[h]][storage_index] <- f_tr3_val - actual_val
     FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
-    FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
+    FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val 
+  } 
+}
 
 #-------------------------------------------------------------------
 # 5. RENDER RESULTS MORE INTUITIVE FOR FURTHER ANALYSIS
@@ -722,13 +753,12 @@ for (i in 1:P) {
 
 # Convert the forecast lists (F_TR_x) into single dataframes
 forecast_to_df <- function(forecast_list, period) {
-  # Convert each element to numeric (benchmark is ts object, which is bad)
-  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
+  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) 
   df <- as.data.frame(numeric_list)
-  # Add period and horizon
-  df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
-  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponding to it
-  df}
+  df$period <- period
+  df$horizon <- 1:nrow(df) 
+  df
+}
 
 # Apply to all forecasting models
 eval_all_models <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
@@ -756,15 +786,19 @@ if (USE_FORMULA == "Formula 1") {
 } else if (USE_FORMULA == "Formula 4") {
   model <- "F_TR_FORMULA_4"
   model_formula <- formula_4
-  model_name <- "Taylor Rule Formula 4" }
+  model_name <- "Taylor Rule Formula 4" 
+}
 
 # period = date the forecast was made
 # date_of_forecast = the future date we are predicting
 eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$horizon 
 
 # Spaghetti plot with color per period
-spag_plot1 <- ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model]], group = period, color = factor(period))) +
-  geom_line(alpha = 0.7) +    # forecast lines
+spag_plot1 <- ggplot(eval_all_models, 
+                     aes(x = date_of_forecast, 
+                         y = .data[[model]], 
+                         group = period, color = factor(period))) +
+  geom_line(alpha = 0.7) +    
   geom_point(shape = 2, alpha = 0.7) +
   # Actuals as black baseline
   geom_line(aes(y = actuals), color = "black", size = 1) +
@@ -781,7 +815,8 @@ spag_plot1 <- ggplot(eval_all_models, aes(x = date_of_forecast, y = .data[[model
       axis.text = element_text(size = 10))
 spag_plot1
 if (save_figures) {
-  ggsave(filename = "spaghetti_plot.png", path = "figures/", plot=spag_plot1)}
+  ggsave(filename = "spaghetti_plot.png", path = "figures/", plot=spag_plot1)
+}
 
 ```
 
@@ -796,7 +831,9 @@ eval_all_models$forecast_error <- eval_all_models[[model]] - eval_all_models$act
 # Compute date_of_forecast for x-axis
 eval_all_models$date_of_forecast <- eval_all_models$period + eval_all_models$horizon
 
-spag_plot2 <- ggplot(eval_all_models, aes(x = date_of_forecast, group = period)) +
+spag_plot2 <- ggplot(eval_all_models, 
+                     aes(x = date_of_forecast, 
+                         group = period)) +
   # Forecast error lines
   geom_line(aes(y = forecast_error), color = "blue", alpha = 0.5) +
   geom_point(aes(y = forecast_error), color = "blue", alpha = 0.5, shape = 4) +
@@ -814,7 +851,8 @@ spag_plot2 <- ggplot(eval_all_models, aes(x = date_of_forecast, group = period))
       axis.text = element_text(size = 10))
 spag_plot2
 if (save_figures) {
-  ggsave(filename = "spaghetti_errors_plot.png", path = "figures/", plot=spag_plot2)}
+  ggsave(filename = "spaghetti_errors_plot.png", path = "figures/", plot=spag_plot2)
+}
 
 ```
 
@@ -822,7 +860,8 @@ if (save_figures) {
 ```{r Density of Forecast Errors}
 
 # Version 1: Non-Adjusted Scales
-plot_facet1 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
+plot_facet1 <- ggplot(eval_all_models %>% filter(horizon <= H), 
+                      aes(x = forecast_error)) +
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both, scales = "free") +
   labs(title = "Density of Forecast Errors by Horizon (Non-Adjusted Scale)",
@@ -830,18 +869,22 @@ plot_facet1 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast
        x = "Forecast Error",
        y = "Density") +
   theme_minimal() +
-  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+  theme(plot.title = element_text(face = "bold", size = 14, 
+                                  margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", 
+                                     margin = margin(b=10)),
         axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
 print(plot_facet1)
 if (save_figures) {
-  ggsave(filename = "density_plot.png", path = "figures/", plot = plot_facet1)}
+  ggsave(filename = "density_plot.png", path = "figures/", plot = plot_facet1)
+}
 
 # Version 2: Adjusted scales
-plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast_error)) +
+plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), 
+                      aes(x = forecast_error)) +
   geom_density(fill = "#3498db", color = "#2980b9", alpha = 0.6) +
   facet_wrap(~horizon, ncol = 4, labeller = label_both) +
   labs(title = "Density of Forecast Errors by Horizon (Adjusted Scale)",
@@ -849,19 +892,24 @@ plot_facet2 <- ggplot(eval_all_models %>% filter(horizon <= H), aes(x = forecast
        x = "Forecast Error",
        y = "Density") +
   theme_minimal() +
-  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+  theme(plot.title = element_text(face = "bold", size = 14, 
+                                  margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", 
+                                     margin = margin(b=10)),
         axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
         strip.background = element_rect(fill = "#ecf0f1", color = NA), 
         strip.text = element_text(face = "bold"))
 print(plot_facet2)
 if (save_figures) {
-  ggsave(filename = "density_scaled_plot.png", path = "figures/", plot = plot_facet2)}
+  ggsave(filename = "density_scaled_plot.png", path = "figures/", plot = plot_facet2)
+}
 
 # Version 3: "Ridges"
 plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
-                       aes(x = forecast_error, y = as.factor(horizon), fill = stat(x))) +
+                       aes(x = forecast_error, 
+                           y = as.factor(horizon), 
+                           fill = stat(x))) +
     geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
     scale_fill_viridis_c(name = "Error", option = "C") +
     labs(title = "Density of Forecast Errors by Horizon",
@@ -869,13 +917,16 @@ plot_ridge <- ggplot(eval_all_models %>% filter(horizon <= H),
          x = "Forecast Error",
          y = "Forecast Horizon") +
     theme_minimal() +
-  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-      plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+  theme(plot.title = element_text(face = "bold", size = 14, 
+                                  margin = margin(b=5)),
+      plot.subtitle = element_text(size = 12, color = "grey30", 
+                                   margin = margin(b=10)),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10))
 print(plot_ridge)
 if (save_figures) {
-  ggsave(filename = "densityridge_plot.png", path = "figures/", plot = plot_ridge)}
+  ggsave(filename = "densityridge_plot.png", path = "figures/", plot = plot_ridge)
+}
 
 ```
 
@@ -887,7 +938,8 @@ var_by_horizon <- eval_all_models %>%
   group_by(horizon) %>%
   summarize(
     mean_fe = mean(forecast_error, na.rm=T),
-    var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
+    var_fe = sd(forecast_error, na.rm=T)^2, n = n() 
+  )
 
 fe_var_plot <- ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
   geom_line(color = "#2c3e50", size = 1) +
@@ -895,17 +947,21 @@ fe_var_plot <- ggplot(var_by_horizon, aes(x = horizon, y = var_fe)) +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::comma) +
   labs(title = "Variance of FE by Horizon",
-    subtitle = paste("For model based on:", model_name),
-    x = "Forecast Horizon",
-    y = "Variance of FE") +
-  theme(plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-        plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
+       subtitle = paste("For model based on:", model_name),
+       x = "Forecast Horizon",
+       y = "Variance of FE") +
+  theme(plot.title = element_text(face = "bold", size = 14, 
+                                  margin = margin(b=5)),
+        plot.subtitle = element_text(size = 12, color = "grey30", 
+                                     margin = margin(b=10)),
         axis.title = element_text(size = 12),
         axis.text = element_text(size = 10),
-        panel.grid.minor.x = element_blank() )
+        panel.grid.minor.x = element_blank() 
+        )
 fe_var_plot
 if (save_figures) {
-  ggsave(filename = "FE_var_plot.png", path = "figures/", plot=fe_var_plot)}
+  ggsave(filename = "FE_var_plot.png", path = "figures/", plot=fe_var_plot)
+}
 
 ```
 
@@ -934,7 +990,8 @@ for (e_model_name in formula_cols) {
   # Print output
   cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", e_model_name))
   print(dw_test_result)
-  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
+  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))
+}
 
 ```
 
@@ -969,8 +1026,10 @@ for (e_model_name in formula_cols) {
         
         #Print Results
         cat(sprintf("Horizon h=%d (N=%d, Lags=%d): Q=%.2f, p-value=%.3f\n", 
-                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))}
-        cat("\n")}
+                    h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))
+    }
+    cat("\n")
+}
 
 ```
 
@@ -1124,9 +1183,12 @@ cat("\\clearpage")
 our_predict <- function(data,formula,H){
 
   # --- 1. Fit inputs and benchmark models  ---
-   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1, var_name="Inflation Gap")
-   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0, var_name="Output Gap")
-   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1, var_name="Interest Rate") # Benchmark
+   inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, 
+                                   d=1, var_name="Inflation Gap")
+   outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, 
+                                   d=0, var_name="Output Gap")
+   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, 
+                                  d=1, var_name="Interest Rate")
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
    inflation_forecasts <- my.forecast(inflation_arma, h = H)
@@ -1157,21 +1219,23 @@ our_predict <- function(data,formula,H){
      TR_preds[h] <- round(pmax(pred_h, min(data$rate)) / 0.25) * 0.25
      
      # Update the lag for h+1
-     current_rate_lag <- pred_h }
+     current_rate_lag <- pred_h 
+  }
      
    # --- 5. Compute forecast for BM ---
     BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25 
     
   return(list(TR_Forecast = TR_preds, 
-                BM_Forecast = BM_preds,
-                Inflation_Forecast = inflation_forecasts + 2, #to add back target 
-                OutputGap_Forecast = outputgap_forecasts,  
-                inflation_gap_arma_coef = inflation_arma$coef,
-                output_gap_arma_coef = outputgap_arma$coef,
-                benchmark_arma_coef = interest_arma$coef,
-                inflation_gap_arma_var = inflation_arma$sigma2,
-                output_gap_arma_var = outputgap_arma$sigma2,
-                benchmark_arma_var = interest_arma$sigma2))}
+              BM_Forecast = BM_preds,
+              Inflation_Forecast = inflation_forecasts + 2, #to add back target 
+              OutputGap_Forecast = outputgap_forecasts,  
+              inflation_gap_arma_coef = inflation_arma$coef,
+              output_gap_arma_coef = outputgap_arma$coef,
+              benchmark_arma_coef = interest_arma$coef,
+              inflation_gap_arma_var = inflation_arma$sigma2,
+              output_gap_arma_var = outputgap_arma$sigma2,
+              benchmark_arma_var = interest_arma$sigma2))
+}
 
  
 final_forecasts <- our_predict(data = data, formula = model_formula, H = H)
@@ -1183,14 +1247,15 @@ display_forecasts(final_forecasts,
 final_fc_plot1 <- plot_forecasts(final_forecasts)
 final_fc_plot1
 if (save_figures) {
-  ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=final_fc_plot1)}
+  ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=final_fc_plot1)
+}
  
 ```
 
 ## Prediction Intervals
 
-Prepare Data
-```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+### Prepare Data
+```{r pred_int_data, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Preparing data with point forecasts and variance
 prediction <- var_by_horizon
@@ -1206,13 +1271,12 @@ final_interval$upper_2_sd <- final_interval$sd*2 + final_interval$TR_Forecast
 final_interval$lower_2_sd <- final_interval$sd*2*(-1) + final_interval$TR_Forecast
 
 final_interval <- as.data.frame(final_interval)
+
 ```
 
-
-
 ### Prediction interval Plot
+```{r pred_int_plot, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-```{r}
 # Get last 4 years of actual data -> show trend over past
 last_obs <- data %>%
   filter(quarter > max(quarter) - 4) %>%  # last 4 years
@@ -1246,12 +1310,9 @@ plot_df <- plot_df %>%
     quarter_numeric = as.numeric(quarter),
     quarter_label = as.character(quarter)
   )
-
-# Plot
-# Color palette
-line_color <- "#1f77b4"       # Strong blue for forecast line
-ribbon_outer <- "#aec7e8"     # Light transparent blue for 2 SD
-ribbon_inner <- "#c6dbef"     # Lighter for 1 SD
+  line_color <- "#1f77b4"       
+  ribbon_outer <- "#aec7e8"     
+  ribbon_inner <- "#c6dbef"     
 
 # Plot
 final_fc_plot2 <- ggplot() +
@@ -1273,14 +1334,12 @@ final_fc_plot2 <- ggplot() +
   scale_x_continuous(breaks = plot_df$quarter_numeric[seq(1, nrow(plot_df), by = 2)],
                      labels = plot_df$quarter_label[seq(1, nrow(plot_df), by = 2)]) +
   
-  # Labels
+  # Labels & theme
   labs(title = "ECB Deposit Facility Rate Forecast",
        #subtitle = paste("Model:", model_name),
        y = "Interest Rate (%)",
        x = "",
        caption = "Shaded areas: ±1 S.D. (dark) / ±2 S.D. (light)") +
-  
-  # Theme settings
   theme_minimal() +
   theme(
     plot.title = element_text(face = "bold", size = 16, color = "#111111"),
@@ -1291,20 +1350,17 @@ final_fc_plot2 <- ggplot() +
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     plot.caption = element_text(size = 9, color = "#555555", hjust = 0),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
+    axis.text.x = element_text(angle = 45, hjust = 1))
 
 final_fc_plot2
 
 if (save_figures) {
-ggsave(
-  filename = "forecast_plot.png",
-  path = "figures/",
-  plot = final_fc_plot2,
-  width = 10,          # in inches
-  height = 6,          # in inches
-  dpi = 300            # high-quality for print
-)
+  ggsave(
+    filename = "forecast_plot.png",
+    path = "figures/",
+    plot = final_fc_plot2,
+    width = 10, height = 6, dpi = 300            
+  )
 }
 
 ```

@@ -10,7 +10,7 @@ format_p_values_with_stars <- function(p) {
     p < 0.05 ~ "**",
     p < 0.10 ~ "*",
     TRUE     ~ "")
-  paste0(format(round(p, 4), nsmall = 3), " ", stars)}
+  paste0(format(round(p, 3), nsmall = 3), " ", stars)}
 
 
 #--------------------------------------------------------------------------------
