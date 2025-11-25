@@ -1293,6 +1293,7 @@ final_fc_plot2 <- ggplot() +
 
 final_fc_plot2
 
+if (save_figures) {
 ggsave(
   filename = "forecast_plot.png",
   path = "figures/",
@@ -1301,6 +1302,7 @@ ggsave(
   height = 6,          # in inches
   dpi = 300            # high-quality for print
 )
+}
 
 ```
 
