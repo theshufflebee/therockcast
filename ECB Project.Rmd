@@ -1245,38 +1245,62 @@ plot_df <- plot_df %>%
   )
 
 # Plot
-final_fc_plot2 <- ggplot(plot_df, aes(x = quarter_numeric, y = Value, group = 1)) +
+# Color palette
+line_color <- "#1f77b4"       # Strong blue for forecast line
+ribbon_outer <- "#aec7e8"     # Light transparent blue for 2 SD
+ribbon_inner <- "#c6dbef"     # Lighter for 1 SD
+
+# Plot
+final_fc_plot2 <- ggplot() +
   
-  # Prediction interval (forecast only)
-  geom_ribbon(aes(x = quarter_numeric, ymin = lower_2_sd, ymax = upper_2_sd), fill = "#C0C0C0", alpha = 0.5, data = forecast_df) +
-  geom_ribbon(aes(x = quarter_numeric, ymin = lower_1_sd, ymax = upper_1_sd), fill = "#A9A9A9", alpha = 0.3, data = forecast_df) +
+  # Prediction intervals (forecast only)
+  geom_ribbon(data = forecast_df,
+              aes(x = quarter_numeric, ymin = lower_2_sd, ymax = upper_2_sd),
+              fill = ribbon_outer, alpha = 0.3) +
+  geom_ribbon(data = forecast_df,
+              aes(x = quarter_numeric, ymin = lower_1_sd, ymax = upper_1_sd),
+              fill = ribbon_inner, alpha = 0.6) +
   
   # Line for actual + forecast
-  geom_line(color = "#3A3A66", size = 1.2) +
+  geom_line(data = plot_df,
+            aes(x = quarter_numeric, y = Value),
+            color = line_color, size = 1.5) +
   
-  # X-axis formatting
-  scale_x_continuous(
-    breaks = plot_df$quarter_numeric,
-    labels = plot_df$quarter_label
-  ) +
+  # X-axis formatting: only show every 2 quarters to avoid clutter
+  scale_x_continuous(breaks = plot_df$quarter_numeric[seq(1, nrow(plot_df), by = 2)],
+                     labels = plot_df$quarter_label[seq(1, nrow(plot_df), by = 2)]) +
   
+  # Labels
   labs(title = "ECB Deposit Facility Rate Forecast",
-       subtitle = paste("Model: Taylor Rule with", model_name, "| Confidence Bands based on Standard Error"),
-       caption = "Inner band: ±1 S.D. (approx. 68%); Outer band: ±2 S.D. (approx. 95%)",
-       y = "Interest Rate (%)", x = "") +
+       #subtitle = paste("Model:", model_name),
+       y = "Interest Rate (%)",
+       x = "",
+       caption = "Shaded areas: ±1 S.D. (light) / ±2 S.D. (darker)") +
   
-  theme_light() +
+  # Theme settings
+  theme_minimal() +
   theme(
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
-    plot.subtitle = element_text(size = 12, color = "#555555", hjust = 0.5),
-    axis.title.x = element_text(size = 12, margin = margin(t=10)),
-    axis.title.y = element_text(size = 12, margin = margin(r=10)),
-    plot.caption = element_text(size = 9, color = "grey50", hjust = 0),
-    panel.grid.major.x = element_blank(), 
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10)
+    plot.title = element_text(face = "bold", size = 16, color = "#111111"),
+    plot.subtitle = element_text(size = 12, color = "#333333"),
+    axis.text = element_text(size = 10, color = "#111111"),
+    axis.title = element_text(size = 12),
+    panel.grid.major.y = element_line(color = "#e0e0e0"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(size = 9, color = "#555555", hjust = 0),
+    axis.text.x = element_text(angle = 45, hjust = 1)
   )
 
 final_fc_plot2
+
+ggsave(
+  filename = "forecast_plot.png",
+  path = "figures/",
+  plot = final_fc_plot2,
+  width = 10,          # in inches
+  height = 6,          # in inches
+  dpi = 300            # high-quality for print
+)
 
 ```
 
