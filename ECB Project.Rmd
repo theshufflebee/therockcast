@@ -974,10 +974,13 @@ for (e_model_name in formula_cols) {
 
 ```
 
-###Errors Normally Distributed
+### Errors Normally Distributed
 Run the Jarque Bera Test with helpers
 
-```{r}
+```{r Jarque Bera Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
+
+# Run with helper functions
+# missing benchmark
 jb_results <- generate_all_jb_reports(
   formula_cols =  formula_cols,
   eval_all_models = eval_all_models,
@@ -1275,7 +1278,7 @@ final_fc_plot2 <- ggplot() +
        #subtitle = paste("Model:", model_name),
        y = "Interest Rate (%)",
        x = "",
-       caption = "Shaded areas: ±1 S.D. (light) / ±2 S.D. (darker)") +
+       caption = "Shaded areas: ±1 S.D. (dark) / ±2 S.D. (light)") +
   
   # Theme settings
   theme_minimal() +
