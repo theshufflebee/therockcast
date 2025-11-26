@@ -15,19 +15,21 @@ check_stationarity <- function(y, var_name) {
   # Automatically assign interpretation (yes, modular!)
   interpretation <- ""
   if (adf_p < 0.05 && kpss_p > 0.05) {
-    interpretation <- "Stationary I(0): ADF rejects unit root, KPSS confirms stationarity." } 
-  else if (adf_p > 0.05 && kpss_p < 0.05) {
-    interpretation <- "Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity." } 
-  else if (adf_p > 0.05 && kpss_p > 0.05) {
-    interpretation <- "Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity." } 
-  else { # adf_p < 0.05 && kpss_p < 0.05
-    interpretation <- "Conflicting Results: ADF rejects unit root, while KPSS rejects stationarity." }
+    interpretation <- "Stationary I(0): ADF rejects unit root, KPSS confirms stationarity." 
+  } else if (adf_p > 0.05 && kpss_p < 0.05) {
+    interpretation <- "Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity." 
+  } else if (adf_p > 0.05 && kpss_p > 0.05) {
+    interpretation <- "Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity." 
+  } else { # adf_p < 0.05 && kpss_p < 0.05
+    interpretation <- "Conflicting Results: ADF rejects unit root, while KPSS rejects stationarity." 
+  }
   
   # Export results
   data.frame(Variable = var_name,
              `ADF p-value` = adf_p,
              `KPSS p-value` = kpss_p,
-             Result = interpretation, check.names = FALSE) }
+             Result = interpretation, check.names = FALSE) 
+}
 
 
 #--------------------------------------------------------------------------------
@@ -51,7 +53,8 @@ check_coint <- function(y1,y2, var_name1, var_name2){
   # Export results
   data.frame(Variables = paste(var_name1, "&", var_name2),
              `p-value` = p_value,
-             Result = interpretation, check.names = FALSE) } 
+             Result = interpretation, check.names = FALSE) 
+} 
 
 
 #--------------------------------------------------------------------------------

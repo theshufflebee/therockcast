@@ -85,16 +85,15 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
         max_h = max_h
       )
       
-      # Print Kable table
-      print(
-        results %>%
-          kable(
-            format = "markdown",
-            caption = spec$caption,
-            digits = 4
-          ) %>%
-          kable_styling(full_width = FALSE)
-      )
+      # Make Kable table
+      table_output <- kable(results,
+                            format = "markdown",
+                            caption = spec$caption,
+                            digits = 4) %>%
+                          kable_styling(full_width = FALSE)
+      #print(table_output)
+      #if (save_figures) {
+      #  save_kable(table_output, paste0("figures/", spec$caption, ".tex"))} 
       
       # Return the results
       results
@@ -140,9 +139,14 @@ format_jb_table <- function(jb_results_list) {
   }
   
   # print with kable for niece display
-  combined %>%
-    kable(format = "markdown", align = "c", caption = "Jarque–Bera Test Results") %>%
-    kable_styling(full_width = FALSE)
+  table_output2 <- kable(combined, 
+                         format = "markdown", 
+                         align = "c", 
+                         caption = "Jarque–Bera Test Results") %>%
+              kable_styling(full_width = FALSE)
+  print(table_output2)
+  if (save_figures) {
+    save_kable(table_output2, paste0("figures/", spec$caption, ".tex"))} 
 }
 
 
