@@ -1057,7 +1057,7 @@ jb_results <- generate_all_jb_reports(
   max_h = max_h
 )
 
-format_jb_table(jb_results)
+jb_results
 
 ```
 
