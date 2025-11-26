@@ -34,6 +34,7 @@ source(here("scripts/packages.R"))
 source(here("helpers/raw_plotter.R"))
 source(here("helpers/stationarity_tables.R"))
 source(here("helpers/taylor_tables.R"))
+source(here("helpers/struct_breaks_tables.R"))
 source(here("helpers/roll_TR_plotter.R"))
 source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/actual_forecast_helpers.R"))
@@ -80,6 +81,12 @@ source(here("scripts/options_config.R"))
 #temp remove soon
 format <- "html"
 #format <- "latex" 
+
+```
+
+```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
+
+source(here("scripts/taylor_rule_formulas.R"))
 
 ```
 
@@ -270,68 +277,29 @@ taylor_regression_to_table(models, caption = "Interest Rate Lag, with
 ## Checking for structural breaks
 ```{r chowtest}
 
-# Formula to test for breaks
-break_formula = rate ~ rate_lag + inflation_gap + output_gap
+#only paste chow one
+source(here("helpers/struct_breaks_tests.R"))
 
-# Suspected break: Start of ZLB in 2012 Q3
-breakpoint1_obs = 55 #R = 55 in evaluation chunk
-breakpoint1_date <- data$quarter[breakpoint1_obs]
+# 1st Suspected break: Start of ZLB in 2012 Q3
+#  -> R = 55 in evaluation chunk
 
 # Suspected break: Covid
-breakpoint2_obs = 85 #R = 85 in evaluation chunk
-breakpoint2_date <- data$quarter[breakpoint2_obs]
+#  -> R = 85 in evaluation chunk
 
-# Chow test (rejecting the null means there are structural breaks)
-chow_test1 <- sctest(break_formula, type = "Chow", point = breakpoint1_obs, data = data)
-chow_test2 <- sctest(break_formula, type = "Chow", point = breakpoint2_obs, data = data)
+# Run test using helper function 
+chow_tests(data, break1 = 55, break2 = 85, 
+           events_name <- c("ZLB Start", "COVID-19 Start"))  
 
-# Table with Chow results (for suspected breaks)
-chow_df <- data.frame(
-  Event = c("ZLB Start", "COVID-19 Start"),
-  Date = c(as.character(breakpoint1_date), as.character(breakpoint2_date)),
-  `p-value` = c(chow_test1$p.value, chow_test2$p.value),check.names = FALSE)
-
-chow_table <- kable(chow_df, digits = 4, format = format, booktabs = TRUE,
-      caption = "Chow tests for suspected structural breaks") %>%
-      kable_styling(latex_options = "scale_down",
-      position = "center") %>%
-        column_spec(1, border_right = TRUE) 
-chow_table
-if (save_figures) {
-  save_kable(chow_table, "figures/chow_breaks.tex")}
 
 ```
 
 ```{r bai-perron test}
 
-# Estimate Bai-Perron test & output results
-BP_test = breakpoints(break_formula, data = data)
-BP_test_res = summary(BP_test)
+#only paste bp one
+source(here("helpers/struct_breaks_tests.R"))
 
-# Optimal values (modular!)
-bic_values <- BP_test_res$RSS[2, ]
-optimal_m <- as.numeric(names(bic_values)[which.min(bic_values)])
-
-# Make a table out of results (also modular!)
-if (optimal_m == 0) {
-  bp_df <- data.frame(
-    `Detected Breaks` = "No structural breaks detected",
-    check.names = FALSE)
-  } else {
-  break_obs <- na.omit(BP_test_res$breakpoints[optimal_m, ])
-  detected_dates <- data$quarter[break_obs]
-  bp_df <- data.frame(
-    `Detected Breaks` = as.character(detected_dates),
-    check.names = FALSE) }
-
-bp_table <- kable(bp_df, format = format, booktabs=TRUE,
-  caption = "Bai-Perron test for multiple breaks") %>%
-  kable_styling(latex_options = "scale_down",
-      position = "center") 
-bp_table
-if (save_figures) {
-  save_kable(bp_table, "figures/bp_breaks.tex")}
-# Note: breaks_obs shows in which row the BP breaks are 
+# Run test using helper function 
+bp_tests(data)
 
 ```
 
@@ -401,27 +369,23 @@ source(here("helpers/auto_ARIMA_replic.R"))
 Pseudo-out of sample rolling estimation scheme of direct forecasts for all
 Taylor Rule formulas and a benchmark ARIMA specification. 
 
-```{r forecast-model-main, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-# Parameters
+
+```{r pseudo-out-of-sample-parameters, echo=TRUE, message=FALSE, warning=FALSE}
+
+#explain parameters
 R = 85 # Chow: Structural breaks at R=55 and R=85 
 cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
 P = nrow(data) - R #but will effectively be: P = T-h-R
 H = 10 #number of different horizons (takes 10 to go until 2027 Q4)
 
-#-------------------------------------------------------------------
-# 1. DEFINE THE TAYLOR RULE (TR) MODEL FORMULAS
-#-------------------------------------------------------------------
+```
 
-# TR specifications (using either current inflation or inflation expectations
-#                    according to configuration, same with HP vs Hamilton)
-formula_1 <- rate ~ inflation_gap + output_gap
-formula_2 <- shadowrate ~ inflation_gap + output_gap
-formula_3 <- rate ~ rate_lag + inflation_gap + output_gap
-formula_4 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
+
+```{r pseudo-out-of-sample-estimation, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #-------------------------------------------------------------------
-# 2. PRE-ALLOCATE STORAGE FOR ALL RESULTS
+# 1. PRE-ALLOCATE STORAGE FOR ALL RESULTS
 #-------------------------------------------------------------------
 
 # We need 4 lists for the TR models, 1 list for the shared benchmark
@@ -450,7 +414,7 @@ FE_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
 
 
 #-------------------------------------------------------------------
-# 3. SETUP & RUN THE PARALLEL BACKTESTING LOOP
+# 2. SETUP & RUN THE PARALLEL BACKTESTING LOOP
 #-------------------------------------------------------------------
 num_cores <- detectCores() / 4 
 cl <- makeCluster(num_cores)
@@ -544,7 +508,7 @@ stopCluster(cl)
 rm(cl)
 
 #-------------------------------------------------------------------
-# 4. UNPACK PARALLEL RESULTS INTO STORAGE LISTS
+# 3. UNPACK PARALLEL RESULTS INTO STORAGE LISTS
 #-------------------------------------------------------------------
 
 # 'worker_results' is a list of P lists. We need to re-organize it.
@@ -581,7 +545,7 @@ for (i in 1:P) {
     FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
 
 #-------------------------------------------------------------------
-# 5. RENDER RESULTS MORE INTUITIVE FOR FURTHER ANALYSIS
+# 4. RENDER RESULTS MORE INTUITIVE FOR FURTHER ANALYSIS
 #-------------------------------------------------------------------
 
 # Convert the forecast lists (F_TR_x) into single dataframes
@@ -603,24 +567,6 @@ eval_all_models[] <- lapply(eval_all_models, function(x) as.numeric(x))
 
 ## Spaghetti Plots
 ```{r Spaghetti Plot, message=FALSE, warning=FALSE}
-
-# Select the model to plot based on initial option
-if (USE_FORMULA == "Formula 1") {
-  model <- "F_TR_FORMULA_1"
-  model_formula <- formula_1
-  model_name <- "Taylor Rule Formula 1"
-} else if (USE_FORMULA == "Formula 2") {
-  model <- "F_TR_FORMULA_2"
-  model_formula <- formula_2
-  model_name <- "Taylor Rule Formula 2"
-} else if (USE_FORMULA == "Formula 3") {
-  model <- "F_TR_FORMULA_3"
-  model_formula <- formula_3
-  model_name <- "Taylor Rule Formula 3"
-} else if (USE_FORMULA == "Formula 4") {
-  model <- "F_TR_FORMULA_4"
-  model_formula <- formula_4
-  model_name <- "Taylor Rule Formula 4" }
 
 # period = date the forecast was made
 # date_of_forecast = the future date we are predicting
@@ -1019,7 +965,7 @@ our_predict <- function(data,formula,H){
   # --- 1. Fit inputs and benchmark models  ---
    inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1, var_name="Inflation Gap")
    outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0, var_name="Output Gap")
-   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1, var_name="Interest Rate") # Benchmark
+   interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1, var_name="Interest Rate")
   
   # --- 2. Get forecasts of inputs (all H horizons) ---
    inflation_forecasts <- my.forecast(inflation_arma, h = H)
