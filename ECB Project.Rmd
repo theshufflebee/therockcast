@@ -208,7 +208,7 @@ data <- data %>%
   )
 
 # Remove last row since no output data
-data = subset(data, quarter < "2025 Q3")
+data = subset(data, quarter < "2025 Q4")
 
 # Clean environment
 rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
