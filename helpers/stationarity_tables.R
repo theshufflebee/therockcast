@@ -16,7 +16,7 @@ generate_stat_tests_table <- function(stat_tests) {
     column_spec(1, border_right = TRUE) %>%
     column_spec(4, width = "6cm")  
   if (save_figures) {
-    save_kable(stat_table, "figures/staionarity_results.tex")
+    save_kable(stat_table, "figures/stationarity_results.tex")
   }
   return(stat_table)
 }
