@@ -109,9 +109,135 @@ plot_forecasts <- function(forecast_list,
           axis.text = element_text(size = 10),
           strip.text = element_text(face = "bold", size = 12), 
           axis.text.x = element_text(angle = 45, hjust = 1)  ) +
-    scale_color_brewer(palette = "Set1") 
+    scale_color_brewer(palette = "Set1")
+  if (save_figures) {
+    ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=plot)
+  }
   return(plot) 
 }
 
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     3                        -----------------
+#--------------------------------------------------------------------------------
+
+# Helper function for plotting our final forecast results but including
+#  computed prediction intervals, as well as previous years observations
+
+plot_forecasts_pred_int <- function(data, intervals) {
+  
+  # --- 1. Prepare the plot data ---
+  
+  # Get last 4 years of actual data -> show trend overtime
+  last_obs <- data %>%
+    filter(quarter > max(quarter) - 4) %>%  # last 4 years
+    select(quarter, rate) %>%
+    rename(Value = rate)
+  
+  # Prepare horizons and dates
+  H <- nrow(intervals)
+  forecast_quarters_yearqtr <- seq(from = last(data$quarter) + 0.25, 
+                                   by = 0.25, 
+                                   length.out = H)
+  
+  # This df is for the forecast part to make the band
+  forecast_df <- intervals %>%
+    mutate(
+      quarter = forecast_quarters_yearqtr,
+      quarter_numeric = as.numeric(quarter),
+      Value = TR_Forecast
+    ) %>%
+    select(quarter, quarter_numeric, Value, 
+           lower_1_sd, upper_1_sd, lower_2_sd, upper_2_sd)
+  
+  # Add a row at the start
+  forecast_df <- forecast_df %>%
+    bind_rows(
+      tibble(
+        quarter = forecast_df$quarter[1] - 0.25,
+        quarter_numeric = as.numeric(forecast_df$quarter[1] - 0.25),
+        Value = data %>% filter(quarter == forecast_df$quarter[1] - 0.25) %>% pull(rate),
+        lower_1_sd = Value,
+        upper_1_sd = Value,
+        lower_2_sd = Value,
+        upper_2_sd = Value
+      )
+    ) %>%
+    arrange(quarter_numeric)
+  
+  # Combine last actual values and forecast for plotting
+  plot_df <- bind_rows(
+    last_obs %>% mutate(lower_1_sd = NA, upper_1_sd = NA, 
+                        lower_2_sd = NA, upper_2_sd = NA),
+    forecast_df
+  )
+  
+  # Numeric and label for x-axis
+  plot_df <- plot_df %>%
+    mutate(
+      quarter_numeric = as.numeric(quarter),
+      quarter_label = as.character(quarter)
+    )
+  
+  
+  # --- 2. Make the actual plot ---
+  
+  line_color <- "#1f77b4"       
+  ribbon_outer <- "#aec7e8"     
+  ribbon_inner <- "#c6dbef"     
+  
+  final_fc_plot <- ggplot() +
+    
+    # Prediction intervals (forecast only)
+    geom_ribbon(data = forecast_df,
+                aes(x = quarter_numeric, ymin = lower_2_sd, ymax = upper_2_sd),
+                fill = ribbon_outer, alpha = 0.3) +
+    geom_ribbon(data = forecast_df,
+                aes(x = quarter_numeric, ymin = lower_1_sd, ymax = upper_1_sd),
+                fill = ribbon_inner, alpha = 0.6) +
+    
+    # Line for actual + forecast
+    geom_line(data = plot_df,
+              aes(x = quarter_numeric, y = Value),
+              color = line_color, size = 1.5) +
+    
+    # X-axis formatting: only show every 2 quarters to avoid clutter
+    scale_x_continuous(breaks = plot_df$quarter_numeric[seq(1, nrow(plot_df), by = 2)],
+                       labels = plot_df$quarter_label[seq(1, nrow(plot_df), by = 2)]) +
+    
+    # Labels
+    labs(title = "ECB Deposit Facility Rate Forecast",
+         subtitle = paste("Model:", model_name),
+         y = "Interest Rate (%)",
+         x = "",
+         caption = "Shaded areas: ±1 S.D. (dark) / ±2 S.D. (light)") +
+    
+    # Theme settings
+    theme_minimal() +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, color = "#111111"),
+      plot.subtitle = element_text(size = 12, color = "#333333"),
+      axis.text = element_text(size = 10, color = "#111111"),
+      axis.title = element_text(size = 12),
+      panel.grid.major.y = element_line(color = "#e0e0e0"),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(size = 9, color = "#555555", hjust = 0),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+  
+  if (save_figures) {
+    ggsave(
+      filename = "forecast_plot.png",
+      path = "figures/",
+      plot = final_fc_plot,
+      width = 10,          # in inches
+      height = 6,          # in inches
+      dpi = 300            # high-quality for print
+    )
+  }
+  return(final_fc_plot)
+}
 
 #--------------------------------------------------------------------------------

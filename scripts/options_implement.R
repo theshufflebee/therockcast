@@ -28,4 +28,9 @@ if (USE_INFLATION_EXPECTATIONS) {
   cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
 } else {
   data$inflation_gap <- data$realised_inflation_gap 
-  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") }
+  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") 
+}
+
+
+
+#--------------------------------------------------------------------------------

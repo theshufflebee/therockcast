@@ -89,3 +89,6 @@ data = subset(data, quarter < "2025 Q4")
 # Clean environment
 rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
    inflation_exp, inflation_exp_q, monthly_shadow, quarterly_shadow, shadow_rate_daily)
+
+
+#--------------------------------------------------------------------------------
