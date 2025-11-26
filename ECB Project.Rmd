@@ -214,7 +214,7 @@ $$
 \end{aligned}
 $$
 
-```{r Taylor Rule simple w/o lag}
+```{r Taylor Rule simple w/o lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 TR <- lm(rate ~ realised_inflation_gap + output_gap, data = data)
 TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
@@ -224,7 +224,7 @@ taylor_regression_to_table(models, caption = "No Lag, No Expectations")
 
 ```
 
-```{r Taylor Rule simple w/o lag but with inflatione expectations}
+```{r Taylor Rule simple w/o lag but with inflatione expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 TR_e <- lm(rate ~ exp_inflation_gap + output_gap, data = data)
 TRsr_e <- lm(shadowrate ~ exp_inflation_gap + output_gap, data = data)
@@ -247,7 +247,7 @@ $$
 \end{aligned}
 $$
 
-```{r Taylor Rule simple w/ lag}
+```{r Taylor Rule simple w/ lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 lTR <- lm(rate ~ rate_lag + realised_inflation_gap + output_gap, data = data)
 lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + 
@@ -259,7 +259,7 @@ taylor_regression_to_table(models, caption = "Interest Rate Lag,
 
 ```
 
-```{r Taylor Rule simple w/ lag and inflation expectations}
+```{r Taylor Rule simple w/ lag and inflation expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 lTR_e <- lm(rate ~ rate_lag + exp_inflation_gap + output_gap, data = data)
 lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + 

@@ -21,9 +21,8 @@ taylor_regression_to_table <- function(models, caption) {
                                 model.names = model_names,
                                 digits = 4)
   huxtable::caption(table) <- caption
-  
   # Save logic with dynamic filename generation
-  if (exists("save_figures") && save_figures) {
+  if (save_figures) {
     
     # Cleans name in order to be fit for a file name
     clean_name <- tolower(caption)
@@ -34,7 +33,7 @@ taylor_regression_to_table <- function(models, caption) {
     # Save
     huxtable::quick_latex(table, file = file_path)
   }
-  print(table)
+  return(table)
 }
 
 
