@@ -553,7 +553,7 @@ cat("\\clearpage")
 
 # Forecasting Model Evaluation
 
-## Estimation
+## Pseudo Out of Sample Estimation
 
 Pseudo-out of sample rolling estimation scheme of direct forecasts for all
 Taylor Rule formulas and a benchmark ARIMA specification. 
