@@ -29,7 +29,7 @@ require(here)
 getwd()
 setwd("...") 
 
-# Load packages & helper functions
+# Load packages & helper functions THAT WON'T BE IN THE FINAL MARKDOWN
 source(here("helpers/packages.R"))
 source(here("helpers/auto_ARIMA_replic.R"))
 source(here("helpers/stationarity_tests.R"))
@@ -83,7 +83,7 @@ USE_FORMULA <- "Formula 3"
 
 # Related to Document Output
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 save_figures <- FALSE #note: format has to be set to latex
 
 ```
@@ -1054,6 +1054,15 @@ format_jb_table(jb_results)
 
 
 ## Absolute Performance: Efficiency \& Bias
+```{r temp}
+
+# in final markdown, input just the relevant code, i.e. the tests made
+# who cares about code to create tables, that stays in helpers
+source(here("helpers/pseudo_outofsample_tests.R"))
+
+```
+
+
 ```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
 # Call MZ-test helper function 4 times.
@@ -1063,7 +1072,7 @@ format_jb_table(jb_results)
 
 # MZ Report 1: Actual Rate, No Lag
 mz_report_1 <- tryCatch({
-  generate_mincer_zarnowitz_report(
+  generate_absolute_performance_report(
     F_model = F_TR_1,
     Actual_values = Actuals,
     H = H,
@@ -1075,7 +1084,7 @@ mz_report_1 <- tryCatch({
 
 # MZ Report 2: Shadow Rate, No Lag (
 mz_report_2 <- tryCatch({
-  generate_mincer_zarnowitz_report(
+  generate_absolute_performance_report(
     F_model = F_TR_2,
     Actual_values = Actuals,
     H = H,
@@ -1087,7 +1096,7 @@ mz_report_2 <- tryCatch({
 
 # MZ Report 3: Actual Rate, with Lag
 mz_report_3 <- tryCatch({
-  generate_mincer_zarnowitz_report(
+  generate_absolute_performance_report(
     F_model = F_TR_3,
     Actual_values = Actuals,
     H = H,
@@ -1099,7 +1108,7 @@ mz_report_3 <- tryCatch({
 
 # MZ Report 4: Shadow Rate, with Lag
 mz_report_4 <- tryCatch({
-  generate_mincer_zarnowitz_report(
+  generate_absolute_performance_report(
     F_model = F_TR_4,
     Actual_values = Actuals,
     H = H,
@@ -1111,7 +1120,7 @@ mz_report_4 <- tryCatch({
 
 # MZ Report 5: Benchmark
 mz_report_BM <- tryCatch({
-  generate_mincer_zarnowitz_report(
+  generate_absolute_performance_report(
     F_model = F_BM,
     Actual_values = Actuals,
     H = H,
@@ -1132,7 +1141,7 @@ list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 # Call DM-test helper function 4 times.
 
 # Report 1: Actual Rate, No Lag
-report_1 <- generate_report_table(
+report_1 <- generate_relative_performance_report(
   FE_TR_model = FE_TR_1,
   FE_BM_model = FE_BM,
   H = H,
@@ -1140,7 +1149,7 @@ report_1 <- generate_report_table(
   format = format)
 
 # Report 2: Shadow Rate, No Lag
-report_2 <- generate_report_table(
+report_2 <- generate_relative_performance_report(
   FE_TR_model = FE_TR_2,
   FE_BM_model = FE_BM,
   H = H,
@@ -1148,7 +1157,7 @@ report_2 <- generate_report_table(
   format = format)
 
 # Report 3: Actual Rate, with Lag
-report_3 <- generate_report_table(
+report_3 <- generate_relative_performance_report(
   FE_TR_model = FE_TR_3,
   FE_BM_model = FE_BM,
   H = H,
@@ -1156,7 +1165,7 @@ report_3 <- generate_report_table(
   format = format)
 
 # Report 4: Shadow Rate, with Lag
-report_4 <- generate_report_table(
+report_4 <- generate_relative_performance_report(
   FE_TR_model = FE_TR_4,
   FE_BM_model = FE_BM,
   H = H,
