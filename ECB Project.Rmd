@@ -36,7 +36,6 @@ source(here("helpers/stationarity_tests.R"))
 source(here("helpers/roll_TR_plotter.R"))
 source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/actual_forecast_helpers.R"))
-source(here("helpers/jarque_bera_test_helpers.R"))
 
 
 # Api key for data
@@ -1040,6 +1039,14 @@ for (e_model_name in formula_cols) {
 ### Errors Normally Distributed
 Run the Jarque Bera Test with helpers
 
+```{r temp1}
+
+# in final markdown, input just the relevant code, i.e. the tests made
+# who cares about code to create tables, that stays in helpers
+source(here("helpers/pseudo_outofsample_tests.R"))
+
+```
+
 ```{r Jarque Bera Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Run with helper functions
@@ -1058,7 +1065,7 @@ format_jb_table(jb_results)
 
 
 ## Absolute Performance: Efficiency \& Bias
-```{r temp}
+```{r temp2}
 
 # in final markdown, input just the relevant code, i.e. the tests made
 # who cares about code to create tables, that stays in helpers
@@ -1140,6 +1147,14 @@ list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 
 
 ## Relative Performance (against benchmark)
+```{r temp3}
+
+# in final markdown, input just the relevant code, i.e. the tests made
+# who cares about code to create tables, that stays in helpers
+source(here("helpers/pseudo_outofsample_tests.R"))
+
+```
+
 ```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 # Call DM-test helper function 4 times.
