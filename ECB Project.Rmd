@@ -1211,7 +1211,8 @@ display_forecasts(final_forecasts,
 final_fc_plot1 <- plot_forecasts(final_forecasts)
 final_fc_plot1
 if (save_figures) {
-  ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=final_fc_plot1)}
+  ggsave(filename = "actual_forecasts_plot.png", path = "figures/", plot=final_fc_plot1)
+}
  
 ```
 

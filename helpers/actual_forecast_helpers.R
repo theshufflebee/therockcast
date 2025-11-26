@@ -40,7 +40,7 @@ display_forecasts <- function(forecast_list,
       position = "center") %>%
     column_spec(1, bold = TRUE, border_right = TRUE)
   if (save_figures) {
-    save_kable(table_output, paste0("figures/", caption, ".tex"))
+    save_kable(table_output, "figures/actual_forecasts_table.tex")
   } 
   return(table_output) 
 } 

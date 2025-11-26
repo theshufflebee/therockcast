@@ -155,7 +155,7 @@ format_jb_table <- function(jb_results_list) {
                          caption = "Jarque–Bera Test Results") %>%
     kable_styling(full_width = FALSE)
   if (save_figures) {
-    save_kable(table_output2, paste0("figures/", spec$caption, ".tex"))} 
+    save_kable(table_output2, paste0("figures/Jarque–Bera Test Results.tex"))} 
   return(table_output2)
 }
 
