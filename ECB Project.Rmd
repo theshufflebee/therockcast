@@ -31,7 +31,9 @@ setwd("...")
 
 # --------- 4. Load packages & helper functions for plots and tables
 source(here("scripts/packages.R"))
+source(here("helpers/raw_plotter.R"))
 source(here("helpers/stationarity_tables.R"))
+source(here("helpers/taylor_tables.R"))
 source(here("helpers/roll_TR_plotter.R"))
 source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/actual_forecast_helpers.R"))
@@ -139,31 +141,8 @@ source(here("scripts/options_implement.R"))
 ## Raw Data Plots
 ```{r data_plots, message=FALSE, warning=FALSE}
 
-# Data must be in long format for a faceted plot
-plot_data <- data %>%
-  pivot_longer(cols = c(rate, inflation, exp_inflation, output_gap_hp, output_gap_ham),
-               names_to = "series",
-               values_to = "value") %>%
-  mutate(series = factor(series, 
-    levels = c("rate", "inflation", "exp_inflation", "output_gap_hp", "output_gap_ham"),
-    labels = c("Deposit Rate", "(Realised) Inflation", "(Expected) Inflation", "Output Gap (HP)", "Output Gap (Hamilton)")))
-
-raw_plot = ggplot(plot_data, aes(x = date, y = value)) +
-  geom_line(aes(color = series), linewidth = 1) +
-  facet_wrap(~ series, scales = "free_y", ncol = 2) +
-  scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
-  labs(title = "Raw Data Plots", subtitle = "Y axis in %", x = "", y = "") +
-  theme_minimal() + theme(
-     plot.title = element_text(face = "bold", size = 14, margin = margin(b=5)),
-     plot.subtitle = element_text(size = 12, color = "grey30", margin = margin(b=10)),
-     axis.title = element_text(size = 12),
-     axis.text = element_text(size = 10),
-     legend.position = "none",
-     panel.grid.major.x = element_line(linewidth = 0.525, color = "grey83"))
-raw_plot
-if (save_figures) {
-  ggsave(filename = "raw_data_plot.png", path = "figures/", plot = raw_plot)}
-rm(plot_data)
+# Who cares about the method here, only result matters 
+raw_data_plotter(data = data)
 
 ```
 
@@ -208,8 +187,8 @@ generate_stat_tests_table(stat_tests = all_stationarity_results)
 generate_coint_tests_table(coint_test = coint_test)
 
 # Cleanup
-rm(all_stationarity_results, coint_test, test_inflation, test_inflation_diff,
-   test_output_gap, test_rate, test_rate_diff)
+rm(all_stationarity_results, coint_test, test_inflation, 
+   test_inflation_diff, test_output_gap, test_rate, test_rate_diff)
 
 ```
 
@@ -232,12 +211,8 @@ $$
 TR <- lm(rate ~ realised_inflation_gap + output_gap, data = data)
 TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
 
-table1 <- export_summs(TR, TRsr, vcov = sandwich::NeweyWest, 
-          model.names = c("TR", "TR w/ SR"), digits = 4)
-huxtable::caption(table1) <- "No Lag, No Expectations"
-if (save_figures) {
-  huxtable::quick_latex(table1, file = "figures/TR_no_lag_no_expectations.tex")}
-table1
+models <- list(TR, TRsr)
+taylor_regression_to_table(models, caption = "No Lag, No Expectations")
 
 ```
 
@@ -245,15 +220,14 @@ table1
 
 TR_e <- lm(rate ~ exp_inflation_gap + output_gap, data = data)
 TRsr_e <- lm(shadowrate ~ exp_inflation_gap + output_gap, data = data)
-TR_ie <- lm(rate ~ realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
-TRsr_ie <- lm(shadowrate ~ realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
+TR_ie <- lm(rate ~ realised_inflation_gap + exp_inflation_gap + 
+                   output_gap, data = data)
+TRsr_ie <- lm(shadowrate ~ realised_inflation_gap + exp_inflation_gap + 
+                           output_gap, data = data)
 
-table2 <- export_summs(TR_e, TRsr_e, TR_ie, TRsr_ie, vcov = sandwich::NeweyWest, 
-          model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
-huxtable::caption(table2) <- "No Lag, with Inflation Expectations"
-if (save_figures) {
-  huxtable::quick_latex(table2, file = "figures/TR_no_lag_w_expectations.tex")}
-table2
+models <- list(TR_e, TRsr_e, TR_ie, TRsr_ie)
+taylor_regression_to_table(models, caption = "No Lag, with 
+                                              Inflation Expectations")
 
 ```
 
@@ -268,30 +242,28 @@ $$
 ```{r Taylor Rule simple w/ lag}
 
 lTR <- lm(rate ~ rate_lag + realised_inflation_gap + output_gap, data = data)
-lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + output_gap, data = data)
+lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + 
+                         output_gap, data = data)
 
-table3 <- export_summs(lTR, lTRsr, vcov = sandwich::NeweyWest, 
-          model.names = c("TR", "TR w/ SR"), digits = 4)
-huxtable::caption(table3) <- "Interest Rate Lag, No Expectations"
-if (save_figures) {
-  huxtable::quick_latex(table3, file = "figures/TR_w_lag_no_expectations.tex")}
-table3
+models <- list(lTR, lTRsr)
+taylor_regression_to_table(models, caption = "Interest Rate Lag, 
+                                              No Expectations")
 
 ```
 
 ```{r Taylor Rule simple w/ lag and inflation expectations}
 
 lTR_e <- lm(rate ~ rate_lag + exp_inflation_gap + output_gap, data = data)
-lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + output_gap, data = data)
-lTR_ie <- lm(rate ~ rate_lag + realised_inflation_gap + exp_inflation_gap + output_gap, data = data)
-lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + exp_inflation_gap + output_gap, data = data) 
+lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + 
+                           output_gap, data = data)
+lTR_ie <- lm(rate ~ rate_lag + realised_inflation_gap + exp_inflation_gap + 
+                    output_gap, data = data)
+lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + 
+                            exp_inflation_gap + output_gap, data = data) 
 
-table4 <- export_summs(lTR_e, lTRsr_e, lTR_ie,lTRsr_ie, vcov = sandwich::NeweyWest, 
-          model.names = c("TR", "TR w/ SR", "TR", "TR w/ SR"), digits = 4)
-huxtable::caption(table4) <- "Interest Rate Lag, with Inflation Expectations"
-if (save_figures) {
-  huxtable::quick_latex(table4, file = "figures/TR_w_lag_w_expectations.tex")}
-table4
+models <- list(lTR_e, lTRsr_e, lTR_ie, lTRsr_ie)
+taylor_regression_to_table(models, caption = "Interest Rate Lag, with 
+                                              Inflation Expectations")
 
 ```
 
