@@ -19,29 +19,27 @@ header-includes:
 ## Setup
 ```{r setup, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-# Clear memory 
+# --------- 1. Clear memory
 rm(list=ls())
 
-# Load here package to enable finding script loading other packages
+# --------- 2. Load here package to enable finding script loading other packages 
 require(here)
 
-# Set directory
+# --------- 3. Set directory
 getwd()
 setwd("...") 
 
-# Load packages & helper functions THAT WON'T BE IN THE FINAL MARKDOWN
-source(here("helpers/packages.R"))
-source(here("helpers/auto_ARIMA_replic.R"))
-source(here("helpers/stationarity_tests.R"))
+# --------- 4. Load packages & helper functions for plots and tables
+source(here("scripts/packages.R"))
+source(here("helpers/stationarity_tables.R"))
 source(here("helpers/roll_TR_plotter.R"))
 source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/actual_forecast_helpers.R"))
 
-
 # Api key for data
 fredr_set_key("e0169694a62c1337f1969e3872605eca")
 
-# Dates (to automatically get the latest data from API calls)
+# --------- 5. Dates (to automatically get the latest data from API calls
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
@@ -75,15 +73,11 @@ set.seed(2025)
 
 ```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-# Related to Analysis
-USE_HAMILTON_FILTER <- TRUE
-USE_INFLATION_EXPECTATIONS <- FALSE
-USE_FORMULA <- "Formula 3"
+source(here("scripts/options_config.R"))
 
-# Related to Document Output
+#temp remove soon
 format <- "html"
 #format <- "latex" 
-save_figures <- FALSE #note: format has to be set to latex
 
 ```
 
@@ -128,123 +122,17 @@ cat("\\clearpage")
 
 
 ## Loading \& Preparation Data 
-```{r data_main, message=FALSE, warning=FALSE}
+```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
-# --- 1. ECB Deposit Facility Rate & Shadow Rate ---
-ecb_rate_daily <- fredr(series_id = "ECBDFR", observation_start = as.Date(start_date))
-ecb_rate_q <- ecb_rate_daily %>%
-  mutate(quarter = as.yearqtr(date)) %>%
-  group_by(quarter) %>%
-  summarise(rate = last(value)) %>%
-  mutate(date = as.Date(quarter))
-# Wu-Xia Shadow Rate 
-shadow_rate_daily = as.data.frame(readMat("data/shadowrate_ECB.mat")) 
-colnames(shadow_rate_daily) <- c("DATE", "shadowrate")
-shadow_rate_daily$DATE <- as.Date(paste0(shadow_rate_daily$DATE, "01"), format="%Y%m%d")
-shadow_rate_daily$quarter <- as.yearqtr(as.Date(shadow_rate_daily$DATE))
-shadow_rate_daily$month <- as.yearmon(as.Date(shadow_rate_daily$DATE))
-quarterly_shadow = aggregate(shadowrate ~ quarter, data=shadow_rate_daily, FUN=mean, na.rm=T)
-monthly_shadow = aggregate(shadowrate ~ month, data=shadow_rate_daily, FUN=mean, na.rm=T)
-
-# --- 2. HICP Inflation (Euro Area) ---
-inflation_data <- get_eurostat("prc_hicp_manr", filters = list(geo = "EA", coicop = "CP00"), type = "label")
-inflation_q <- inflation_data %>%
-  filter(time >= start_date) %>%
-  dplyr::select(date = time, inflation = values) %>%
-  mutate(quarter = as.yearqtr(date)) %>%
-  group_by(quarter) %>%
-  summarise(inflation = mean(inflation, na.rm = TRUE)) %>%
-  mutate(date = as.Date(quarter))
-
-#inflation expectations
-inflation_exp <- rdb(ids = "ECB/SPF/M.U2.HICP.POINT.P12M.Q.AVG")
-#inflation_exp <- rdb(ids = "ECB/SPF/M.U2.HICP.POINT.P24M.Q.AVG")
-inflation_exp_q <- inflation_exp %>%
-  mutate(quarter = as.yearqtr(period)) %>%
-  group_by(quarter) %>%
-  summarise(exp_inflation = last(original_value)) %>%
-  mutate(date = as.Date(quarter))
-
-#P12M : 12-month ahead forecasts
-inflation_q$exp_inflation = c(rep(NA,3),as.numeric(inflation_exp_q$exp_inflation),NA)
-#P24M : 24-month ahead forecasts
-#inflation_q$exp_inflation = c(rep(NA,7),as.numeric(inflation_exp_q$exp_inflation[1:101]))
-
-# --- 3. Real GDP and Estimated Output Gap ---
-# a) Real GDP for the Euro Area. The series ID is CLVMNACSCAB1GQE_A.
-gdp_q <- fredr(
-  series_id = "CLVMEURSCAB1GQEA19",
-  observation_start = as.Date(start_date)) %>%
-  mutate(quarter = as.yearqtr(date)) %>%
-  dplyr::select(quarter, real_gdp = value) %>%
-  mutate(log_real_gdp = log(real_gdp)) 
-
-# b) Estimate Potential GDP (the trend) using the HP Filter on the log of real GDP.
-# The lambda value of 1600 is standard for quarterly data.
-hp_gdp <- hpfilter(gdp_q$log_real_gdp, freq = 1600)
-gdp_q$potential_gdp_log <- as.numeric(hp_gdp$trend)
-ham_gdp_cycle <- filter_hamilton(gdp_q$log_real_gdp, p = 4, horizon = 8)
-gdp_q$potential_gdp_log_ham <- gdp_q$log_real_gdp - ham_gdp_cycle
-
-# Combine all data into a single data frame
-data <- ecb_rate_q %>%
-  dplyr::select(quarter, rate) %>%
-  left_join(inflation_q, by = "quarter") %>%
-  left_join(gdp_q, by = "quarter") %>%
-  left_join(quarterly_shadow, by = "quarter") 
-
-# Create model variables
-data <- data %>%
-  mutate(
-    realised_inflation_gap = inflation - 2.0,
-    exp_inflation_gap = exp_inflation -2.0,
-    output_gap_hp = 100 * (log_real_gdp - potential_gdp_log),
-    output_gap_ham = 100 * (log_real_gdp - potential_gdp_log_ham),
-    rate_lag = lag(rate, 1),
-    shadowrate = case_when(
-      quarter < "2012 Q3" | quarter >= "2022 Q3" ~ rate,
-      TRUE ~ shadowrate),
-    shadowrate_lag = lag(shadowrate, 1))
-
-# Remove last row since no output data
-data = subset(data, quarter < "2025 Q4")
-
-# Clean environment
-rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
-   inflation_exp, inflation_exp_q, monthly_shadow, quarterly_shadow, shadow_rate_daily)
+#copypaste data script and explain
+source(here("scripts/data.R"))
 
 ```
 
 ## Options Configuration
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
-# Choices in setup chunk
-
-# --------- 1. Filter selection for output gap estimation ----------
-
-# TRUE  = Use Hamilton Filter (newer, arguably more robust)
-# FALSE = Use HP Filter (classic approach)
-
-# Applying selection
-if (USE_HAMILTON_FILTER) {
-    data$output_gap <- data$output_gap_ham
-  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.")
-} else {
-  data$output_gap <- data$output_gap_hp 
-  cat("* CONFIGURATION: Using HP Filter for output gap estimation.") }
-
-# --------- 2. Inflation expectations choice ----------
-
-# TRUE  = Use inflation expectations from ECB survey of professional forecasts
-# FALSE = Use realised inflation
-
-# Applying selection
-if (USE_INFLATION_EXPECTATIONS) {
-    data$inflation_gap <- data$exp_inflation_gap
-  cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
-} else {
-  data$inflation_gap <- data$realised_inflation_gap 
-  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") }
+source(here("scripts/options_implement.R"))
 
 ```
 
@@ -280,7 +168,15 @@ rm(plot_data)
 ```
 
 ## Data Properties
-```{r data_prop, message=FALSE, warning=FALSE}
+```{r stat_tests_func, echo=TRUE, message=FALSE, warning=FALSE}
+
+# copy paste both stat and coint funcs and explain
+source(here("helpers/stationarity_tests.R"))
+
+```
+
+
+```{r data_prop, echo=TRUE, message=FALSE, warning=FALSE}
 
 # -----  Run Tests -----
 
@@ -308,24 +204,12 @@ all_stationarity_results <- rbind(test_rate,
                                   test_inflation_diff)
 
 # Tables
-stat_table <- kable(all_stationarity_results, digits = 4, format = format, booktabs = TRUE, 
-      caption = "Summary of Stationarity Tests (ADF \\& KPSS)") %>%
-      kable_styling(latex_options = "scale_down",
-      position = "center") %>%
-        column_spec(1, border_right = TRUE) %>%
-        column_spec(4, width = "6cm")  
-stat_table
-if (save_figures) {
-  save_kable(stat_table, "figures/staionarity_results.tex")}
+generate_stat_tests_table(stat_tests = all_stationarity_results)
+generate_coint_tests_table(coint_test = coint_test)
 
-coint_table <- kable(coint_test, digits = 4, format = format, booktabs = TRUE,
-      caption = "Cointegration Test Results") %>%
-      kable_styling(latex_options = "scale_down",
-      position = "center") %>%
-        column_spec(1, border_right = TRUE) 
-coint_table
-if (save_figures) {
-  save_kable(coint_table, "figures/cointegration_results.tex")}
+# Cleanup
+rm(all_stationarity_results, coint_test, test_inflation, test_inflation_diff,
+   test_output_gap, test_rate, test_rate_diff)
 
 ```
 
@@ -530,6 +414,15 @@ cat("\\clearpage")
 
 
 # Forecasting Model Evaluation
+
+## Methods
+Describe method with auto arima and so on.
+```{r auto_arima_func, echo=TRUE, message=FALSE, warning=FALSE}
+
+source(here("helpers/auto_ARIMA_replic.R"))
+
+```
+
 
 ## Pseudo Out of Sample Estimation
 
@@ -980,7 +873,7 @@ for (e_model_name in formula_cols) {
 ### Errors Normally Distributed
 Run the Jarque Bera Test with helpers
 
-```{r temp1}
+```{r jb_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
 # in final markdown, input just the relevant code, i.e. the tests made
 # who cares about code to create tables, that stays in helpers
@@ -1006,7 +899,7 @@ jb_results
 
 
 ## Absolute Performance: Efficiency \& Bias
-```{r temp2}
+```{r mz_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
 # in final markdown, input just the relevant code, i.e. the tests made
 # who cares about code to create tables, that stays in helpers
@@ -1088,7 +981,7 @@ list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 
 
 ## Relative Performance (against benchmark)
-```{r temp3}
+```{r dm_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
 # in final markdown, input just the relevant code, i.e. the tests made
 # who cares about code to create tables, that stays in helpers
