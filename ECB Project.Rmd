@@ -910,6 +910,7 @@ if (save_figures) {
 ```
 
 ### Horizon 1 Autocorrelation of FE
+Mmodel 1, 2, 3 are autocorrelated at h=1. 
 ```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #Durbin Watson tests for first autocorrelation at h=1
@@ -940,6 +941,9 @@ for (e_model_name in formula_cols) {
 
 
 ### Overall Autocorrelation of FE
+We don't reject H0 -> h+1 are uncorrelated
+1,2, are autocorrelated, 3 and 4 arent
+
 ```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #Ljung Box Test, with Columns & max lags set in Durbin Watson code chunk
