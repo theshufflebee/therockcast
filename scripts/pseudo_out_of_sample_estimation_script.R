@@ -6,9 +6,23 @@
 
 #--------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------
+# 0. Set parameters
+#-------------------------------------------------------------------
+
+# Rolling window size
+R = 85 # Chow: Structural breaks at R=55 and R=85 
+cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
+
+# Start of evaluation sample
+P = nrow(data) - R # Will effectively be: P = T-h-R
+
+# Number of different horizons (takes 10 to go until 2028 Q1)
+H = 10 
+
 
 #-------------------------------------------------------------------
-# 1. PRE-ALLOCATE STORAGE FOR ALL RESULTS
+# 1. Pre-allocate storage for all results
 #-------------------------------------------------------------------
 
 # We need 4 lists for the TR models, 1 list for the shared benchmark
@@ -37,7 +51,7 @@ FE_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
 
 
 #-------------------------------------------------------------------
-# 2. SETUP & RUN THE PARALLEL BACKTESTING LOOP
+# 2. Setup & run the parallel "backtesting" (rolling) loop
 #-------------------------------------------------------------------
 num_cores <- detectCores() / 4 
 cl <- makeCluster(num_cores)
@@ -130,8 +144,9 @@ worker_results <- foreach(
 stopCluster(cl)
 rm(cl)
 
+
 #-------------------------------------------------------------------
-# 3. UNPACK PARALLEL RESULTS INTO STORAGE LISTS
+# 3. Unpack parallel results into storage lists
 #-------------------------------------------------------------------
 
 # 'worker_results' is a list of P lists. We need to re-organize it.
@@ -167,8 +182,9 @@ for (i in 1:P) {
     FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
     FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
 
+
 #-------------------------------------------------------------------
-# 4. RENDER RESULTS MORE INTUITIVE FOR FURTHER ANALYSIS
+# 4. Render results more intuitive for further analysis
 #-------------------------------------------------------------------
 
 # Convert the forecast lists (F_TR_x) into single dataframes

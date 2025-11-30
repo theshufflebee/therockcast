@@ -139,7 +139,7 @@ generate_relative_performance_report <- function(FE_TR_model,
 #--------------------------------------------------------------------------------
 
 # These Are all functions needed to generate the jarque bera test to test 
-#  for nomrmality of errors in each horizon
+#  for normality of errors in each horizon
 
 # Helper function where formula cols is the list of Models, for each element 
 #  in formula cols (model_name) produce the caption
@@ -237,6 +237,28 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
   table_output <- format_jb_table(jb_results)
   return(table_output)
 }
+
+
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     4                        -----------------
+#--------------------------------------------------------------------------------
+#add durbin watson. add ONLY the code related to the methodology of the tests.
+#for all code for table making and such, put it in another helper function
+# like "pseudo_outofsample_tables.R" and call it at the end of this function
+#  just like all other functions here
+
+
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     5                        -----------------
+#--------------------------------------------------------------------------------
+#add ljung box, same instructions as DW
+
+
+
 
 
 #--------------------------------------------------------------------------------
