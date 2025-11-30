@@ -18,9 +18,8 @@ explain_arima <- function(model_object, var_name) {
   spec_str <- paste0("ARIMA(", p, ", ", d, ", ", q, ")")
   
   # Make it legible 
-  result <- paste0(
-    "This model is fitted to the variable '", var_name, 
-    "' specified as ", spec_str, ".")
+  result <- paste0("The ARIMA model fitted to the '", var_name, 
+                   "' variable is specified as ", spec_str, ". \n\n")
   return(result) }
 
 
@@ -105,7 +104,8 @@ my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
   final.model <- arima(x, order = parameters, method = "ML")
   
   # Print the model summary
-  print(explain_arima(final.model, var_name = var_name))
+  print <- explain_arima(final.model, var_name = var_name)
+  cat(print)
   
   # Return a list with all the results
   return(final.model)}

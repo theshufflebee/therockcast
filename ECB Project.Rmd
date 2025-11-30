@@ -27,8 +27,8 @@ rm(list=ls())
 require(here)
 
 # --------- 3. Set directory
-getwd()
-setwd("...") 
+#getwd()
+#setwd("...") 
 
 # --------- 4. Load packages & helper functions for plots and tables
 source(here("scripts/packages.R"))
@@ -118,13 +118,16 @@ cat("\\clearpage")
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
 
-* Potential GDP: Either estimated with the Hodrick-Prescott filter or the Hamilton filter, based on the formula below:
-    $$
-      \begin{aligned}
-      \text{HP Filter:} \quad & \min_{\tau} \left( \sum_{t=1}^{T} (y_t - \tau_t)^2 + \lambda \sum_{t=2}^{T-1} \left[ (\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1}) \right]^2 \right) \\
-      \text{Hamilton:} \quad & y_t = \beta_0 + \sum_{j=1}^{p} \beta_j y_{t-h-j+1} + v_t \quad \text{(where } v_t \text{ is the cycle)}
-      \end{aligned}
-    $$
+* Potential GDP: Either estimated with the Hodrick-Prescott filter or the Hamilton 
+filter, based on the formulas described in equation \eqref{eq:filters}:
+
+\begin{equation} 
+\begin{aligned}
+  \text{HP Filter:} \quad & \min_{\tau} \left( \sum_{t=1}^{T} (y_t - \tau_t)^2 + \lambda \sum_{t=2}^{T-1} \left[ (\tau_{t+1} - \tau_t) - (\tau_t - \tau_{t-1}) \right]^2 \right) \\
+  \text{Hamilton:} \quad & y_t = \beta_0 + \sum_{j=1}^{p} \beta_j y_{t-h-j+1} + v_t \quad \text{(where } v_t \text{ is the cycle)}
+\end{aligned}
+\label{eq:filters}
+\end{equation}
 
 * Inflation:
   + Realised: The Inflation data is from Eurostat and measures HICP monthly data (annual rate of change). It's the index that the ECB uses for Inflation and is not seasonally adjusted, but the 
@@ -545,7 +548,8 @@ for (e_model_name in formula_cols) {
 ```
 
 ### Errors Normally Distributed
-Run the Jarque Bera Test with helpers
+Run the Jarque-Bera test using a custom function that \textcolor{red}{explain loop
+and package where the actual test function is made}
 
 ```{r jb_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
@@ -570,6 +574,23 @@ generate_all_jb_reports(
 
 
 ## Absolute Performance: Efficiency \& Bias
+In order to evaluate the absolute performance of our model with the results
+from the pseudo out-of-sample estimation, we use Mincer-Zarnowitz regressions
+to check for both efficiency and bias. The method is to regress the actual realised
+values of the interest rate on the forecasted ones, as seen in equation 
+\eqref{eq:MZ}. We then run a joint test, on the null 
+hypothesis that $\alpha = 0$ (model is unbiased) and $\beta = 1$ (model is efficient).
+We run this with a custom function that loops over each horizon, in order to assess
+the performance of our models in the shorter vs longer term, and do so on all
+Taylor Rule formulas as well as on the benchmark
+
+\begin{equation} 
+\begin{aligned}
+  i_t^{actual} = \alpha + \beta i_t^{forecast} + \epsilon_t
+\end{aligned}
+\label{eq:MZ}
+\end{equation}
+
 ```{r mz_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
 # in final markdown, input just the relevant code, i.e. the tests made
@@ -652,6 +673,31 @@ list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 
 
 ## Relative Performance (against benchmark)
+In order to evaluate the relative performance of our model against the benchmark
+ARIMA, we first compute the Mean Squared Forecast Errors (MSFE) for each horizon. 
+This allows us to see the average performance of each estimation. For a deeper
+comparison, we implement Diebold-Mariano tests on each horizon. This test compares 
+the forecast errors of both models by computing a loss differential, which is the 
+difference of the squared forecast errors between the main model and the benchmark.
+The test statistic is as reported in equation \eqref{eq:DM} \textcolor{red}{and 
+assumes that $\hat{d_{h,t}}$ is covariance stationary}. We include three versions
+of the test, one where the alternative hypothesis is that the two models bring
+about different losses, one where the alternative hypothesis is that the tested 
+model is greater than the benchmark, and one where the alternative hypothesis is
+that the tested model is worse than the benchmark (greater loss). The null 
+hypothesis is the same for all three, being that the two models bring about the 
+same loss.
+
+
+\begin{equation} 
+\begin{aligned}
+  DM &= \frac{\bar{\hat{d_h}}}{\hat{\sigma^2_{\bar{\hat{d_h}}}}} \\
+   &= \frac{\frac{1}{P}\sum^{T-h}_{t=R}\hat{d}_{h,t}}{\hat{\sigma^2_{\bar{\hat{d_h}}}}} \\
+   \text{where } \hat{d_{h,t}} &= \hat{e_{1,t+h|t}^2} - \hat{e_{2,t+h|t}^2}
+\end{aligned}
+\label{eq:DM}
+\end{equation}
+
 ```{r dm_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
 # in final markdown, input just the relevant code, i.e. the tests made
@@ -707,8 +753,22 @@ cat("\\clearpage")
 
 
 # Actual Forecast Model
+As described earlier, our methodology consists of two steps where we first
+fit ARIMA models to the Taylor Rule inputs as well as estimate the coefficients,
+and then use the forecasted inputs and the coefficients to compute our point
+forecast for the interest rate. In this section however, we run this method on
+the entire sample (Q1 1999 to Q3 2025) making forecasts up to 10 quarters ahead
+(Q1 2028).
 
 ## Forecasting
+In order to do this, we use a custom function that first fits the ARIMA models
+for the inputs, uses these to make forecasts of said inputs, estimates the Taylor
+Rule coefficients and then computes the point forecast for the interest rate.
+Note that for the lagged models, we then use these point forecasts to compute the
+next forecast iteratively. It also fits an ARIMA model for the interest rate,
+so that we have a simple benchmark model to see if there are large differences
+in estimates.
+
 ```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 source(here("helpers/actual_forecast_estimator.R"))
@@ -724,8 +784,24 @@ plot_forecasts(final_forecasts)
 ```
 
 ## Prediction Intervals
+To compute the prediction intervals for our point forecasts, we use the estimated
+variance of errors computed in the pseudo out-of-sample evaluation exercise 
+assuming that the distribution of errors will be the same for our actual future
+forecast. We include two intervals, one being one standard deviation away from the
+point forecasts, and the other being two standard deviations away. This is computed
+as in equation \eqref{eq:PI}.
 
-Prepare Data
+\begin{equation} 
+\begin{aligned}
+  PI_1^{upper} &= i_t^{forecast} + \sigma_{e} \\
+  PI_1^{lower} &= i_t^{forecast} - \sigma_{e} \\
+  PI_2^{upper} &= i_t^{forecast} + 2\sigma_{e} \\
+  PI_2^{lower} &= i_t^{forecast} - 2\sigma_{e} 
+\end{aligned}
+\label{eq:PI}
+\end{equation}
+
+
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 source(here("helpers/actual_forecast_estimator.R"))
