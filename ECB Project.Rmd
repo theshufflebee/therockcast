@@ -20,10 +20,11 @@ header-includes:
 ## Setup
 ```{r setup, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-# --------- 1. Clear memory
+# 1. Clear memory
 rm(list=ls())
 
-# --------- 2. Load here package to enable finding script loading other packages 
+
+# 2. Load here package to enable finding script loading other packages 
 
 # First, define a function that checks if a package is installed. 
 # If not, it installs it. Then it loads it.
@@ -37,7 +38,7 @@ package_loader <- function(pkg) {
 package_loader("here")
 
 
-# --------- 3. Load packages & helper functions for plots and tables
+# 3. Load packages & helper functions for plots and tables
 source(here("scripts/packages_script.R"))
 source(here("helpers/raw_plotter.R"))
 source(here("helpers/stationarity_tables.R"))
@@ -48,10 +49,12 @@ source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/pseudo_outofsample_plots.R"))
 source(here("helpers/actual_forecast_displays.R"))
 
-# --------- 4. Load API keys for data (only FRED required)
+
+# 4. Load API keys for data (only FRED required)
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
 
-# --------- 5. Dates (to automatically get the latest data from API calls
+
+# 5. Dates (to automatically get the latest data from API calls
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
@@ -82,16 +85,14 @@ end_date <- Sys.Date()
 
 ```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
+#paste options config here and in main then delete the script file
 source(here("scripts/options_config_script.R"))
-
-#temp remove soon
-format <- "html"
-#format <- "latex" 
 
 ```
 
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
 
+#full paste
 source(here("scripts/taylor_rule_formulas_script.R"))
 
 ```
@@ -159,6 +160,7 @@ We then implement the chosen options on using inflation expectations or not, and
 on using either the HP filter or the Hamilton filter for output gap.
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
+#paste
 source(here("scripts/options_implement_script.R"))
 
 ```
@@ -166,7 +168,7 @@ source(here("scripts/options_implement_script.R"))
 ## Raw Data Plots
 ```{r data_plots, message=FALSE, warning=FALSE}
 
-# Who cares about the method here, only result matters 
+# Who cares about the method here, only result matters, paste
 source(here("scripts/raw_data_plot_script.R"))
 
 ```
