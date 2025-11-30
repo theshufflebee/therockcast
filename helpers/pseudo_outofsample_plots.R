@@ -3,10 +3,9 @@
 #--------------------------------------------------------------------------------
 
 # This function makes a spaghetti plot of the pseudo out-of-sample
-#  estimation exercise. It uses the TR model formula chosen in options config.
-# It chooses colors based on the period.
+#  estimation exercise. It chooses colors based on the period.
 
-spaghetti_plotter <- function(evals) {
+spaghetti_plotter <- function(evals, model, model_name) {
 
   spag_plot <- ggplot(evals, 
                       aes(x = date_of_forecast, 

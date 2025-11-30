@@ -4,14 +4,11 @@
 
 # This function run a rolling sample estimation loop for the main TR formula
 
-estimate_rolling_TR <- function(data, W) {
+estimate_rolling_TR <- function(data, formula, W) {
   
   # Based on the quarter rolling window W parameter, automatically output
   #  the Looping Parameter
   L = nrow(data) - W + 1
-  
-  # Taking the main TR formula chosen in the options config
-  formula = model_formula
   
   # Preparation of result data, dates, var names, and confidence intervals
   var_names <- attr(terms(formula), "term.labels")

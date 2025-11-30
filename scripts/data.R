@@ -6,12 +6,15 @@
 
 
 # --------- 1. ECB Deposit Facility Rate & Shadow Rate ---------
-ecb_rate_daily <- fredr(series_id = "ECBDFR", observation_start = as.Date(start_date))
+ecb_rate_daily <- fredr(
+                    series_id = "ECBDFR", 
+                    observation_start = as.Date(start_date))
 ecb_rate_q <- ecb_rate_daily %>%
   mutate(quarter = as.yearqtr(date)) %>%
   group_by(quarter) %>%
   summarise(rate = last(value)) %>%
   mutate(date = as.Date(quarter))
+
 # Wu-Xia Shadow Rate 
 shadow_rate_daily = as.data.frame(readMat("data/shadowrate_ECB.mat")) 
 colnames(shadow_rate_daily) <- c("DATE", "shadowrate")
@@ -23,7 +26,10 @@ monthly_shadow = aggregate(shadowrate ~ month, data=shadow_rate_daily, FUN=mean,
 
 
 # --------- 2. HICP Inflation (Euro Area) ---------
-inflation_data <- get_eurostat("prc_hicp_manr", filters = list(geo = "EA", coicop = "CP00"), type = "label")
+inflation_data <- get_eurostat(
+                    "prc_hicp_manr", 
+                    filters = list(geo = "EA", coicop = "CP00"), 
+                    type = "label")
 inflation_q <- inflation_data %>%
   filter(time >= start_date) %>%
   dplyr::select(date = time, inflation = values) %>%

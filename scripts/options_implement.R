@@ -12,10 +12,10 @@
 # Applying selection
 if (USE_HAMILTON_FILTER) {
   data$output_gap <- data$output_gap_ham
-  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.")
+  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.\n")
 } else {
   data$output_gap <- data$output_gap_hp 
-  cat("* CONFIGURATION: Using HP Filter for output gap estimation.") }
+  cat("* CONFIGURATION: Using HP Filter for output gap estimation.\n") }
 
 # --------- 2. Inflation expectations choice ----------
 
@@ -25,10 +25,10 @@ if (USE_HAMILTON_FILTER) {
 # Applying selection
 if (USE_INFLATION_EXPECTATIONS) {
   data$inflation_gap <- data$exp_inflation_gap
-  cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.")
+  cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.\n")
 } else {
   data$inflation_gap <- data$realised_inflation_gap 
-  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.") 
+  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.\n") 
 }
 
 

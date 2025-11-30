@@ -1,5 +1,5 @@
 ---
-title: "ECB Project"
+title: "ECB Project - Coding Appendix"
 output:
   pdf_document: 
     toc: true
@@ -9,7 +9,8 @@ output:
     keep_tex: false
 header-includes:
   - \usepackage{amsmath}
-  - \usepackage[backend=biber,style=authoryear]{biblatex}  # load biblatex
+  - \usepackage{hyperref}
+  - \usepackage[backend=biber,style=authoryear]{biblatex}  
   - \addbibresource{citations.bib}  # BibTeX file
 ---
 \newpage
@@ -81,7 +82,7 @@ source(here("scripts/options_config.R"))
 
 #temp remove soon
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 
 ```
 
@@ -111,7 +112,8 @@ cat("\\clearpage")
                         a hypothetical removal of the ZLB. The rate does not 
                         track 1:1 on the deposit facility in the data before 
                         the ZLB, instead being closer to the refinancing rate. 
-                        (maybe need to adjust)
+                        (maybe need to adjust, oui je crois faux, surtout la partie
+                        sur refinancing rate)
 
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
@@ -128,10 +130,16 @@ cat("\\clearpage")
   + Realised: The Inflation data is from Eurostat and measures HICP monthly data (annual rate of change). It's the index that the ECB uses for Inflation and is not seasonally adjusted, but the 
     fact that it represents the year-on-year change in prices implies there is no seasonality.
   + Expectations: Expected Inflation is the ECB's survey of professional 
-    forecasters. It forecasts the HICP 12 months in advance.
+    forecasters. It tracks professional forecasts of HICP inflation 12 months in advance.
 
 
 ## Loading \& Preparation Data 
+To get this data, we run the following code using API calls to FRED, EuroStat, and
+DBnomics. We convert each variable to the quarterly average and then store them all
+to one dataframe named "data". It includes a date column, the deposit rate, the shadow
+rate, inflation, inflation gap (which is just inflation minus the ECB target, which is
+set at 2\%), expected inflation, expected inflation gap, real GDP, GDP output gap 
+computed with the HP filter and GDP output gap computed with the Hamilton filter.
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
 #copypaste data script and explain
@@ -140,6 +148,8 @@ source(here("scripts/data.R"))
 ```
 
 ## Options Configuration
+We then implement the chosen options on using inflation expectations or not, and
+on using either the HP filter or the Hamilton filter for output gap.
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
 source(here("scripts/options_implement.R"))
@@ -155,6 +165,11 @@ raw_data_plotter(data = data)
 ```
 
 ## Data Properties
+In this section, we run various tests to understand the properties of our main variables,
+interest rate, inflation and output gap.
+These include both ADF and KPSS stationarity tests (using the tseries package) and a cointegration test (using the aTSA package) to see if the interest rate is 
+cointegrated with inflation. We wrap these in custom functions that automatically report
+the results and intepret them based on the relevant p-value.
 ```{r stat_tests_func, echo=TRUE, message=FALSE, warning=FALSE}
 
 # copy paste both stat and coint funcs and explain
@@ -206,13 +221,21 @@ cat("\\clearpage")
 ```
 
 # Taylor Rule Estimation
+We now run basic Taylor Rule estimations using OLS on the complete dataset in order
+to get some information on the historical Taylor coefficients.
 
 ## Without Lags
-$$
+The "No Lag" Taylor Rule specifications follow the regression expressed in equation \eqref{eq:nolagTR}. We run 6 variations total of this, starting with the base case
+using the actual deposit rate, realised inflation (gap) and the output gap. We then 
+mix cases where we use the shadow rate, expected inflation (gap) and finally including
+both expected and realised inflation (gap).
+
+\begin{equation} 
 \begin{aligned}
-  i_t &= \pi^* + \beta(\pi_t-\pi^*) + \gamma(y_t-\bar{y_t})  \\
+  i_t &= \pi^* + \beta(\pi_t-\pi^*) + \gamma(y_t-\bar{y_t}) 
 \end{aligned}
-$$
+\label{eq:nolagTR}
+\end{equation}
 
 ```{r Taylor Rule simple w/o lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
@@ -241,11 +264,16 @@ taylor_regression_to_table(models, caption = "No Lag, with
 
 
 ## Lagged Models 
-$$
+The lagged Taylor Rule specifications follow the regression expressed in equation \eqref{eq:lagTR} which is the same as \eqref{eq:nolagTR} but also including a 
+one-quarter lag for the interest rate. We then run the same 6 variations as for 
+the models without the lag.
+
+\begin{equation} 
 \begin{aligned}
-     i_t &= \pi^* + \phi i_{t-1} + \beta (\pi_t-\pi^*) + \gamma(y_t-\bar{y_t}) 
+  i_t &= \pi^* + \phi i_{t-1} + \beta (\pi_t-\pi^*) + \gamma(y_t-\bar{y_t})
 \end{aligned}
-$$
+\label{eq:lagTR}
+\end{equation}
 
 ```{r Taylor Rule simple w/ lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
@@ -276,7 +304,18 @@ taylor_regression_to_table(models, caption = "Interest Rate Lag, with
 ```
 
 ## Checking for structural breaks
-```{r chowtest}
+The previous Taylor Rule estimation are most likely flawed if there have been 
+structural breaks in the economic system that would influence the way the ECB reacts
+to the economy. Given this, we run both a Chow test and a Bai-Perron test in order
+to see if there are any using the "strucchange" package. The Chow test is run on 
+two dates where we suspect therehave been breaks which are in the third quarter of 
+2012, representing the start 
+of the Zero Lower Bound, and in the first quarter of 2020, representing the start
+of the COVID-19 pandemic. The Bai-Perron test, however, works by finding any
+structural breaks present in the overall sample \textcolor{red}{which minimise
+the Aikake Information Criterion}. 
+
+```{r chowtest, echo=TRUE, message=FALSE, warning=FALSE}
 
 #only paste chow one
 source(here("helpers/struct_breaks_tests.R"))
@@ -284,7 +323,7 @@ source(here("helpers/struct_breaks_tests.R"))
 # 1st Suspected break: Start of ZLB in 2012 Q3
 #  -> R = 55 in evaluation chunk
 
-# Suspected break: Covid
+# Suspected break: Covid in 2020 Q1
 #  -> R = 85 in evaluation chunk
 
 # Run test using helper function 
@@ -306,16 +345,22 @@ bp_tests(data)
 
 
 
+## Rolling Estimation 
+Given that there have been structural breaks (according to our tests), we decide 
+to run a rolling estimation scheme for the Taylor Rule formula selected in the 
+setup options configuration. To do this, we use a custom function which runs the 
+chosen model firstly on the first data "window" (which can be selected to be 
+however many quarters desired) and then moves this window forward in time by one
+quarter at a time, running the estimation for each loop. We then use another
+custom function to plot the resulting coefficients through time, including 
+confidence intervals.
 
-
-
-## Rolling Estimation (for structural breaks)
 ```{r rolling TR, message=FALSE, warning=FALSE}
 
 source(here("helpers/roll_TR_estimator.R"))
 
 # Estimate a rolling-window (W in quarters) Taylor Rule specification
-TR_roll <- estimate_rolling_TR(data, W = 30)
+TR_roll <- estimate_rolling_TR(data, model_formula, W = 30)
 
 # Plotting (note: this part is not modular, obviously)
 plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
@@ -332,8 +377,20 @@ cat("\\clearpage")
 
 # Forecasting Model Evaluation
 
-## Methods
-Describe method with auto arima and so on.
+## Methodology
+Our method of forecasting consists of two steps. First, we run our custom auto 
+ARIMA function on the inputs of the Taylor Rule (inflation and output gap). This 
+function replicates the one in the "forecast" package, though does not loop over
+the differentiation parameter as we want to set that value manually based on the 
+stationarity tests run above. We additionally run this function on the interest
+rate in order to serve as our benchmark model for relative forecasting performance 
+evaluation. In order to compute the forecasts based on the fitted ARIMA models,
+we use a custom function that replicates the same use-case in the "forecast" package.
+At the same time as the ARIMA fits, we use OLS to compute the Taylor Rule coefficients.
+The second step is then to do the actual forecasting, where we predict future values
+of the interest rate based on the forecasted values of the inputs using the fitted
+ARIMA models, weighted by the coefficients computed with OLS. 
+
 ```{r auto_arima_func, echo=TRUE, message=FALSE, warning=FALSE}
 
 source(here("helpers/auto_ARIMA_replic.R"))
@@ -342,11 +399,17 @@ source(here("helpers/auto_ARIMA_replic.R"))
 
 
 ## Pseudo Out of Sample Estimation
-
-Pseudo-out of sample rolling estimation scheme of direct forecasts for all
-Taylor Rule formulas and a benchmark ARIMA specification. 
-
-
+In order to asses the performance of this methodology, we use a pseudo out-of-sample
+rolling estimation scheme of direct forecasts for all Taylor Rule formulas and for
+the benchmark ARIMA. We forecast up to a horizon of 10 quarters ahead. 
+To do this, we loop over quarters starting just before the evaluation sample,
+where we then implement our methodology to forecast up to the farthest horizon.
+We then store these values and the loop starts again, adding one more quarter from
+the evaluation sample, and dropping the very first quarter in the overall sample.
+For the lagged models, we additionally need to include an iterative forecasting step, where 
+we loop over each horizon in order to use the previous point forecast to compute
+the next one. In order to speed up the process, we include a simple parallelization
+procedure which runs these loops in parallel on a fourth the the users' CPU cores.
 
 ```{r pseudo-out-of-sample-parameters, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -358,7 +421,6 @@ H = 10 # Number of different horizons (takes 10 to go until 2027 Q4)
 
 ```
 
-
 ```{r pseudo-out-of-sample-estimation, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 source(here("scripts/pseudo_out_of_sample_estimation.R"))
@@ -366,15 +428,26 @@ source(here("scripts/pseudo_out_of_sample_estimation.R"))
 ```
 
 ## Spaghetti Plots
+In order to visualize the pseudo out-of-sample evaluation exercise, we use spaghetti
+plots of the point forecasts which allow to compare how often the model "misses" the 
+realised values of the interest rate between different horizons and dates. We do
+the plot only on the on the Taylor Rule formula selected in the options configuration
+in order to avoid clutter.
+
 ```{r Spaghetti Plot, message=FALSE, warning=FALSE}
 
-spaghetti_plotter(evals = eval_all_models)
+spaghetti_plotter(evals = eval_all_models,
+                  model = model,
+                  model_name = model_name)
 
 ```
 
 ## Forecast Errors 
 
 ### Plots of FE
+Similar to the spaghetti plot of the point forecasts, we essentially use the same 
+plot but computing the forecast errors as the difference between our point
+forecast and the realised value.
 ```{r Plot of Forecast Errors, warning=FALSE, message=FALSE}
 
 FE_spaghetti_plotter(evals = eval_all_models)
@@ -382,6 +455,10 @@ FE_spaghetti_plotter(evals = eval_all_models)
 ```
 
 ### Density of FE
+We can then plot the distribution of these forecast errors using a density plot.
+We include 3 versions: one that is unscaled in order to compare the absolute values,
+one that is scaled in order to compare relative differences, and one that plots
+density in a way to compare both.
 ```{r Density of Forecast Errors}
 
 FE_density_plotter_unscaled(evals = eval_all_models)
@@ -398,7 +475,8 @@ FE_variance_plotter(var_by_horizon)
 ```
 
 ### Horizon 1 Autocorrelation of FE
-Mmodel 1, 2, 3 are autocorrelated at h=1. 
+\textcolor{red}{Model 1, 2, 3 are autocorrelated at h=1. Include results in paper,
+not here in the appendix. Well maybe not idk.}
 ```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #Durbin Watson tests for first autocorrelation at h=1
@@ -429,8 +507,8 @@ for (e_model_name in formula_cols) {
 
 
 ### Overall Autocorrelation of FE
-We don't reject H0 -> h+1 are uncorrelated
-1,2, are autocorrelated, 3 and 4 arent
+\textcolor{red}{We don't reject H0 -> h+1 are uncorrelated
+1,2, are autocorrelated, 3 and 4 are not.}
 
 ```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
