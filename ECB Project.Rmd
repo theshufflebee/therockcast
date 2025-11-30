@@ -44,7 +44,7 @@ package_loader("here")
 
 
 # --------- 3. Load packages & helper functions for plots and tables
-source(here("scripts/packages.R"))
+source(here("scripts/packages_script.R"))
 source(here("helpers/raw_plotter.R"))
 source(here("helpers/stationarity_tables.R"))
 source(here("helpers/taylor_tables.R"))
@@ -91,17 +91,17 @@ end_date <- Sys.Date()
 
 ```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-source(here("scripts/options_config.R"))
+source(here("scripts/options_config_script.R"))
 
 #temp remove soon
 format <- "html"
-format <- "latex" 
+#format <- "latex" 
 
 ```
 
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
 
-source(here("scripts/taylor_rule_formulas.R"))
+source(here("scripts/taylor_rule_formulas_script.R"))
 
 ```
 
@@ -159,7 +159,7 @@ computed with the HP filter and GDP output gap computed with the Hamilton filter
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
 #copypaste data script and explain
-source(here("scripts/data.R"))
+source(here("scripts/data_script.R"))
 
 ```
 
@@ -168,7 +168,7 @@ We then implement the chosen options on using inflation expectations or not, and
 on using either the HP filter or the Hamilton filter for output gap.
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
-source(here("scripts/options_implement.R"))
+source(here("scripts/options_implement_script.R"))
 
 ```
 
@@ -176,7 +176,7 @@ source(here("scripts/options_implement.R"))
 ```{r data_plots, message=FALSE, warning=FALSE}
 
 # Who cares about the method here, only result matters 
-source(here("scripts/raw_data_plot.R"))
+source(here("scripts/raw_data_plot_script.R"))
 
 ```
 
@@ -196,7 +196,7 @@ source(here("helpers/stationarity_tests.R"))
 
 ```{r data_prop, echo=TRUE, message=FALSE, warning=FALSE}
 
-source(here("scripts/data_properties.R"))
+source(here("scripts/data_properties_script.R"))
 
 ```
 
@@ -225,14 +225,14 @@ both expected and realised inflation (gap).
 ```{r Taylor Rules w/o lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste first half of this script
-source(here("scripts/taylor_estim_no_lag.R"))
+source(here("scripts/taylor_estim_no_lag_script.R"))
 
 ```
 
 ```{r Taylor Rules w/o lag but with inflation expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste second half of this script
-source(here("scripts/taylor_estim_no_lag.R"))
+source(here("scripts/taylor_estim_no_lag_script.R"))
 
 ```
 
@@ -251,14 +251,14 @@ the models without the lag.
 ```{r Taylor Rules w/ lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste first half of this script
-source(here("scripts/taylor_estim_with_lag.R"))
+source(here("scripts/taylor_estim_with_lag_script.R"))
 
 ```
 
 ```{r Taylor Rules w/ lag but with inflation expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste second half of this script
-source(here("scripts/taylor_estim_with_lag.R"))
+source(here("scripts/taylor_estim_with_lag_script.R"))
 
 ```
 
@@ -391,6 +391,9 @@ in order to avoid clutter.
 
 ```{r Spaghetti Plot, message=FALSE, warning=FALSE}
 
+#needs to run but dont paste anything
+source(here("helpers/pseudo_outofsample_tests.R"))
+
 #paste only first
 source(here("scripts/pseudo_out_of_sample_results_script.R"))
 
@@ -480,7 +483,7 @@ source(here("helpers/pseudo_outofsample_tests.R"))
 ```{r Jarque Bera Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste only seventh
-source(here("scripts/pseudo_outofsample_results_script.R"))
+source(here("scripts/pseudo_out_of_sample_results_script.R"))
 
 ```
 
@@ -517,7 +520,7 @@ source(here("helpers/pseudo_outofsample_tests.R"))
 ```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
 #paste only eighth
-source(here("scripts/pseudo_outofsample_results_script.R"))
+source(here("scripts/pseudo_out_of_sample_results_script.R"))
 
 ```
 
@@ -559,7 +562,7 @@ source(here("helpers/pseudo_outofsample_tests.R"))
 ```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #paste only ninth
-source(here("scripts/pseudo_outofsample_results_script.R"))
+source(here("scripts/pseudo_out_of_sample_results_script.R"))
 
 ```
 
@@ -596,7 +599,7 @@ source(here("helpers/actual_forecast_estimator.R"))
 ```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #do paste without pred int part
-source(here("helpers/final_forecast_script.R"))
+source(here("scripts/final_forecast_script.R"))
  
 ```
 
@@ -634,8 +637,7 @@ source(here("helpers/actual_forecast_estimator.R"))
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #do paste only pred int part (4 and 5)
-source(here("helpers/final_forecast_script.R"))
-
+source(here("scripts/final_forecast_script.R"))
 
 ```
 
