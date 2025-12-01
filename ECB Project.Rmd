@@ -109,16 +109,15 @@ cat("\\clearpage")
                     Area [ECBDFR], retrieved from FRED, Federal Reserve Bank of 
                     St. Louis; https://fred.stlouisfed.org/series/ECBDFR. 
                     The data is the Deposit Facility and is directly reprinted 
-                    from the ECB. It's in Percent and not seasonally adjusted. 
-                    The ECB Monetary Policy is steered through this rate
+                    from the ECB. It's in percent and not seasonally adjusted. 
+                    The ECB Monetary Policy is steered through this rate.
 
 * Shadow Interest Rate: The Shadow rate was developed by 
                         \cite{wuTimeVaryingLowerBound2017} and does quantify 
                         a hypothetical removal of the ZLB. The rate does not 
                         track 1:1 on the deposit facility in the data before 
                         the ZLB, instead being closer to the refinancing rate. 
-                        (maybe need to adjust, oui je crois faux, surtout la partie
-                        sur refinancing rate)
+                        \textcolor{red}{(maybe need to adjust, oui je crois faux, surtout la                          partie sur refinancing rate)}
 
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
