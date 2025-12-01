@@ -48,7 +48,7 @@ source(here("helpers/struct_breaks_tests.R"))
 # --------- v. Load API keys for data (only FRED required)
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
 
-# --------- vi. Dates (to automatically get the latest data from API calls
+# --------- vi. Dates (to automatically get the latest data from API calls)
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
