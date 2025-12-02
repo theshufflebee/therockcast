@@ -46,9 +46,12 @@ There is some customization possible before running the project. These are all o
                 interest rate and on inflation and output gaps
                 
 * Format:
-  + html: For outputting in console or knitting to html
-  + latex: For knitting to pdf
+  + html: For outputting all tables in html
+  + latex: For outputting all tables in latex (and for knitting R Markdown document to pdf)
 
+* Save figures:
+  + TRUE: All figures (plots and tables) are saved to the figures/ folder
+  + FALSE: No figures are saved, useful for running the code in console
 
 
 
