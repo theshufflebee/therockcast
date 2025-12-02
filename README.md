@@ -15,12 +15,13 @@ Then, running the "main.R" script should reproduce all our analysis and figures.
 
 ```
 therockcast/
-├── main.R              # Main entry point and preface
-├── 01-intro.R           # Introduction to Forecasting
-├── 02-chapter-1.R      # Time Series Fundamentals
-├── 03-chapter-2.R         # Forecasting Methods
-├── 04-chapter-3.R      # Model Evaluation and Selection
-
+├── main.R                              # Main file that runs all subsequent scripts
+├── scripts/                            # Contains all subscripts and subsubscripts
+  ├── 01_taylor_rule_formulas.R         # Subscript that defines the 4 Taylor Rule formulas we use     
+  ├── 02_data.R                         # Subscript that creates and analyzes our data
+  ├── 03_taylor_rule.R                  # Subscript that runs all initial Taylor Rule estimation
+  ├── 04_evaluation.R                   # Subscript that runs the pseudo out-of-sample evaluation scripts for our forecasting model
+  ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast 
 ```
 
 ## Options
