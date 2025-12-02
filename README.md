@@ -15,17 +15,12 @@ Then, running the "main.R" script should reproduce all our analysis and figures.
 
 ```
 therockcast/
-├── index.Rmd              # Main entry point and preface
-├── 01-intro.Rmd           # Introduction to Forecasting
-├── 02-chapter-1.Rmd      # Time Series Fundamentals
-├── 03-chapter-2.Rmd         # Forecasting Methods
-├── 04-chapter-3.Rmd      # Model Evaluation and Selection
-├── _bookdown.yml          # Bookdown configuration
-├── _output.yml            # Output format configuration
-├── book.bib               # Bibliography file
-├── style.css              # Custom CSS styling
-├── .gitignore             # Git ignore file
-└── _book/                 # Generated book output (after building)
+├── main.R              # Main entry point and preface
+├── 01-intro.R           # Introduction to Forecasting
+├── 02-chapter-1.R      # Time Series Fundamentals
+├── 03-chapter-2.R         # Forecasting Methods
+├── 04-chapter-3.R      # Model Evaluation and Selection
+
 ```
 
 ## Options
