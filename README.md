@@ -9,11 +9,17 @@ This repository contains all files related to a forecasting project on ECB Polic
 In order our code, one only needs to set their FRED API key in their R system environment, as " FRED_API_KEY = your_key_here ".
 Then, running the "main.R" script should reproduce all our analysis and figures. 
 
+Note that all data is pulled from API's apart from the Wu-Xia shadow rate data.
+This one is the "Euro area shadow rate" matlab datafile downloaded from: https://sites.google.com/view/jingcynthiawu/shadow-rates.
+
 ## Project Structure
 
 ```
 therockcast/
 ├── main.R                              # Main file that runs all subsequent scripts
+├── data/                               # Folder containing all data not able to be pulled with an API
+  ├── shadowrate_ECB.mat                # Wu-Xia Euro area shadow rate 
+├── helpers/                            # Folder containing all custom helper functions
 ├── scripts/                            # Contains all subscripts and subsubscripts
   ├── 00a_packages.R                    # Subscript that loads/installs all packages needed
   ├── 00b_helpers.R                     # Subscript that loads all helpers functions 
@@ -21,7 +27,8 @@ therockcast/
   ├── 02_data.R                         # Subscript that creates and analyzes our data
   ├── 03_taylor_rule.R                  # Subscript that runs all initial Taylor Rule estimation
   ├── 04_evaluation.R                   # Subscript that runs the pseudo out-of-sample evaluation scripts for our forecasting model
-  ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast 
+  ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast
+├── figures/                            # Folder contining all outputted figures (plots & tables)
 ```
 
 ## Options
