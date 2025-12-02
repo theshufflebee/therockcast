@@ -15,6 +15,8 @@ Then, running the "main.R" script should reproduce all our analysis and figures.
 therockcast/
 ├── main.R                              # Main file that runs all subsequent scripts
 ├── scripts/                            # Contains all subscripts and subsubscripts
+  ├── 00a_packages.R                    # Subscript that loads/installs all packages needed
+  ├── 00b_helpers.R                     # Subscript that loads all helpers functions 
   ├── 01_taylor_rule_formulas.R         # Subscript that defines the 4 Taylor Rule formulas we use     
   ├── 02_data.R                         # Subscript that creates and analyzes our data
   ├── 03_taylor_rule.R                  # Subscript that runs all initial Taylor Rule estimation
