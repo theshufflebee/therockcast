@@ -51,7 +51,7 @@ There is some customization possible before running the project. These are all o
 
 * Save figures:
   + TRUE: All figures (plots and tables) are saved to the figures/ folder
-  + FALSE: No figures are saved, useful for running the code in console
+  + FALSE: No figures are saved, useful for running the code in console quickly
 
 
 
