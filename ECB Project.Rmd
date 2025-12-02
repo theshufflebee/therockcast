@@ -23,11 +23,11 @@ header-includes:
 ## Setup
 ```{r setup, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-# 1. Clear memory
+# --------- i. Clear environment
+
 rm(list=ls())
 
-
-# 2. Load here package to enable finding script loading other packages 
+# --------- ii. Load here package to enable finding script loading other packages 
 
 # First, define a function that checks if a package is installed. 
 # If not, it installs it. Then it loads it.
@@ -40,26 +40,24 @@ package_loader <- function(pkg) {
 }
 package_loader("here")
 
+# --------- iii. Load packages 
+source(here("scripts/00a_packages.R"))
 
-# 3. Load packages & helper functions for plots and tables
-source(here("scripts/packages_script.R"))
-source(here("helpers/raw_plotter.R"))
-source(here("helpers/stationarity_tables.R"))
-source(here("helpers/taylor_tables.R"))
-source(here("helpers/struct_breaks_tables.R"))
-source(here("helpers/roll_TR_plotter.R"))
-source(here("helpers/pseudo_outofsample_tables.R"))
-source(here("helpers/pseudo_outofsample_plots.R"))
-source(here("helpers/actual_forecast_displays.R"))
+# --------- iv. Load helper functions
+source(here("scripts/00b_helpers.R"))
 
 
-# 4. Load API keys for data (only FRED required)
+# --------- v. Load API keys for data (only FRED required)
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
 
-
-# 5. Dates (to automatically get the latest data from API calls
+# --------- vi. Dates (to automatically get the latest data from API calls)
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
+
+# --------- vii. Options Choice
+#options config will be pasted both here and in the markdown
+source(here("scripts/options_config_script.R"))
+#and add window R choice and horizon H choice removed from pseudo estimation
 
 ```
 
