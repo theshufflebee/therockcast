@@ -1,7 +1,5 @@
 # The RockCast: University Forecasting Project
 
-A comprehensive bookdown environment for learning and applying forecasting methods using R.
-
 ## Overview
 
 This repository contains all files related to a forecasting project on ECB Policy rates.
