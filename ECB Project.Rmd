@@ -150,7 +150,7 @@ computed with the HP filter and GDP output gap computed with the Hamilton filter
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
 #copypaste data script and explain
-source(here("scripts/data_script.R"))
+source(here("scripts/get_data_script.R"))
 
 ```
 
@@ -625,7 +625,7 @@ source(here("helpers/actual_forecast_estimator.R"))
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #do paste only pred int part (4 and 5)
-source(here("scripts/final_forecast_script.R"))
+source(here("scripts/05_final_forecast_script.R"))
 
 ```
 
