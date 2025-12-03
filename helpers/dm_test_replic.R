@@ -38,7 +38,7 @@ dm_test <- function(e1, e2, alternative = c("two.sided", "less", "greater"),
   
   # 5. Apply Harvey-Leybourne-Newbold correction (like in slides)
   #     (corrects for small samples, useful for us)
-  k <- ((n + 1 - 2 * h + (h / n) * (h - 1)) / n)^(1/2)
+  k <- ((P + 1 - 2 * h + (h / P) * (h - 1)) / P)^(1/2)
   STATISTIC <- STATISTIC * k
   
   # 6. pvalue with student distribution (as seen in class)
