@@ -15,7 +15,7 @@ USE_FORMULA <- "Formula 3"
 
 format <- "html"
 format <- "latex" 
-save_figures <- TRUE #note: format has to be set to latex
+save_figures <- TRUE 
 
 
 

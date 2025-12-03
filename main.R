@@ -27,23 +27,11 @@ package_loader <- function(pkg) {
 package_loader("here")
 
 # --------- iii. Load packages 
+source(here("scripts/00a_packages.R"))
 
 # --------- iv. Load helper functions
-source(here("scripts/packages_script.R"))
-source(here("helpers/raw_plotter.R"))
-source(here("helpers/stationarity_tables.R"))
-source(here("helpers/stationarity_tests.R"))
-source(here("helpers/taylor_tables.R"))
-source(here("helpers/struct_breaks_tables.R"))
-source(here("helpers/roll_TR_plotter.R"))
-source(here("helpers/pseudo_outofsample_tables.R"))
-source(here("helpers/pseudo_outofsample_plots.R"))
-source(here("helpers/actual_forecast_displays.R"))
-source(here("helpers/actual_forecast_estimator.R"))
-source(here("helpers/auto_ARIMA_replic.R"))
-source(here("helpers/pseudo_outofsample_tests.R"))
-source(here("helpers/roll_TR_estimator.R"))
-source(here("helpers/struct_breaks_tests.R"))
+source(here("scripts/00b_helpers.R"))
+
 
 # --------- v. Load API keys for data (only FRED required)
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
@@ -52,80 +40,46 @@ fredr_set_key(Sys.getenv("FRED_API_KEY"))
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
-
-#------------------------------------------------------------------------------
-# 1. Options Choice & define formulas
-#------------------------------------------------------------------------------
-
+# --------- vii. Options Choice
 #options config will be pasted both here and in the markdown
 source(here("scripts/options_config_script.R"))
-source(here("scripts/taylor_rule_formulas_script.R"))
+#and add window R choice and horizon H choice removed from pseudo estimation
 
 
 #------------------------------------------------------------------------------
-# 2. Data
+# 1. Define formulas
 #------------------------------------------------------------------------------
 
-source(here("scripts/data_script.R"))
-
-
-#------------------------------------------------------------------------------
-# 3. Implement chosen options
-#------------------------------------------------------------------------------
-
-source(here("scripts/options_implement_script.R"))
+source(here("scripts/01_taylor_rule_formulas.R"))
 
 
 #------------------------------------------------------------------------------
-# 4. Plot raw data, and investigate properties
+# 2. Data Creation & Analysis
 #------------------------------------------------------------------------------
 
-source(here("scripts/raw_data_plot_script.R"))
-
-
-#------------------------------------------------------------------------------
-# 5. Investigate data properties
-#------------------------------------------------------------------------------
-
-source(here("scripts/data_properties_script.R"))
+source(here("scripts/02_data.R"))
 
 
 #------------------------------------------------------------------------------
-# 6. Estimate Taylor Rules 
+# 3. Taylor Rule
 #------------------------------------------------------------------------------
 
-source(here("scripts/taylor_estim_no_lag_script.R"))
-source(here("scripts/taylor_estim_with_lag_script.R"))
-
-
-#------------------------------------------------------------------------------
-# 7. Find structural breaks
-#------------------------------------------------------------------------------
-
-source(here("scripts/struct_breaks_tests_script.R"))
+source(here("scripts/03_taylor_rule.R"))
 
 
 #------------------------------------------------------------------------------
-# 8. Estimate rolling Taylor Rule 
-#------------------------------------------------------------------------------
-
-source(here("scripts/roll_TR_script.R"))
-
-
-#------------------------------------------------------------------------------
-# 9. Run pseudo out-of-sample evaluation exercise and use results
+# 4. Evaluation of forecasting model
 #------------------------------------------------------------------------------
 
 #will later pull out parameter choice and put here and in the markdown
-source(here("scripts/pseudo_out_of_sample_estimation_script.R"))
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+source(here("Scripts/04_evaluation.R"))
 
 
 #------------------------------------------------------------------------------
-# 10. Compute final actual future forecasts 
+# 5. Compute final actual future forecasts 
 #------------------------------------------------------------------------------
 
-source(here("scripts/final_forecast_script.R"))
+source(here("scripts/05_final_forecast_script.R"))
 
 
 

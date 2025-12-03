@@ -15,16 +15,19 @@ header-includes:
 ---
 \newpage
 
+# BIG NOTE: THIS FILE IS CURRENTLY BROKEN, AND ONLY SERVES AS AN OUTLINE TO LATER IMPLEMENT THE CODING APPENDIX. JUST PASTE THE PARTS OF THE SCRIPTS COMMENTED IN THE CHUNKS ONCE ALL CODE IS FINALISED.
+
+
 # Preliminaries
 
 ## Setup
 ```{r setup, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-# 1. Clear memory
+# --------- i. Clear environment
+
 rm(list=ls())
 
-
-# 2. Load here package to enable finding script loading other packages 
+# --------- ii. Load here package to enable finding script loading other packages 
 
 # First, define a function that checks if a package is installed. 
 # If not, it installs it. Then it loads it.
@@ -37,9 +40,11 @@ package_loader <- function(pkg) {
 }
 package_loader("here")
 
+# --------- iii. Load packages 
+source(here("scripts/00a_packages.R"))
 
-# 3. Load packages & helper functions for plots and tables
-source(here("scripts/packages_script.R"))
+# --------- iv. Load helper functions ONLY for plots and tables
+# Note: These will NOT be explained in the companion paper
 source(here("helpers/raw_plotter.R"))
 source(here("helpers/stationarity_tables.R"))
 source(here("helpers/taylor_tables.R"))
@@ -49,14 +54,17 @@ source(here("helpers/pseudo_outofsample_tables.R"))
 source(here("helpers/pseudo_outofsample_plots.R"))
 source(here("helpers/actual_forecast_displays.R"))
 
-
-# 4. Load API keys for data (only FRED required)
+# --------- v. Load API keys for data (only FRED required)
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
 
-
-# 5. Dates (to automatically get the latest data from API calls
+# --------- vi. Dates (to automatically get the latest data from API calls)
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
+
+# --------- vii. Options Choice
+#options config will be pasted both here and in the markdown
+source(here("scripts/options_config_script.R"))
+#and add window R choice and horizon H choice removed from pseudo estimation
 
 ```
 
@@ -80,8 +88,13 @@ end_date <- Sys.Date()
                 interest rate and on inflation and output gaps
                 
 * Format:
-  + html: For outputting in console or knitting to html
-  + latex: For knitting to pdf
+  + html: For printing tables in html (to view in console) 
+  + latex: For saving and knitting tables to LaTeX and pdf
+
+* Save figures:
+  + TRUE: All figures (plots and tables) are saved to the figures/ folder
+  + FALSE: No figures are saved, useful for running the code in console
+
 
 ```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
@@ -93,7 +106,7 @@ source(here("scripts/options_config_script.R"))
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
 
 #full paste
-source(here("scripts/taylor_rule_formulas_script.R"))
+source(here("scripts/01_taylor_rule_formulas.R"))
 
 ```
 
@@ -150,7 +163,7 @@ computed with the HP filter and GDP output gap computed with the Hamilton filter
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
 #copypaste data script and explain
-source(here("scripts/data_script.R"))
+source(here("scripts/get_data_script.R"))
 
 ```
 
@@ -625,7 +638,7 @@ source(here("helpers/actual_forecast_estimator.R"))
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
 #do paste only pred int part (4 and 5)
-source(here("scripts/final_forecast_script.R"))
+source(here("scripts/05_final_forecast_script.R"))
 
 ```
 
