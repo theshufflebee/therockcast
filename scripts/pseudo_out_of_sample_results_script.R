@@ -53,23 +53,8 @@ formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
 # Automatically set max horizon for loop
 max_h <- max(eval_all_models$horizon)
 
-# Loop for each model
-for (e_model_name in formula_cols) {
-  
-  # Extract and regress errors
-  all_forecast_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
-  h1_errors_vector <- all_forecast_errors[eval_all_models$horizon == 1]
-  temp_model <- lm(h1_errors_vector ~ 1)
-  
-  # Durbin-Watson Test
-  dw_test_result <- durbinWatsonTest(temp_model)
-  
-  # Print output
-  cat(sprintf("\n--- Durbin-Watson Test for Model: %s (h=1) ---\n", e_model_name))
-  print(dw_test_result)
-  cat(sprintf("DW Statistic: %.4f\n", dw_test_result$statistic))}
-
-
+#Run the Table function, the formula is inside
+generate_dw_table(eval_all_models, formula_cols, model_caption = "Durbin Watson Tests", format = format)
 
 #-------------------------------------------------------------------
 # 6. Ljung-Box
@@ -78,32 +63,7 @@ for (e_model_name in formula_cols) {
 # With Columns & max lags set in Durbin Watson code chunk
 
 # Loop through each TR
-for (e_model_name in formula_cols) {
-  
-  cat(sprintf("--- Checking Errors for Model: %s ---\n", e_model_name))
-  
-  # Calculate the errors of the model
-  all_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
-  
-  # Loop over all forecast horizons to test for autocorrelation
-  for (h in 1:max_h){
-    
-    # select errors for each horizon
-    h_errors <- all_errors[eval_all_models$horizon == h]
-    
-    # max lag according to slides around sqrt T
-    T_errors <- length(h_errors)
-    max_lag <- 4 #round(sqrt(T_errors)) # use 4 or 5 chose 4 because 1 year has 4 quarters
-    
-    # Ljung-Box Test
-    lb_test_result <- Box.test(h_errors, 
-                               lag = max_lag, 
-                               type = "Ljung-Box")
-    
-    #Print Results
-    cat(sprintf("Horizon h=%d (N=%d, Lags=%d): Q=%.2f, p-value=%.3f\n", 
-                h, T_errors, max_lag, lb_test_result$statistic, lb_test_result$p.value))}
-  cat("\n")}
+generate_ljung_box_table(eval_all_models, formula_cols, max_h = max_h, format = format, model_caption = "Ljung-Box Tests")
 
 
 
@@ -116,7 +76,8 @@ for (e_model_name in formula_cols) {
 generate_all_jb_reports(
   formula_cols =  formula_cols,
   eval_all_models = eval_all_models,
-  max_h = max_h)
+  max_h = max_h,
+  format = format)
 
 
 
