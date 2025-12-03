@@ -106,7 +106,7 @@ source(here("scripts/options_config_script.R"))
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
 
 #full paste
-source(here("scripts/taylor_rule_formulas_script.R"))
+source(here("scripts/01_taylor_rule_formulas.R"))
 
 ```
 
