@@ -2,29 +2,39 @@
 \centering
 \caption{Jarque–Bera Test Results}
 \centering
-\begin{tabular}[t]{c|c|c|c|c}
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{threeparttable}
+\begin{tabular}[t]{>{}c||c|c|>{}c|c}
 \hline
-horizon & F\_TR\_FORMULA\_1 & F\_TR\_FORMULA\_2 & F\_TR\_FORMULA\_3 & F\_TR\_FORMULA\_4\\
+horizon & Formula 1 & Formula 2 & Formula 3 & Formula 4\\
 \hline
-1 & 1.3147 (0.518 ) & 1.4536 (0.483 ) & 3.0503 (0.218 ) & 17.8432 (0.000 ***)\\
+\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{1.3147 (0.518 )} & \cellcolor{gray!10}{1.4536 (0.483 )} & \ttfamily{\cellcolor{gray!10}{3.0503 (0.218 )}} & \cellcolor{gray!10}{17.8432 (0.000 ***)}\\
 \hline
-2 & 1.5416 (0.463 ) & 1.3227 (0.516 ) & 8 (0.018 **) & 2.9683 (0.227 )\\
+\textbf{2} & 1.5416 (0.463 ) & 1.3227 (0.516 ) & \ttfamily{8 (0.018 **)} & 2.9683 (0.227 )\\
 \hline
-3 & 1.7299 (0.421 ) & 1.6514 (0.438 ) & 7.5554 (0.023 **) & 2.5318 (0.282 )\\
+\textbf{\cellcolor{gray!10}{3}} & \cellcolor{gray!10}{1.7299 (0.421 )} & \cellcolor{gray!10}{1.6514 (0.438 )} & \ttfamily{\cellcolor{gray!10}{7.5554 (0.023 **)}} & \cellcolor{gray!10}{2.5318 (0.282 )}\\
 \hline
-4 & 1.4723 (0.479 ) & 30.1444 (0.000 ***) & 2.75 (0.253 ) & 2.2488 (0.325 )\\
+\textbf{4} & 1.4723 (0.479 ) & 30.1444 (0.000 ***) & \ttfamily{2.75 (0.253 )} & 2.2488 (0.325 )\\
 \hline
-5 & 1.4886 (0.475 ) & 58.129 (0.000 ***) & 2.3399 (0.310 ) & 2.194 (0.334 )\\
+\textbf{\cellcolor{gray!10}{5}} & \cellcolor{gray!10}{1.4886 (0.475 )} & \cellcolor{gray!10}{58.129 (0.000 ***)} & \ttfamily{\cellcolor{gray!10}{2.3399 (0.310 )}} & \cellcolor{gray!10}{2.194 (0.334 )}\\
 \hline
-6 & 1.5736 (0.455 ) & 67.3941 (0.000 ***) & 1.8789 (0.391 ) & 2.4866 (0.288 )\\
+\textbf{6} & 1.5736 (0.455 ) & 67.3941 (0.000 ***) & \ttfamily{1.8789 (0.391 )} & 2.4866 (0.288 )\\
 \hline
-7 & 0.9188 (0.632 ) & 64.089 (0.000 ***) & 1.6653 (0.435 ) & 3.159 (0.206 )\\
+\textbf{\cellcolor{gray!10}{7}} & \cellcolor{gray!10}{0.9188 (0.632 )} & \cellcolor{gray!10}{64.089 (0.000 ***)} & \ttfamily{\cellcolor{gray!10}{1.6653 (0.435 )}} & \cellcolor{gray!10}{3.159 (0.206 )}\\
 \hline
-8 & 0.3858 (0.825 ) & 56.1628 (0.000 ***) & 1.3626 (0.506 ) & 2.9565 (0.228 )\\
+\textbf{8} & 0.3858 (0.825 ) & 56.1628 (0.000 ***) & \ttfamily{1.3626 (0.506 )} & 2.9565 (0.228 )\\
 \hline
-9 & 0.3242 (0.850 ) & 42.1115 (0.000 ***) & 1.3005 (0.522 ) & 3.2125 (0.201 )\\
+\textbf{\cellcolor{gray!10}{9}} & \cellcolor{gray!10}{0.3242 (0.850 )} & \cellcolor{gray!10}{42.1115 (0.000 ***)} & \ttfamily{\cellcolor{gray!10}{1.3005 (0.522 )}} & \cellcolor{gray!10}{3.2125 (0.201 )}\\
 \hline
-10 & 1.5089 (0.470 ) & 30.9638 (0.000 ***) & 3.1801 (0.204 ) & 3.0005 (0.223 )\\
+\textbf{10} & 1.5089 (0.470 ) & 30.9638 (0.000 ***) & \ttfamily{3.1801 (0.204 )} & 3.0005 (0.223 )\\
 \hline
 \end{tabular}
+\begin{tablenotes}[para]
+\item \textit{Note:} 
+\item This test checks if the errors are normally distributed.
+\item \textit{Jarque-Berra Test Alternative Hypothesis (H\_A):} 
+\item[*] 'Errors aren't normally distributed
+\item[\dag] Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1
+\end{tablenotes}
+\end{threeparttable}}
 \end{table}

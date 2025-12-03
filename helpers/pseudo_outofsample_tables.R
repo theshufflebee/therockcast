@@ -148,12 +148,31 @@ format_jb_table <- function(jb_results_list, format = format) {
     names(combined)[ncol(combined)] <- model_name
   }
   
+  names(combined) <- sub("^F_TR_FORMULA_", "Formula ", names(combined))
+  
   # print with kable for niece display
   table_output2 <- kable(combined, 
                          format = format, 
                          align = "c", 
                          caption = "Jarque–Bera Test Results") %>%
-    kable_styling(full_width = FALSE)
+    kable_styling(
+      latex_options = c("striped", "scale_down"),
+      position = "center"
+    ) %>%
+    column_spec(1, bold = TRUE, border_right = TRUE) %>%
+    column_spec(4, monospace = TRUE) %>%
+    footnote(
+      general = "This test checks if the errors are normally distributed.",
+      symbol = c(
+        "'Errors aren't normally distributed",
+        "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"
+      ),
+      general_title = "Note:",
+      symbol_title = "Jarque-Berra Test Alternative Hypothesis (H_A):",
+      footnote_as_chunk = TRUE,
+      threeparttable = TRUE
+    )
+  
   if (save_figures) {
     save_kable(table_output2, paste0("figures/Jarque–Bera Test Results.tex"))} 
   return(table_output2)
@@ -171,7 +190,7 @@ generate_dw_table <- function(eval_all_models, formula_cols, model_caption, form
   dw_results_list <- generate_dw_tests(eval_all_models, formula_cols)
   
   # Combine list of tibbles
-  dw_table <- imap_dfr(dw_results_list, ~ mutate(.x, Model = sub("^F_TR_FORMULA_", "Model: TR ", .y))) %>%
+  dw_table <- imap_dfr(dw_results_list, ~ mutate(.x, Model = sub("^F_TR_FORMULA_", "Formula ", .y))) %>%
     select(Model, horizon, dw_stat, p_value) %>%
     mutate(p_value = format_p_values_with_stars(p_value))
   
@@ -190,8 +209,20 @@ generate_dw_table <- function(eval_all_models, formula_cols, model_caption, form
       position = "center"
     ) %>%
     column_spec(1, bold = TRUE, border_right = TRUE) %>%
-    column_spec(4, monospace = TRUE)
-  
+    column_spec(4, monospace = TRUE) %>%
+    footnote(
+      general = "This test checks the first order autocorrelation of forecasting errors. A test statistic around 2 indicates no autocorrelation.",
+      symbol = c(
+        "'Greater 2' means negative autocorrelations.",
+        "'Lesser 2' means positive autocorrelation.",
+        "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"
+      ),
+      general_title = "Note:",
+      symbol_title = "DW Test Alternative Hypotheses (H_A):",
+      footnote_as_chunk = TRUE,
+      threeparttable = TRUE
+    )
+    
   # Save LaTeX version if requested
   if (save_figures) {
     safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
@@ -245,6 +276,9 @@ generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, forma
       round(q_table[[model_name]], 2), " (", p_table[[model_name]], ")"
     )
   }
+  
+  names(display_table) <- sub("^F_TR_FORMULA_", "Formula ", names(display_table))
+  
   # --- Render with kable/kableExtra ---
   table_output <- kable(
     display_table,
@@ -258,7 +292,17 @@ generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, forma
       latex_options = c("striped", "scale_down"),
       position = "center"
     ) %>%
-    column_spec(1, bold = TRUE, border_right = TRUE)
+    column_spec(1, bold = TRUE, border_right = TRUE) %>%
+    footnote(
+      general = "This test checks residual are randomly distributed up to a certain lag.",
+      symbol = c(
+        "'There is autocorrelation in the errors at one (or more) lags."      ),
+      general_title = "Note:",
+      symbol_title = "Ljung-Box Test Alternative Hypotheses (H_A):",
+      footnote_as_chunk = TRUE,
+      threeparttable = TRUE
+    )
+  
   
   # --- Save LaTeX version if requested ---
   if (save_figures) {

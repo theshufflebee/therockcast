@@ -3,9 +3,10 @@
 \caption{Ljung-Box Tests}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{threeparttable}
 \begin{tabular}[t]{>{}r|llll}
 \toprule
-Horizon & F_TR_FORMULA_1 & F_TR_FORMULA_2 & F_TR_FORMULA_3 & F_TR_FORMULA_4\\
+Horizon & Formula 1 & Formula 2 & Formula 3 & Formula 4\\
 \midrule
 \textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{47.79 (0.000 ***)} & \cellcolor{gray!10}{43.55 (0.000 ***)} & \cellcolor{gray!10}{8.5 (0.075 *)} & \cellcolor{gray!10}{1.82 (0.770 )}\\
 \textbf{2} & 45.55 (0.000 ***) & 31.45 (0.000 ***) & 15.23 (0.004 ***) & 9.02 (0.061 *)\\
@@ -19,5 +20,12 @@ Horizon & F_TR_FORMULA_1 & F_TR_FORMULA_2 & F_TR_FORMULA_3 & F_TR_FORMULA_4\\
 \textbf{\cellcolor{gray!10}{9}} & \cellcolor{gray!10}{7.04 (0.134 )} & \cellcolor{gray!10}{0.95 (0.918 )} & \cellcolor{gray!10}{12.3 (0.015 **)} & \cellcolor{gray!10}{12.41 (0.015 **)}\\
 \textbf{10} & 8.8 (0.066 *) & 0.74 (0.947 ) & 8.83 (0.065 *) & 11.81 (0.019 **)\\
 \bottomrule
-\end{tabular}}
+\end{tabular}
+\begin{tablenotes}[para]
+\item \textit{Note:} 
+\item This test checks residual are randomly distributed up to a certain lag.
+\item \textit{Ljung-Box Test Alternative Hypotheses (H\_A):} 
+\item[*] 'There is autocorrelation in the errors at one (or more) lags.
+\end{tablenotes}
+\end{threeparttable}}
 \end{table}
