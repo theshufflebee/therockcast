@@ -109,10 +109,10 @@ generate_relative_performance_report <- function(FE_TR_model,
   for (h in 1:H){
     # Note: dm.test needs the full (un-omitted) error vectors
     #       to align them properly, hence using the original list inputs
-    x1 = dm.test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h)
-    x2 = dm.test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
+    x1 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h)
+    x2 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
                  alternative = "greater")
-    x3 = dm.test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
+    x3 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
                  alternative = "less")
     DMpvalues[h, 1] = round(x1$p.value, digits = 4)
     DMpvalues[h, 2] = round(x2$p.value, digits = 4)

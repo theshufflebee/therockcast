@@ -359,6 +359,12 @@ source(here("helpers/auto_ARIMA_replic.R"))
 
 ```
 
+```{r dm_test_func, echo=TRUE, message=FALSE, warning=FALSE}
+
+source(here("helpers/dm_test_replic.R"))
+
+```
+
 
 ## Pseudo Out of Sample Estimation
 In order to asses the performance of this methodology, we use a pseudo out-of-sample
