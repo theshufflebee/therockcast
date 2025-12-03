@@ -1,11 +1,13 @@
-\documentclass[10pt, letterpaper]{article}
+\documentclass[10pt, a4paper]{article}
 \usepackage{multicol}
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage[skip=12pt, indent=0pt]{parskip}
 \usepackage[a4paper, portrait, margin=0.55in]{geometry}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{xcolor}
+\usepackage{colortbl}
 
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
@@ -17,7 +19,7 @@
 
 \graphicspath{ {./figures/} }
 
-%\title{\textbf{Forecats for Interest Rate on the ECB Deposit Facility}}
+%\title{\textbf{Forecasts for Interest Rate on the ECB Deposit Facility}}
 %\author{Jonas Bruno, Marcos Constantinou, Benoit Goye}
 %\date{November 2025}
 
@@ -27,13 +29,13 @@
 \noindent\hfill November 2025\par
 \vspace{1cm}
 {\LARGE\bfseries Forecasts of the Interest Rate on the ECB Deposit Facility}
-\par{\large Jonas Bruno\footnote{University of Lausanne, MScE candidate}, Marcos Constantinou\footnote{University of Lausanne, MScE candidate}, Benoit Goye\footnote{University of Lausanne, MScE candidate}}
+\par{\large Jonas Bruno\footnote{University of Lausanne, MScE candidates}, Marcos Constantinou\footnote{University of Lausanne, MScE candidates}, Benoit Goye\footnote{University of Lausanne, MScE candidates}}
 \vspace{0.5cm}
 
 \colorbox{lightgray!35}{
 \begin{minipage}{\columnwidth}
     \vspace{6pt}
-    \textbf{At their latest policy meeting, the ECB Governing Council decided to keep the interest rate on the deposit facility unchanged at 2.00\% while not committing to any predetermined trajectory for future rate adjustments. Building on our forecasts for inflation dynamics and the projected deviation of output from its potential level, we anticipate a gradual easing cycle comprising three 25bps cuts on the deposit facility interest rate. The first reduction is expected in Q4 2025, bringing the rate to 1.75\%, followed by a second cut in Q2 2026 to 1.50\%, and a final decrease in Q1 2027 establishing the rate at 1.25\%. This 75bps easing cycle reflects our view that moderating inflation and a widening output gap will warrant supportive monetary policy to ensure inflation stabilizes sustainably at the ECB's 2\% target.}
+    \textbf{At their latest policy meeting, the ECB Governing Council decided to keep the interest rate on the deposit facility unchanged at 2.00\% while not committing to any predetermined trajectory for future rate adjustments. Building on our forecasts for inflation dynamics and the projected deviation of output from its potential level, we anticipate a gradual easing cycle comprising three 25bps cuts on the deposit facility interest rate. The first reduction is expected in Q1 2026, bringing the rate to 1.75\%, followed by a second cut in Q1 2027 to 1.50\%, and a final decrease in Q1 2028 establishing the rate at 1.25\%. This 75bps easing cycle reflects our view that moderating inflation and a widening output gap will warrant supportive monetary policy to ensure inflation stabilizes sustainably at the ECB's 2\% target.}
     \vspace{6pt}
 \end{minipage}
 }
@@ -41,49 +43,49 @@
 \vspace{0.25cm}
 
 \begin{multicols}{2}
+
 \par \textbf{On October 30th, the ECB Governing Council decided to keep the interest rates on the deposit facility unchanged at 2.00\%, maintaining the current monetary policy stance following the easing cycle that began in June 2024.} The decision to keep interest rates on the deposit facility at 2.00\% reflects the Governing Council's assessment that previous rate cuts have been sufficient to address the evolving economic conditions while keeping inflation stable around target. Future interest rate decisions will depend on the Council's evaluation of inflation projections and associated risks, considering recent economic and financial indicators, core inflation trends, and the effectiveness of monetary policy transmission mechanisms. Importantly, the Council maintains full discretion in its decision-making process and explicitly does not commit to any predetermined trajectory for interest rates.
-\par \textbf{Taking into account the trajectory of inflation in the upcoming quarters and the predicted deviation from potential output, we expect interest rates on the ECB deposit facility to continue their downward trend throughout 2026 and Q1 2027.} Building on our inflation and output gap forecasts, we anticipate that the ECB will implement a gradual easing cycle consisting of three 25bps rate cuts. The first reduction is expected in Q4 2025, bringing the deposit facility rate down to 1.75\%. As inflation moderates and the output gap turns increasingly negative through early 2026, a second 25bps cut is projected for Q2 2026, lowering the rate to 1.50\%. This rate level is expected to be maintained throughout the remainder of 2026 as the Governing Council assesses the transmission of these policy adjustments to the broader economy. Given our forecast of a persistently negative output gap reaching its trough in Q1 2027 at -0.29\%, a final 25bps reduction is anticipated during that quarter, establishing the deposit facility rate at 1.25\%. Following this cumulative easing of 75 bps from current levels, we expect the policy rate to stabilize at 1.25\% throughout the remainder of 2027 as inflation gravitates toward the ECB's 2\% target and economic slack begins to diminish.
+\par \textbf{Taking into account the trajectory of inflation in the upcoming quarters and the predicted deviation from potential output, we expect interest rates on the ECB deposit facility to continue their downward trend throughout 2026, 2027, and 2028.} Building on our inflation and output gap forecasts, we anticipate that the ECB will implement a gradual easing cycle consisting of three 25bps rate cuts over the three-year forecast horizon. This monetary policy easing trajectory reflects our assessment that the combination of moderating inflation dynamics and a deteriorating output gap will create the necessary conditions for the Governing Council to adopt a more accommodative policy stance. Specifically, we expect a first rate cut in Q1 2026 bringing the deposit facility rate to 1.75\%, timed to coincide with the initial signs of economic slack emerging in the euro area economy. This would be followed by another 25bps cut in Q1 2027, reducing the rate to 1.50\%, as the output gap continues its transition into negative territory and inflation pressures further subside. Finally, we anticipate a third and final cut in Q1 2028 bringing the policy rate to 1.25\%, which we view as the terminal rate for this easing cycle—a level that provides meaningful monetary accommodation while remaining above the effective lower bound and preserving the ECB's policy space for future adjustments. The cumulative 75bps reduction from the current 2.00\% level represents a calibrated policy response designed to support economic activity and ensure inflation stabilizes sustainably at the ECB's 2\% medium-term target, without prematurely constraining the recovery or reigniting inflationary pressures.
 \begin{center}
-    \includegraphics[width=\columnwidth]{actual_forecast_intervals_plot.png}
+    \includegraphics[width=\columnwidth]{forecast_plot.png}
     %\captionof{figure}{Forecast of Interest Rates on Deposit Facility}
-    \label{fig:forecasts1}
+    %\label{fig:forecasts1}
 \end{center}
-\par \textbf{Our forecasts for inflation point to a decrease in inflation rate in Q1 2026, followed by a gradual increase all the way to Q4 2027.} Starting from the current level of 1.98\% in Q3 2025, we anticipate a temporary uptick to 2.04\% in Q4 2025, reflecting recent price pressures and base effects. However, inflation is then projected to decelerate notably, reaching its lowest point of 1.85\% in Q1 2026 as previous monetary tightening continues to work through the economy and demand conditions soften. We then expect a sustained but measured increase in inflation, rising to 1.91\% in Q2 2026, 1.95\% in Q3 2026, and 1.98\% in Q4 2026. This upward trajectory continues throughout 2027, with inflation forecast at 2.00\% in Q1 2027, 2.01\% in Q2 2027, 2.02\% in Q3 2027, and finally reaching 2.03\% in Q4 2027. This gradual convergence toward the ECB's 2\% target from below reflects our expectation of improving economic conditions and the unwinding of previous disinflationary pressures.
-\par \textbf{Concurrently, the output gap—which measures the deviation of actual output from its potential level—is projected to transition from positive territory (0.32\% in Q3 2025) into negative values starting in Q2 2026, indicating a transition from excess capacity utilization to emerging economic slack that would typically warrant accommodative monetary policy.} 
-Our output gap forecast reveals a clear cyclical pattern, beginning with modest positive values of 0.32\% in Q3 2025 and 0.19\% in Q4 2025, indicating an economy operating slightly above potential. The gap narrows to 0.04\% in Q1 2026 before turning negative in Q2 2026 at -0.12\%, then deepening progressively to reach its lowest point of -0.29\% in Q1 2027. This widening slack provides economic justification for the anticipated sequence of ECB interest rate cuts to stimulate demand. From Q2 2027 onwards, the output gap begins recovering (-0.28\% in Q2, -0.24\% in Q3, -0.19\% in Q4), and this progressive reduction, coupled with inflation stabilizing close to target, supports maintaining a stable 1.25\% rate throughout 2027, contingent on the absence of substantial changes to underlying economic conditions.
+\par \textbf{Our forecasts for the output gap imply a euro area economy undergoing a significant transition from above-potential growth to below-potential conditions over the 2025-2028 period.} Starting from 2025 Q4, our model projects a robust 1.24\% output gap, indicating an economy operating well above its sustainable capacity. However, this positive gap steadily erodes throughout the forecast horizon, crossing into negative territory by 2027 Q3 and reaching -0.52\% by 2028 Q1. Based on our analysis of the economic outlook for the euro area, we have reasons to believe that our model may underestimate the economic slack in upcoming quarters and we expect the output gap to turn negative sooner than the projected 2027 Q3, thereby supporting our prediction of an expansionary monetary policy stance.
+\par \textbf{Our assessment for the trajectory of the output gap diverges from the model's baseline projection due to significant downside risks not fully captured in current data.} The considerable uncertainty surrounding US tariffs will likely continue to adversely impact euro area economic performance, creating headwinds for export-driven growth and business investment given the region's high trade openness and vulnerability to external demand shocks. Additionally, weakness in the labor market may further hinder growth in coming quarters, with employment indicators showing deceleration and leading indicators pointing to softening hiring intentions across key sectors. This labor market fragility could translate into subdued wage growth and weaker household consumption, further constraining the recovery trajectory.
+\par \textbf{Inflation dynamics throughout the forecast period demonstrate persistent price pressures that remain stubbornly above the ECB's 2\% target.} Beginning at 2.17\% in 2025 Q4, inflation declines only marginally to 2.07\% by 2028 Q1—a mere 10 basis point reduction over the ten-quarter horizon despite the economy moving from significantly above potential to notably below potential. This remarkable stickiness, with inflation persisting 7-17 basis points above target even as economic slack accumulates, suggests underlying structural challenges including wage indexation mechanisms, supply-side constraints in services and food sectors, and ongoing second-round effects from previous energy and commodity price shocks.
 \begin{center}
     \includegraphics[width=\columnwidth]{forecasts_panels.png}
     %\captionof{figure}{Forecast of Inflation, Output Gap, and Interest Rates on Deposit Facility}
-    \label{fig:forecasts2}
+    %\label{fig:forecasts2}
 \end{center}
+\vspace{0.1cm}
 \begin{center}
-    %\captionof{table}{Policy Rate, Inflation, and Output Gap Forecasts}
-    \label{tab:forecasts}
     \small
-    \begin{tabular}{@{}lccc@{}}
+    \newcolumntype{C}{>{\centering\arraybackslash}X}
+    \begin{tabularx}{\columnwidth}{X|CCC}
         \toprule
-            \textbf{Quarter} & \textbf{Policy Rate} & \textbf{Inflation} & \textbf{Output Gap} \\
-             & \textbf{Forecast (\%)} & \textbf{Forecast (\%)} & \textbf{Forecast (\%)} \\
-             \midrule
-             2025 Q3 & 2.00 & 1.98 & 0.32 \\
-             2025 Q4 & 1.75 & 2.04 & 0.19 \\
-             2026 Q1 & 1.75 & 1.85 & 0.04 \\
-             2026 Q2 & 1.50 & 1.91 & $-$0.12 \\
-             2026 Q3 & 1.50 & 1.95 & $-$0.21 \\
-             2026 Q4 & 1.50 & 1.98 & $-$0.26 \\
-             2027 Q1 & 1.25 & 2.00 & $-$0.29 \\
-             2027 Q2 & 1.25 & 2.01 & $-$0.28 \\
-             2027 Q3 & 1.25 & 2.02 & $-$0.24 \\
-             2027 Q4 & 1.25 & 2.03 & $-$0.19 \\
+        Quarter & Policy Rate & Inflation & Output Gap\\
+        \midrule
+        \rowcolor{gray!10}\textbf{2025 Q4} & 2.00 & 2.17 & 1.24\\
+        \textbf{2026 Q1} & 1.75 & 2.03 & 1.38\\
+        \rowcolor{gray!10}\textbf{2026 Q2} & 1.75 & 2.10 & 1.33\\
+        \textbf{2026 Q3} & 1.75 & 2.09 & 1.11\\
+        \rowcolor{gray!10}\textbf{2026 Q4} & 1.75 & 2.09 & 0.79\\
+        \textbf{2027 Q1} & 1.50 & 2.08 & 0.42\\
+        \rowcolor{gray!10}\textbf{2027 Q2} & 1.50 & 2.08 & 0.07\\
+        \textbf{2027 Q3} & 1.50 & 2.07 & -0.22\\
+        \rowcolor{gray!10}\textbf{2027 Q4} & 1.50 & 2.07 & -0.42\\
+        \textbf{2028 Q1} & 1.25 & 2.07 & -0.52\\
         \bottomrule
-    \end{tabular}
+    \end{tabularx}
 \end{center}
-\par\textbf{While our forecast anticipates sustained easing to 1.25\% by early 2027 reflecting concerns about persistent economic weakness, the ECB SPF consensus expects only a brief cut to 1.90\% followed by a reversal back to 2.10\%, suggesting divergent views on whether the euro area economy will require prolonged accommodation or policy normalization.} Our forecast anticipates a sustained easing cycle with rates declining to 1.25\% by early 2027 and remaining at that accommodative level through year-end. In contrast, the ECB SPF consensus envisions only a modest initial reduction to 1.90\% in early 2026, followed by a notable reversal that sees rates rising back to 2.10\% by 2027. This fundamental difference reflects contrasting views on the medium-term economic outlook: our forecast implies concerns about weakening growth or disinflationary pressures warranting sustained accommodation, while the SPF consensus suggests a more resilient economy requiring a return to moderately restrictive policy.
-\par\textbf{Our forecast projects a gradual and stable inflation path that supports sustained policy accommodation compared to the ECB SPF which anticipates a sharper but temporary mid-period undershoot.} Our projection shows a relatively smooth trajectory with inflation dipping to 1.85\% in early 2026 before gradually converging back toward 2\% over the forecast horizon, exhibiting limited volatility throughout the period. The ECB SPF, by comparison, displays greater amplitude in its inflation path, with a sharper decline to 1.80\% throughout 2026 followed by a more pronounced rebound that stabilizes at exactly 2.00\% in 2027. The SPF's more volatile pattern and deeper mid-period undershoot may explain why the consensus anticipates policy tightening in 2027. Professional forecasters appear to view the 2026 disinflationary episode as temporary, necessitating a preemptive policy response to anchor expectations. Our more gradual and stable inflation path, conversely, supports the case for sustained policy accommodation as inflation remains well-anchored near target without requiring corrective tightening.
+\par\textbf{While our forecast anticipates sustained easing to 1.25\% by early 2028 reflecting concerns about persistent economic weakness, the ECB SPF consensus expects only a brief cut to 1.90\% followed by a reversal back to 2.10\%, suggesting divergent views on whether the euro area economy will require prolonged accommodation or policy normalization.} In contrast to the ECB SPF consensus which envisions only a modest initial reduction to 1.90\% in early 2026 followed by a notable reversal that sees rates rising back to 2.10\% by 2027, our forecast anticipates a sustained easing cycle with rates declining to 1.25\% by early 2028. This fundamental difference reflects contrasting views on the medium-term economic outlook: our forecast implies concerns about weakening growth warranting sustained accommodation, while the SPF consensus suggests a more resilient economy requiring a return to moderately restrictive policy.
+\par\textbf{Our forecast maintains inflation persistently above the ECB's 2\% target at 2.07--2.10\% through 2028 Q1, diverging substantially from the ECB SPF consensus which anticipates a sharper disinflation to 1.8\% in 2026 before recovering to target by 2027.} Starting at 2.1\% in 2025 Q4, our forecast shows inflation remaining stable around 2.07--2.10\% through 2028 Q1, consistently above target. In contrast, the ECB SPF consensus projects inflation dropping sharply to 1.8\% by early 2026, where it remains through 2026 Q4 before gradually recovering to 2.0\% by early 2027. This substantial gap—ranging from 20 to 30 basis points during 2026—reflects our view of more persistent inflation dynamics, ongoing supply-side pressures, and greater skepticism about the speed of convergence to target.
 \begin{center}
     \includegraphics[width=\columnwidth]{combined_forecast_panels.png}
     %\captionof{figure}{Comparison with ECB SPF}
-    \label{fig:forecasts3}
+    %\label{fig:forecasts3}
 \end{center}
 \par\textbf{These contrasting forecasts ultimately reflect different assessments of the euro area's underlying economic dynamics and the balance of risks facing policymakers.} The ECB SPF consensus appears premised on an economy that achieves a "soft landing" with sufficient momentum to warrant policy normalization by 2027, viewing any near-term weakness as cyclical rather than structural. Our forecast, with its sustained low-rate environment, implies greater concern about persistent economic slack, weaker underlying demand, or heightened downside risks that require the ECB to maintain accommodation for longer. The fact that our inflation forecast remains close to target despite lower policy rates suggests we anticipate either a wider negative output gap than the SPF consensus or reduced sensitivity of inflation to monetary policy.
 
@@ -115,3 +117,9 @@ Our output gap forecast reveals a clear cyclical pattern, beginning with modest 
 %https://www.ecb.europa.eu/stats/ecb_surveys/survey_of_professional_forecasters/html/index.en.html
 %https://www.ecb.europa.eu/press/press_conference/monetary-policy-statement/2025/html/ecb.is251030~4f74dde15e.en.html
 %https://www.ecb.europa.eu/press/pr/date/2025/html/ecb.mp251030~cf0540b5c0.en.html
+
+%Additional resources:
+%https://www.spglobal.com/ratings/en/regulatory/article/economic-research-economic-outlook-europe-q1-2026-germanys-fiscal-reawakening-s101657610
+%https://economy-finance.ec.europa.eu/economic-forecast-and-surveys/economic-forecasts/autumn-2025-economic-forecast-shows-continued-growth-despite-challenging-environment_en
+%https://cepr.org/voxeu/columns/continued-growth-despite-challenging-environment-commissions-autumn-2025-forecast
+%https://kpmg.com/uk/en/insights/economics/eu-economic-outlook.html
