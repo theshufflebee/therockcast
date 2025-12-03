@@ -37,7 +37,7 @@ package_loader("ggridges")     # for fancy density plots
 package_loader("strucchange")  # Chow & BP tests for structural breaks
 package_loader("transx")       # for hamilton filter
 package_loader("webshot2")     # for png tables
-
+package_loader("purrr")        # mechanical data mutation
 
 
 #--------------------------------------------------------------------------------

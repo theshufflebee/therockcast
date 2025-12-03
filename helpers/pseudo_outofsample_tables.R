@@ -120,7 +120,7 @@ generate_relative_performance_table <- function(dm_results,
 
 
 # This creates a table with the results from the JB test function
-format_jb_table <- function(jb_results_list) {
+format_jb_table <- function(jb_results_list, format = format) {
   
   # Start with horizon column from the first model
   horizons <- jb_results_list[[1]]$horizon
@@ -150,7 +150,7 @@ format_jb_table <- function(jb_results_list) {
   
   # print with kable for niece display
   table_output2 <- kable(combined, 
-                         format = "markdown", 
+                         format = format, 
                          align = "c", 
                          caption = "Jarque–Bera Test Results") %>%
     kable_styling(full_width = FALSE)
@@ -165,6 +165,50 @@ format_jb_table <- function(jb_results_list) {
 #-----------------                     5                        -----------------
 #--------------------------------------------------------------------------------
 #add durbin watson. add ONLY the code related to table making.
+generate_dw_table <- function(eval_all_models, formula_cols, model_caption, format = "html") {
+  
+  
+  dw_results_list <- generate_dw_tests(eval_all_models, formula_cols)
+  
+  # Combine list of tibbles
+  dw_table <- imap_dfr(dw_results_list, ~ mutate(.x, Model = sub("^F_TR_FORMULA_", "Model: TR ", .y))) %>%
+    select(Model, horizon, dw_stat, p_value) %>%
+    mutate(p_value = format_p_values_with_stars(p_value))
+  
+  # Render table in default format (for R Markdown / HTML)
+  table_output <- kable(
+    dw_table,
+    format = format,
+    booktabs = TRUE,
+    caption = model_caption,
+    digits = 4,
+    col.names = c("Model", "Horizon", "DW Statistic", "p-value"),
+    escape = FALSE
+  ) %>%
+    kable_styling(
+      latex_options = c("striped", "scale_down"),
+      position = "center"
+    ) %>%
+    column_spec(1, bold = TRUE, border_right = TRUE) %>%
+    column_spec(4, monospace = TRUE)
+  
+  # Save LaTeX version if requested
+  if (save_figures) {
+    safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
+    safe_name <- gsub("_+", "_", safe_name)
+    safe_name <- substr(safe_name, 1, 50)
+    safe_name <- gsub("_$", "", safe_name)
+    
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"))
+  }
+  
+  return(table_output)
+}
+
+
+
+
+
 
 
 
@@ -173,6 +217,63 @@ format_jb_table <- function(jb_results_list) {
 #-----------------                     6                        -----------------
 #--------------------------------------------------------------------------------
 #add ljung box, same instructions as DW
+
+
+generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, format = format, model_caption = "Ljung-Box Tests") {
+  
+  # Initialize empty list to store results for each model
+  lb_results_list <-generate_ljung_box_test(eval_all_models, formula_cols, max_h)
+  
+  # Combine results into one table: horizons as rows, models as columns
+  # Here we create two tables: one for Q, one for p-values
+  q_table <- tibble(Horizon = 1:max_h)
+  p_table <- tibble(Horizon = 1:max_h)
+  
+  for (model_name in formula_cols) {
+    q_table[[model_name]] <- lb_results_list[[model_name]]$Q_stat
+    p_table[[model_name]] <- lb_results_list[[model_name]]$p_value
+  }
+  
+  # Optionally format p-values with stars
+  p_table <- p_table %>%
+    mutate(across(-Horizon, ~ format_p_values_with_stars(.)))
+  
+  # Combine Q and p-values in one display table (Q (p))
+  display_table <- q_table
+  for (model_name in formula_cols) {
+    display_table[[model_name]] <- paste0(
+      round(q_table[[model_name]], 2), " (", p_table[[model_name]], ")"
+    )
+  }
+  # --- Render with kable/kableExtra ---
+  table_output <- kable(
+    display_table,
+    format = format,
+    booktabs = TRUE,
+    caption = model_caption,
+    digits = 2,
+    escape = FALSE
+  ) %>%
+    kable_styling(
+      latex_options = c("striped", "scale_down"),
+      position = "center"
+    ) %>%
+    column_spec(1, bold = TRUE, border_right = TRUE)
+  
+  # --- Save LaTeX version if requested ---
+  if (save_figures) {
+    safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
+    safe_name <- gsub("_+", "_", safe_name)
+    safe_name <- substr(safe_name, 1, 50)
+    safe_name <- gsub("_$", "", safe_name)
+    
+    save_kable(table_output, paste0("figures/", safe_name, ".tex"), format = "latex")
+  }
+  
+  return(table_output)
+}
+
+
 
 
 #--------------------------------------------------------------------------------

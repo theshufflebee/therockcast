@@ -205,7 +205,10 @@ generate_jb_report <- function(model_name, eval_all_models, max_h) {
   return(model_results)
 }
 
-generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
+
+# This  function uses the previous one and collects them into a nice tavle
+
+generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h, format = format) {
   
   jb_specs <- create_jb_specs(formula_cols)
   
@@ -234,7 +237,7 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
   }
   
   # Use table generator helper function 
-  table_output <- format_jb_table(jb_results)
+  table_output <- format_jb_table(jb_results, format = format)
   return(table_output)
 }
 
@@ -249,6 +252,30 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
 # like "pseudo_outofsample_tables.R" and call it at the end of this function
 #  just like all other functions here
 
+generate_dw_tests <- function(eval_all_models, formula_cols) {
+  
+  dw_results_list <- list()
+  
+  for (e_model_name in formula_cols) {
+    # Compute forecast errors
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
+    h1_errors <- all_errors[eval_all_models$horizon == 1]
+    
+    # Run Durbin-Watson test on h=1 errors
+    temp_model <- lm(h1_errors ~ 1)
+    dw_test_result <- durbinWatsonTest(temp_model)
+    
+    # Store result in tibble
+    dw_results_list[[e_model_name]] <- tibble(
+      horizon = 1,
+      dw_stat = dw_test_result$dw,
+      p_value = dw_test_result$p
+    )
+  }
+  
+  return(dw_results_list)
+}
+
 
 
 
@@ -256,6 +283,36 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h) {
 #-----------------                     5                        -----------------
 #--------------------------------------------------------------------------------
 #add ljung box, same instructions as DW
+
+generate_ljung_box_test <- function(eval_all_models, formula_cols, max_h = max_h){
+  lb_results_list <- list()
+  
+  for (model_name in formula_cols) {
+    
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+    
+    # Collect results for each horizon
+    model_results <- tibble(
+      Horizon = 1:max_h,
+      Q_stat = numeric(max_h),
+      p_value = numeric(max_h)
+    )
+    
+    for (h in 1:max_h) {
+      h_errors <- all_errors[eval_all_models$horizon == h]
+      max_lag <- 4 # default quarterly
+      lb_test <- Box.test(h_errors, lag = max_lag, type = "Ljung-Box")
+      model_results$Q_stat[h] <- lb_test$statistic
+      model_results$p_value[h] <- lb_test$p.value
+    }
+    
+    lb_results_list[[model_name]] <- model_results
+  }
+  return(lb_results_list)
+}
+
+
+
 
 
 
