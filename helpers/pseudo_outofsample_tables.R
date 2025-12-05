@@ -183,18 +183,25 @@ format_jb_table <- function(jb_results_list, format = format) {
 #--------------------------------------------------------------------------------
 #-----------------                     5                        -----------------
 #--------------------------------------------------------------------------------
-#add durbin watson. add ONLY the code related to table making.
+
+# This function automatically creates a nice table based on the results of the
+#  function that runs the Durbin-Watson test
+
 generate_dw_table <- function(eval_all_models, formula_cols, model_caption, format = "html") {
   
   
   dw_results_list <- generate_dw_tests(eval_all_models, formula_cols)
   
   # Combine list of tibbles
-  dw_table <- imap_dfr(dw_results_list, ~ mutate(.x, Model = sub("^F_TR_FORMULA_", "Formula ", .y))) %>%
+  dw_table <- imap_dfr(dw_results_list, 
+                       ~ mutate(.x, 
+                                Model = sub("^F_TR_FORMULA_", 
+                                            "Formula ", 
+                                            .y))) %>%
     select(Model, horizon, dw_stat, p_value) %>%
     mutate(p_value = format_p_values_with_stars(p_value))
   
-  # Render table in default format (for R Markdown / HTML)
+  # Render table in option-set format
   table_output <- kable(
     dw_table,
     format = format,
@@ -223,7 +230,7 @@ generate_dw_table <- function(eval_all_models, formula_cols, model_caption, form
       threeparttable = TRUE
     )
     
-  # Save LaTeX version if requested
+  # Save LaTeX version if requested i noptions config
   if (save_figures) {
     safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
     safe_name <- gsub("_+", "_", safe_name)
@@ -238,17 +245,12 @@ generate_dw_table <- function(eval_all_models, formula_cols, model_caption, form
 
 
 
-
-
-
-
-
-
 #--------------------------------------------------------------------------------
 #-----------------                     6                        -----------------
 #--------------------------------------------------------------------------------
-#add ljung box, same instructions as DW
 
+# This function automatically creates a nice table based on the results of the
+#  function that runs the Durbin-Watson test
 
 generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, format = format, model_caption = "Ljung-Box Tests") {
   
@@ -279,7 +281,7 @@ generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, forma
   
   names(display_table) <- sub("^F_TR_FORMULA_", "Formula ", names(display_table))
   
-  # --- Render with kable/kableExtra ---
+  # Make table
   table_output <- kable(
     display_table,
     format = format,
@@ -304,7 +306,7 @@ generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, forma
     )
   
   
-  # --- Save LaTeX version if requested ---
+  # Save LaTeX version if requested in options config
   if (save_figures) {
     safe_name <- gsub("[^a-zA-Z0-9]", "_", model_caption)
     safe_name <- gsub("_+", "_", safe_name)

@@ -247,10 +247,8 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h, format
 #--------------------------------------------------------------------------------
 #-----------------                     4                        -----------------
 #--------------------------------------------------------------------------------
-#add durbin watson. add ONLY the code related to the methodology of the tests.
-#for all code for table making and such, put it in another helper function
-# like "pseudo_outofsample_tables.R" and call it at the end of this function
-#  just like all other functions here
+
+# This function runs the Durbin-Watson tests on forecast errors 
 
 generate_dw_tests <- function(eval_all_models, formula_cols) {
   
@@ -277,12 +275,11 @@ generate_dw_tests <- function(eval_all_models, formula_cols) {
 }
 
 
-
-
 #--------------------------------------------------------------------------------
 #-----------------                     5                        -----------------
 #--------------------------------------------------------------------------------
-#add ljung box, same instructions as DW
+
+# This function runs the Ljung-Box test
 
 generate_ljung_box_test <- function(eval_all_models, formula_cols, max_h = max_h){
   lb_results_list <- list()
@@ -310,12 +307,5 @@ generate_ljung_box_test <- function(eval_all_models, formula_cols, max_h = max_h
   }
   return(lb_results_list)
 }
-
-
-
-
-
-
-
 
 #--------------------------------------------------------------------------------
