@@ -1,0 +1,77 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage{multicol}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{minted}
+\usepackage{adjustbox}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{enumerate}
+\usepackage[skip=8pt, indent=0pt]{parskip}
+\usepackage[a4paper, portrait, margin=0.75in]{geometry}
+\usepackage{titlesec}
+
+\usepackage[sort,round,longnamesfirst]{natbib}
+\usepackage[sectionbib]{bibunits} 
+\defaultbibliographystyle{plainnat}
+\defaultbibliography{biblio}
+
+
+\titlespacing\section{0pt}{12 pt}{4 pt}
+
+\graphicspath{ {./figures/} }
+
+\title{\textbf{Forecasting the ECB interest rate on the deposit facility}}
+\author{Jonas Bruno, Marcos Constantinou, \& Benoit Goye}
+\date{November 2025}
+
+\begin{document}
+\begin{bibunit}
+
+\maketitle
+
+\begin{abstract}
+    [Text]
+%    Example citation \cite{marx2025electoral}
+\end{abstract}
+
+\begin{multicols}{2}
+
+\section*{\hypertarget{Introduction}{Introduction}}
+\par [Text]
+
+\section*{\hypertarget{Data}{Data}}
+\par [Text]
+
+\section*{\hypertarget{Methodology}{Methodology}}
+\par [Text]
+\par \textcolor{red}{Content:
+\begin{itemize}
+    \item motivation (based on economic theory / empirical evidence / intuition) behind the forecasting model
+    \item the representation of forecasting model in details
+    \item the model specification, estimation and diagnostic tests
+\end{itemize}}
+
+\section*{\hypertarget{Results}{Results}}
+\par [Text]
+\par \textcolor{red}{Content:
+\begin{itemize}
+    \item point forecast evaluation according to absolute and relative standards using a simple model as a benchmark (e.g. AR(1) process)
+    \item the point and density forecast at the forecast horizon along with an external point forecast of your choice (e.g. IMF, SECO, ...)
+\end{itemize}}
+
+\section*{\hypertarget{Conclusion}{Conclusion}}
+\par [Text]
+
+\end{multicols}
+
+\putbib
+\end{bibunit}
+
+\pagebreak
+
+\section*{\hypertarget{Appendix}{Appendix}}
+\par [Text]
+%\par \textbf{Please note that Claude.ai was used to assist in writing this document}.
+\end{document}
