@@ -7,7 +7,8 @@ This repository contains all files related to a forecasting project on ECB Polic
 ## Usage
 
 In order our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
-Then, running the "main.R" script should reproduce all our analysis and figures. 
+Then, running the "main.R" script should reproduce all our analysis and figures. Alternatively, one can also run the R Markdown
+file in order to have an easier time looking at the outputs and the code together.
 
 Note that all data is pulled from API's apart from the Wu-Xia shadow rate data.
 This one is the "Euro area shadow rate" matlab datafile downloaded from: https://sites.google.com/view/jingcynthiawu/shadow-rates.
