@@ -52,10 +52,8 @@ HORIZON <- 10
 
 # --- 2. Related to Document Output
 
-format <- "html"
 format <- "latex" 
 save_figures <- TRUE 
-#and add window R choice and horizon H choice removed from pseudo estimation
 
 
 #------------------------------------------------------------------------------
