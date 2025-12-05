@@ -11,14 +11,14 @@
 #-------------------------------------------------------------------
 
 # Rolling window size
-R = 85 # Chow: Structural breaks at R=55 and R=85 
+R = WINDOW # Chow: Structural breaks at R=55 and R=85 
 cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
 
 # Start of evaluation sample
 P = nrow(data) - R # Will effectively be: P = T-h-R
 
 # Number of different horizons (takes 10 to go until 2028 Q1)
-H = 10 
+H = HORIZON 
 
 
 #-------------------------------------------------------------------

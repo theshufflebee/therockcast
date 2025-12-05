@@ -47,6 +47,8 @@ end_date <- Sys.Date()
 USE_HAMILTON_FILTER <- TRUE
 USE_INFLATION_EXPECTATIONS <- FALSE
 USE_FORMULA <- "Formula 3"
+WINDOW <- 85   
+HORIZON <- 10
 
 # --- 2. Related to Document Output
 

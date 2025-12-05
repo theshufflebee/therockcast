@@ -95,27 +95,26 @@ end_date <- Sys.Date()
 USE_HAMILTON_FILTER <- TRUE
 USE_INFLATION_EXPECTATIONS <- FALSE
 USE_FORMULA <- "Formula 3"
+WINDOW <- 85   
+HORIZON <- 10
 
 # --------- 2. Related to Document Output ---------
 
 format <- "html"
-#format <- "latex" 
+format <- "latex" 
 save_figures <- FALSE 
-
-#and add window R choice and horizon H choice removed from pseudo estimation
 
 ```
 
+Note: All 4 formulas are used in the pseudo out-of-sample estimation exercise
+        as well as in the absolute and relative performance evaluation.
+       However, for the rest of the code, specifically spaghetti plots, errors
+        evaluation, and actual future forecast, we only use 1 formula which is
+         determined in the "options_config.R" script.
+       These are also NOT used in the initial taylor rule estimation exercise
+        on the full sample, as there we want to really view the various options
+         and combinations regardless of the selected options config.
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
-
-# Note: All 4 formulas are used in the pseudo out-of-sample estimation exercise
-#        as well as in the absolute and relative performance evaluation.
-#       However, for the rest of the code, specifically spaghetti plots, errors
-#        evaluation, and actual future forecast, we only use 1 formula which is
-#         determined in the "options_config.R" script.
-#       These are also NOT used in the initial taylor rule estimation exercise
-#        on the full sample, as there we want to really view the various options
-#         and combinations regardless of the selected options config.
 
 # --------- 1. Specifications ---------
 # (using either current inflation or inflation expectations
@@ -774,14 +773,13 @@ my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
   colnames(matrix.AIC) <- 0:max.q
   rownames(matrix.BIC) <- 0:max.p
   colnames(matrix.BIC) <- 0:max.q
-  
 
   # Loop over all p from 0 to max.p
   for(p in 0:max.p) {
     # Loop over all q from 0 to max.q
     for(q in 0:max.q) {
       
-      # tryCatch to handle errors 
+      # "try" to handle errors 
       fit.arima <- try(
         arima(x, order = c(p, d, q), method = "ML"),
         silent = TRUE)
@@ -793,7 +791,6 @@ my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
         loglik <- fit.arima$loglik
         
         # Get number of parameters.
-        # This includes p, q, and the mean (if d=0), plus the variance (sigma^2).
         k <- length(fit.arima$coef) + 1 
         
         # Get effective number of observations
@@ -813,7 +810,6 @@ my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
         }}}}
   
   # Find the p and q that minimize the AICc
-  # 'na.rm=TRUE' jut in case of fails
   min_AICc <- min(matrix.AICc, na.rm = TRUE)
   position_AICc <- which(matrix.AICc == min_AICc, arr.ind = TRUE)
   
@@ -926,14 +922,14 @@ procedure which runs these loops in parallel on a fourth the the users' CPU core
 ```{r pseudo-out-of-sample-parameters, echo=TRUE, message=FALSE, warning=FALSE}
 
 # Rolling window size
-R = 85 # Chow: Structural breaks at R=55 and R=85 
+R = WINDOW # Chow: Structural breaks at R=55 and R=85 
 cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
 
 # Start of evaluation sample
 P = nrow(data) - R # Will effectively be: P = T-h-R
 
 # Number of different horizons (takes 10 to go until 2028 Q1)
-H = 10 
+H = HORIZON
 
 ```
 
