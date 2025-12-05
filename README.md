@@ -6,7 +6,7 @@ This repository contains all files related to a forecasting project on ECB Polic
 
 ## Usage
 
-In order our code, one only needs to set their FRED API key in their R system environment, as " FRED_API_KEY = your_key_here ".
+In order our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
 Then, running the "main.R" script should reproduce all our analysis and figures. 
 
 Note that all data is pulled from API's apart from the Wu-Xia shadow rate data.
