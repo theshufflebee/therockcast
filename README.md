@@ -44,14 +44,23 @@ There is some customization possible before running the project. These are all o
           expectations from the ECB survey of professional forecasts (average).
   + FALSE: The models used for forecasting will use realised inflation
   
-* Use Formula
+* Use Formula:
   + Formula 1: Actual interest rate regressed on inflation and output gaps  
   + Formula 2: Shadow interest rate regressed on inflation and output gaps
   + Formula 3: Actual interest rate regressed on the one-quarter lag of the interest
                 rate and on inflation and output gaps
   + Formula 4: Shadow interest rate regressed on the one-quarter lag of the shadow 
                 interest rate and on inflation and output gaps
-                
+
+* Window:
+  + Sets the rolling window size for the pseudo out-of-sample estimation exercise
+  + We set it to 85 as that is the last structural break detected (2020 Q1)
+  
+* Horizon:
+  + Sets the horizon of the forecasts for both the pseudo out-of-sample estimation
+    exercise, and for the actual current forecast
+  + We set it to 10 to forecast up to Q1 2028
+      
 * Format:
   + html: For printing tables in html (to view in console) 
   + latex: For saving and knitting tables to LaTeX and pdf
