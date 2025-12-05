@@ -82,7 +82,7 @@ source(here("scripts/03_taylor_rule.R"))
 #------------------------------------------------------------------------------
 
 #will later pull out parameter choice and put here and in the markdown
-source(here("Scripts/04_evaluation.R"))
+source(here("scripts/04_evaluation.R"))
 
 
 #------------------------------------------------------------------------------
