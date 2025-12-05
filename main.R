@@ -9,7 +9,7 @@
 # 0. Setup
 #------------------------------------------------------------------------------
 
-# --------- i. Clear environment
+# --------- i. Clear environment ---------
 
 rm(list=ls())
 
@@ -26,23 +26,33 @@ package_loader <- function(pkg) {
 }
 package_loader("here")
 
-# --------- iii. Load packages 
+# --------- iii. Load packages ---------
 source(here("scripts/00a_packages.R"))
 
-# --------- iv. Load helper functions
+# --------- iv. Load helper functions ---------
 source(here("scripts/00b_helpers.R"))
 
 
-# --------- v. Load API keys for data (only FRED required)
+# --------- v. Load API keys for data (only FRED required) ---------
 fredr_set_key(Sys.getenv("FRED_API_KEY"))
 
-# --------- vi. Dates (to automatically get the latest data from API calls)
+# --------- vi. Dates (to automatically get the latest data from API calls) ---------
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
-# --------- vii. Options Choice
-#options config will be pasted both here and in the markdown
-source(here("scripts/options_config_script.R"))
+# --------- vii. Options Choice ---------
+
+# --- 1. Related to Analysis
+
+USE_HAMILTON_FILTER <- TRUE
+USE_INFLATION_EXPECTATIONS <- FALSE
+USE_FORMULA <- "Formula 3"
+
+# --- 2. Related to Document Output
+
+format <- "html"
+format <- "latex" 
+save_figures <- TRUE 
 #and add window R choice and horizon H choice removed from pseudo estimation
 
 

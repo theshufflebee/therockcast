@@ -1,6 +1,6 @@
 \begin{table}
 \centering
-\caption{MSFE Comparison, Trained on Actual Rate, with Lag}
+\caption{\label{tab:forecast-model-perf}MSFE Comparison, Trained on Actual Rate, with Lag}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \begin{threeparttable}
@@ -8,10 +8,10 @@
 \toprule
 h & MSFE TR & MSFE BM & Ratio & DM Two-Sided & DM Greater & DM Lesser\\
 \midrule
-\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{0.1335} & \cellcolor{gray!10}{0.1591} & \cellcolor{gray!10}{0.8393} & \ttfamily{\cellcolor{gray!10}{0.491}} & \ttfamily{\cellcolor{gray!10}{0.246}} & \ttfamily{\cellcolor{gray!10}{0.754}}\\
+\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{0.1364} & \cellcolor{gray!10}{0.1591} & \cellcolor{gray!10}{0.8571} & \ttfamily{\cellcolor{gray!10}{0.540}} & \ttfamily{\cellcolor{gray!10}{0.270}} & \ttfamily{\cellcolor{gray!10}{0.730}}\\
 \textbf{2} & 0.4435 & 0.6458 & 0.6866 & \ttfamily{0.196} & \ttfamily{0.098 *} & \ttfamily{0.902}\\
 \textbf{\cellcolor{gray!10}{3}} & \cellcolor{gray!10}{0.9719} & \cellcolor{gray!10}{1.6062} & \cellcolor{gray!10}{0.6051} & \ttfamily{\cellcolor{gray!10}{0.136}} & \ttfamily{\cellcolor{gray!10}{0.068 *}} & \ttfamily{\cellcolor{gray!10}{0.932}}\\
-\textbf{4} & 1.5987 & 2.8224 & 0.5664 & \ttfamily{0.104} & \ttfamily{0.052 *} & \ttfamily{0.948}\\
+\textbf{4} & 1.6217 & 2.8224 & 0.5746 & \ttfamily{0.113} & \ttfamily{0.056 *} & \ttfamily{0.944}\\
 \textbf{\cellcolor{gray!10}{5}} & \cellcolor{gray!10}{2.5347} & \cellcolor{gray!10}{4.3368} & \cellcolor{gray!10}{0.5845} & \ttfamily{\cellcolor{gray!10}{0.037 **}} & \ttfamily{\cellcolor{gray!10}{0.018 **}} & \ttfamily{\cellcolor{gray!10}{0.982}}\\
 \addlinespace
 \textbf{6} & 3.4632 & 5.8787 & 0.5891 & \ttfamily{0.008 ***} & \ttfamily{0.004 ***} & \ttfamily{0.996}\\

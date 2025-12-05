@@ -54,7 +54,10 @@ formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
 max_h <- max(eval_all_models$horizon)
 
 #Run the Table function, the formula is inside
-generate_dw_table(eval_all_models, formula_cols, model_caption = "Durbin Watson Tests", format = format)
+generate_dw_table(eval_all_models, 
+                  formula_cols, 
+                  model_caption = "Durbin Watson Tests", 
+                  format = format)
 
 #-------------------------------------------------------------------
 # 6. Ljung-Box
@@ -63,7 +66,11 @@ generate_dw_table(eval_all_models, formula_cols, model_caption = "Durbin Watson 
 # With Columns & max lags set in Durbin Watson code chunk
 
 # Loop through each TR
-generate_ljung_box_table(eval_all_models, formula_cols, max_h = max_h, format = format, model_caption = "Ljung-Box Tests")
+generate_ljung_box_table(eval_all_models, 
+                         formula_cols, 
+                         max_h = max_h, 
+                         format = format, 
+                         model_caption = "Ljung-Box Tests")
 
 
 

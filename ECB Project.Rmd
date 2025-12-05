@@ -15,9 +15,6 @@ header-includes:
 ---
 \newpage
 
-# BIG NOTE: THIS FILE IS CURRENTLY BROKEN, AND ONLY SERVES AS AN OUTLINE TO LATER IMPLEMENT THE CODING APPENDIX. JUST PASTE THE PARTS OF THE SCRIPTS COMMENTED IN THE CHUNKS ONCE ALL CODE IS FINALISED.
-
-
 # Preliminaries
 
 ## Setup
@@ -61,12 +58,8 @@ fredr_set_key(Sys.getenv("FRED_API_KEY"))
 start_date <- "1999-01-01"
 end_date <- Sys.Date()
 
-# --------- vii. Options Choice
-#options config will be pasted both here and in the markdown
-source(here("scripts/options_config_script.R"))
-#and add window R choice and horizon H choice removed from pseudo estimation
-
 ```
+
 
 ## Interactive Option Selection
 
@@ -95,24 +88,68 @@ source(here("scripts/options_config_script.R"))
   + TRUE: All figures (plots and tables) are saved to the figures/ folder
   + FALSE: No figures are saved, useful for running the code in console
 
-
 ```{r options, results=FALSE, warning=FALSE, message=FALSE, echo=TRUE}
 
-#paste options config here and in main then delete the script file
-source(here("scripts/options_config_script.R"))
+# --------- 1. Related to Analysis ---------
+
+USE_HAMILTON_FILTER <- TRUE
+USE_INFLATION_EXPECTATIONS <- FALSE
+USE_FORMULA <- "Formula 3"
+
+# --------- 2. Related to Document Output ---------
+
+format <- "html"
+#format <- "latex" 
+save_figures <- F 
+
+#and add window R choice and horizon H choice removed from pseudo estimation
 
 ```
 
 ```{r taylor-rule-formulas, echo=TRUE, message=FALSE, warning=FALSE}
 
-#full paste
-source(here("scripts/01_taylor_rule_formulas.R"))
+# Note: All 4 formulas are used in the pseudo out-of-sample estimation exercise
+#        as well as in the absolute and relative performance evaluation.
+#       However, for the rest of the code, specifically spaghetti plots, errors
+#        evaluation, and actual future forecast, we only use 1 formula which is
+#         determined in the "options_config.R" script.
+#       These are also NOT used in the initial taylor rule estimation exercise
+#        on the full sample, as there we want to really view the various options
+#         and combinations regardless of the selected options config.
+
+# --------- 1. Specifications ---------
+# (using either current inflation or inflation expectations
+#  according to configuration, same with HP vs Hamilton)
+formula_1 <- rate ~ inflation_gap + output_gap
+formula_2 <- shadowrate ~ inflation_gap + output_gap
+formula_3 <- rate ~ rate_lag + inflation_gap + output_gap
+formula_4 <- shadowrate ~ shadowrate_lag + inflation_gap + output_gap
+
+# --------- 2. Select the main model based on select initial option ---------
+# Again, used in spaghetti plots, errors evaluation, and actual future forecast
+if (USE_FORMULA == "Formula 1") {
+  model <- "F_TR_FORMULA_1"
+  model_formula <- formula_1
+  model_name <- "Taylor Rule Formula 1"
+} else if (USE_FORMULA == "Formula 2") {
+  model <- "F_TR_FORMULA_2"
+  model_formula <- formula_2
+  model_name <- "Taylor Rule Formula 2"
+} else if (USE_FORMULA == "Formula 3") {
+  model <- "F_TR_FORMULA_3"
+  model_formula <- formula_3
+  model_name <- "Taylor Rule Formula 3"
+} else if (USE_FORMULA == "Formula 4") {
+  model <- "F_TR_FORMULA_4"
+  model_formula <- formula_4
+  model_name <- "Taylor Rule Formula 4" }
 
 ```
 
 ```{r, echo=FALSE, results='asis'}
 cat("\\clearpage")
 ```
+
 
 # Data
 
@@ -160,28 +197,143 @@ to one dataframe named "data". It includes a date column, the deposit rate, the 
 rate, inflation, inflation gap (which is just inflation minus the ECB target, which is
 set at 2\%), expected inflation, expected inflation gap, real GDP, GDP output gap 
 computed with the HP filter and GDP output gap computed with the Hamilton filter.
+
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
-#copypaste data script and explain
-source(here("scripts/get_data_script.R"))
+# --------- 1. ECB Deposit Facility Rate & Shadow Rate ---------
+ecb_rate_daily <- fredr(
+                    series_id = "ECBDFR", 
+                    observation_start = as.Date(start_date))
+ecb_rate_q <- ecb_rate_daily %>%
+  mutate(quarter = as.yearqtr(date)) %>%
+  group_by(quarter) %>%
+  summarise(rate = last(value)) %>%
+  mutate(date = as.Date(quarter))
+
+# Wu-Xia Shadow Rate 
+shadow_rate_daily = as.data.frame(readMat("data/shadowrate_ECB.mat")) 
+colnames(shadow_rate_daily) <- c("DATE", "shadowrate")
+shadow_rate_daily$DATE <- as.Date(paste0(shadow_rate_daily$DATE, "01"), format="%Y%m%d")
+shadow_rate_daily$quarter <- as.yearqtr(as.Date(shadow_rate_daily$DATE))
+shadow_rate_daily$month <- as.yearmon(as.Date(shadow_rate_daily$DATE))
+quarterly_shadow = aggregate(shadowrate ~ quarter, data=shadow_rate_daily, FUN=mean, na.rm=T)
+monthly_shadow = aggregate(shadowrate ~ month, data=shadow_rate_daily, FUN=mean, na.rm=T)
+
+
+# --------- 2. HICP Inflation (Euro Area) ---------
+inflation_data <- get_eurostat(
+                    "prc_hicp_manr", 
+                    filters = list(geo = "EA", coicop = "CP00"), 
+                    type = "label")
+inflation_q <- inflation_data %>%
+  filter(time >= start_date) %>%
+  dplyr::select(date = time, inflation = values) %>%
+  mutate(quarter = as.yearqtr(date)) %>%
+  group_by(quarter) %>%
+  summarise(inflation = mean(inflation, na.rm = TRUE)) %>%
+  mutate(date = as.Date(quarter))
+
+# Inflation expectations
+inflation_exp <- rdb(ids = "ECB/SPF/M.U2.HICP.POINT.P12M.Q.AVG")
+# Inflation_exp <- rdb(ids = "ECB/SPF/M.U2.HICP.POINT.P24M.Q.AVG")
+inflation_exp_q <- inflation_exp %>%
+  mutate(quarter = as.yearqtr(period)) %>%
+  group_by(quarter) %>%
+  summarise(exp_inflation = last(original_value)) %>%
+  mutate(date = as.Date(quarter))
+
+#P12M : 12-month ahead forecasts
+inflation_q$exp_inflation = c(rep(NA,3),as.numeric(inflation_exp_q$exp_inflation),NA)
+#P24M : 24-month ahead forecasts
+#inflation_q$exp_inflation = c(rep(NA,7),as.numeric(inflation_exp_q$exp_inflation[1:101]))
+
+# --------- 3. Real GDP and Estimated Output Gap ---------
+# a) Real GDP for the Euro Area. The series ID is CLVMNACSCAB1GQE_A.
+gdp_q <- fredr(
+  series_id = "CLVMEURSCAB1GQEA19",
+  observation_start = as.Date(start_date)) %>%
+  mutate(quarter = as.yearqtr(date)) %>%
+  dplyr::select(quarter, real_gdp = value) %>%
+  mutate(log_real_gdp = log(real_gdp)) 
+
+# b) Estimate Potential GDP (the trend) using the HP Filter on the log of real GDP.
+# The lambda value of 1600 is standard for quarterly data.
+hp_gdp <- hpfilter(gdp_q$log_real_gdp, freq = 1600)
+gdp_q$potential_gdp_log <- as.numeric(hp_gdp$trend)
+ham_gdp_cycle <- filter_hamilton(gdp_q$log_real_gdp, p = 4, horizon = 8)
+gdp_q$potential_gdp_log_ham <- gdp_q$log_real_gdp - ham_gdp_cycle
+
+
+# --------- 4. Combine all data into a single data frame ---------
+data <- ecb_rate_q %>%
+  dplyr::select(quarter, rate) %>%
+  left_join(inflation_q, by = "quarter") %>%
+  left_join(gdp_q, by = "quarter") %>%
+  left_join(quarterly_shadow, by = "quarter") 
+
+# --------- 5. Create new variables ---------
+data <- data %>%
+  mutate(
+    realised_inflation_gap = inflation - 2.0,
+    exp_inflation_gap = exp_inflation -2.0,
+    output_gap_hp = 100 * (log_real_gdp - potential_gdp_log),
+    output_gap_ham = 100 * (log_real_gdp - potential_gdp_log_ham),
+    rate_lag = lag(rate, 1),
+    shadowrate = case_when(
+      quarter < "2012 Q3" | quarter >= "2022 Q3" ~ rate,
+      TRUE ~ shadowrate),
+    shadowrate_lag = lag(shadowrate, 1))
+
+# Remove last row since no output data
+data = subset(data, quarter < "2025 Q4")
+
+# Clean environment
+rm(gdp_q, hp_gdp, ecb_rate_daily, ecb_rate_q, inflation_data, inflation_q,
+   inflation_exp, inflation_exp_q, monthly_shadow, quarterly_shadow, shadow_rate_daily)
 
 ```
 
+
 ## Options Configuration
+
 We then implement the chosen options on using inflation expectations or not, and
 on using either the HP filter or the Hamilton filter for output gap.
+
 ```{r data_config, message=TRUE, warning=FALSE, results='asis'}
 
-#paste
-source(here("scripts/options_implement_script.R"))
+# --------- 1. Filter selection for output gap estimation ----------
+
+# TRUE  = Use Hamilton Filter (newer, arguably more robust)
+# FALSE = Use HP Filter (classic approach)
+
+# Applying selection
+if (USE_HAMILTON_FILTER) {
+  data$output_gap <- data$output_gap_ham
+  cat("* CONFIGURATION: Using Hamilton Filter for output gap estimation.\n")
+} else {
+  data$output_gap <- data$output_gap_hp 
+  cat("* CONFIGURATION: Using HP Filter for output gap estimation.\n") }
+
+# --------- 2. Inflation expectations choice ----------
+
+# TRUE  = Use inflation expectations from ECB survey of professional forecasts
+# FALSE = Use realised inflation
+
+# Applying selection
+if (USE_INFLATION_EXPECTATIONS) {
+  data$inflation_gap <- data$exp_inflation_gap
+  cat("* CONFIGURATION: Using inflation expectations in Taylor Rule forecasting.\n")
+} else {
+  data$inflation_gap <- data$realised_inflation_gap 
+  cat("* CONFIGURATION: Using realised inflation in Taylor Rule forecasting.\n") 
+}
 
 ```
 
 ## Raw Data Plots
 ```{r data_plots, message=FALSE, warning=FALSE}
 
-# Who cares about the method here, only result matters, paste
-source(here("scripts/raw_data_plot_script.R"))
+raw_data_plotter(data = data)
 
 ```
 
@@ -191,17 +343,104 @@ interest rate, inflation and output gap.
 These include both ADF and KPSS stationarity tests (using the tseries package) and a cointegration test (using the aTSA package) to see if the interest rate is 
 cointegrated with inflation. We wrap these in custom functions that automatically report
 the results and intepret them based on the relevant p-value.
+
 ```{r stat_tests_func, echo=TRUE, message=FALSE, warning=FALSE}
 
-# copy paste both stat and coint funcs and explain
-source(here("helpers/stationarity_tests.R"))
+#--------------------------------------------------------------------------------
+#-----------------                     1                        -----------------
+#--------------------------------------------------------------------------------
+
+# Helper function to run ADF and KPSS tests and return dataframe fit for table
+
+check_stationarity <- function(y, var_name) {
+  
+  # Running tests and getting pvalues
+  adf_result <- tseries::adf.test(y, alternative = "stationary")
+  kpss_result <- tseries::kpss.test(y, null = "Level")
+  adf_p <- adf_result$p.value
+  kpss_p <- kpss_result$p.value
+  
+  # Automatically assign interpretation (yes, modular!)
+  interpretation <- ""
+  if (adf_p < 0.05 && kpss_p > 0.05) {
+    interpretation <- "Stationary I(0): ADF rejects unit root, KPSS confirms stationarity." 
+  } else if (adf_p > 0.05 && kpss_p < 0.05) {
+    interpretation <- "Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity." 
+  } else if (adf_p > 0.05 && kpss_p > 0.05) {
+    interpretation <- "Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity." 
+  } else { # adf_p < 0.05 && kpss_p < 0.05
+    interpretation <- "Conflicting Results: ADF rejects unit root, while KPSS rejects stationarity." 
+  }
+  
+  # Export results
+  data.frame(Variable = var_name,
+             `ADF p-value` = adf_p,
+             `KPSS p-value` = kpss_p,
+             Result = interpretation, check.names = FALSE) 
+}
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     2                        -----------------
+#--------------------------------------------------------------------------------
+
+# Similar helper function, but for cointegration tests
+check_coint <- function(y1,y2, var_name1, var_name2){ 
+  
+  # Run test and get pvalue
+  coint_test <- aTSA::coint.test(y1, y2, output = FALSE)
+  p_value <- coint_test[1, 3] #type 1
+  
+  # Again, modular(!) interpretation
+  interpretation <- ""
+  if (p_value < 0.05) {
+    interpretation <- "Cointegrated"} 
+  else {
+    interpretation <- "Not Cointegrated" }
+  
+  # Export results
+  data.frame(Variables = paste(var_name1, "&", var_name2),
+             `p-value` = p_value,
+             Result = interpretation, check.names = FALSE) 
+} 
 
 ```
 
 
 ```{r data_prop, echo=TRUE, message=FALSE, warning=FALSE}
 
-source(here("scripts/data_properties_script.R"))
+# --------- 1. Run Tests ---------
+
+# Use helper to run stationarity checks for our main variables
+test_rate <- check_stationarity(data$rate, "Interest Rate")
+test_inflation <- check_stationarity(data$inflation, "Inflation")
+test_output_gap <- check_stationarity(na.omit(data$output_gap), "Output Gap")
+
+# Given results for rate and inflation, run tests on 1st diffs
+test_rate_diff <- check_stationarity(diff(data$rate), "Interest Rate (1st Diff)")
+test_inflation_diff <- check_stationarity(diff(data$inflation), "Inflation (1st Diff)")
+
+# Since rate and inflation are I(1), run a cointegration test
+coint_test = check_coint(data$rate, data$inflation, 
+                         var_name1 = "Interest Rate", var_name2 = "Inflation")
+
+
+# --------- 2. Print Results ---------
+
+# Combine stationarity results 
+all_stationarity_results <- rbind(test_rate, 
+                                  test_inflation, 
+                                  test_output_gap,
+                                  test_rate_diff,
+                                  test_inflation_diff)
+
+# Tables
+generate_stat_tests_table(stat_tests = all_stationarity_results)
+generate_coint_tests_table(coint_test = coint_test)
+
+# Cleanup
+rm(all_stationarity_results, coint_test, test_inflation, 
+   test_inflation_diff, test_output_gap, test_rate, test_rate_diff)
 
 ```
 
@@ -229,15 +468,34 @@ both expected and realised inflation (gap).
 
 ```{r Taylor Rules w/o lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste first half of this script
-source(here("scripts/taylor_estim_no_lag_script.R"))
+# --------- 1. Simple Taylor Rule without lag ---------
+
+# Fit models
+TR <- lm(rate ~ realised_inflation_gap + output_gap, data = data)
+TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
+
+# List them and print them as tables using our helper function
+models <- list(TR, TRsr)
+taylor_regression_to_table(models, caption = "No Lag, No Expectations")
 
 ```
 
 ```{r Taylor Rules w/o lag but with inflation expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste second half of this script
-source(here("scripts/taylor_estim_no_lag_script.R"))
+# --------- 2. Taylor Rule without lag but with inflation expectations  ---------
+
+# Fit models
+TR_e <- lm(rate ~ exp_inflation_gap + output_gap, data = data)
+TRsr_e <- lm(shadowrate ~ exp_inflation_gap + output_gap, data = data)
+TR_ie <- lm(rate ~ realised_inflation_gap + exp_inflation_gap + 
+              output_gap, data = data)
+TRsr_ie <- lm(shadowrate ~ realised_inflation_gap + exp_inflation_gap + 
+                output_gap, data = data)
+
+# List them and print them as tables using our helper function
+models <- list(TR_e, TRsr_e, TR_ie, TRsr_ie)
+taylor_regression_to_table(models, caption = "No Lag, with 
+                                              Inflation Expectations")
 
 ```
 
@@ -255,15 +513,37 @@ the models without the lag.
 
 ```{r Taylor Rules w/ lag, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste first half of this script
-source(here("scripts/taylor_estim_with_lag_script.R"))
+# --------- 1. Simple Taylor Rule without lag ---------
+
+# Fit models
+lTR <- lm(rate ~ rate_lag + realised_inflation_gap + output_gap, data = data)
+lTRsr <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + 
+              output_gap, data = data)
+
+# List them and print them as tables using our helper function
+models <- list(lTR, lTRsr)
+taylor_regression_to_table(models, caption = "Interest Rate Lag, 
+                                              No Expectations")
 
 ```
 
 ```{r Taylor Rules w/ lag but with inflation expectations, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste second half of this script
-source(here("scripts/taylor_estim_with_lag_script.R"))
+# --------- 2. Taylor Rule without lag but with inflation expectations  ---------
+
+# Fit models
+lTR_e <- lm(rate ~ rate_lag + exp_inflation_gap + output_gap, data = data)
+lTRsr_e <- lm(shadowrate ~ shadowrate_lag + exp_inflation_gap + 
+                output_gap, data = data)
+lTR_ie <- lm(rate ~ rate_lag + realised_inflation_gap + exp_inflation_gap + 
+               output_gap, data = data)
+lTRsr_ie <- lm(shadowrate ~ shadowrate_lag + realised_inflation_gap + 
+                 exp_inflation_gap + output_gap, data = data) 
+
+# List them and print them as tables using our helper function
+models <- list(lTR_e, lTRsr_e, lTR_ie, lTRsr_ie)
+taylor_regression_to_table(models, caption = "Interest Rate Lag, with 
+                                              Inflation Expectations")
 
 ```
 
@@ -281,29 +561,76 @@ the Aikake Information Criterion}.
 
 ```{r chow test func, echo=TRUE, message=FALSE, warning=FALSE}
 
-#only paste chow ones 
-source(here("helpers/struct_breaks_tests.R"))
+# This first function runs all the steps necessary for a Chow test to check
+#  for structural breaks in key moments. It runs it for 2 dates at a time
+#   and uses the formula we use 
+
+chow_tests <- function(data, break1, break2, events_name) {
+  
+  # Formula to test for breaks (uses formula selected in options config)
+  break_formula = model_formula
+  
+  # Chow test (rejecting the null means there are structural breaks)
+  chow_test1 <- sctest(break_formula, type = "Chow", 
+                       point = break1, data = data)
+  chow_test2 <- sctest(break_formula, type = "Chow", 
+                       point = break2, data = data)
+  
+  # Get dates of the breakpoints
+  breakpoint1_date <- data$quarter[break1]
+  breakpoint2_date <- data$quarter[break2]
+  
+  table_output <- generate_chow_table(test1 = chow_test1,
+                                      test2 = chow_test2,
+                                      date1 = breakpoint1_date,
+                                      date2 = breakpoint2_date,
+                                      events_name = events_name)
+  return(table_output)
+}
 
 ```
 
 ```{r chowtest, echo=TRUE, message=FALSE, warning=FALSE}
 
-#only paste chow ones 
-source(here("scripts/struct_breaks_tests_script.R"))
+# --------- 1. Chow test ---------
+
+# Run test using helper function 
+chow_tests(data, break1 = 55, break2 = 85, 
+           events_name <- c("ZLB Start", "COVID-19 Start")) 
 
 ```
 
 ```{r bai-perron test func, echo=TRUE, message=FALSE, warning=FALSE}
 
-#only paste bp ones
-source(here("helpers/struct_breaks_tests.R"))
+# This second function runs the estimation for the Bai-Perron test which
+#  detects structural breaks wherever in the data
+
+bp_tests <- function(data) {
+  
+  # Formula to test for breaks (uses formula selected in options config)
+  break_formula = model_formula
+  
+  # Estimate Bai-Perron test & output results
+  BP_test = breakpoints(break_formula, data = data)
+  BP_test_res = summary(BP_test)
+  
+  # Optimal values (modular!)
+  bic_values <- BP_test_res$RSS[2, ]
+  optimal_m <- as.numeric(names(bic_values)[which.min(bic_values)])
+  
+  table_output <- generate_bp_table(base_data = data,
+                                    BP_test_res = BP_test_res,
+                                    optimal_m = optimal_m)
+  return(table_output)
+}
 
 ```
 
 ```{r bai-perron test, echo=TRUE, message=FALSE, warning=FALSE}
 
-#only paste bp ones
-source(here("scripts/struct_breaks_tests_script.R"))
+# --------- 2. Bai-Perron test ---------
+# Run test using helper function 
+bp_tests(data)
 
 ```
 
@@ -321,13 +648,57 @@ confidence intervals.
 
 ```{r rolling TR func, message=FALSE, warning=FALSE}
 
-source(here("helpers/roll_TR_estimator.R"))
+# This function run a rolling sample estimation loop for the main TR formula
+
+estimate_rolling_TR <- function(data, formula, W) {
+  
+  # Based on the quarter rolling window W parameter, automatically output
+  #  the Looping Parameter
+  L = nrow(data) - W + 1
+  
+  # Preparation of result data, dates, var names, and confidence intervals
+  var_names <- attr(terms(formula), "term.labels")
+  window_end_dates <- data$quarter[W:nrow(data)] # First window [1:W] ends at data$date[W]
+  TR_roll <- data.frame(date = window_end_dates)
+  TR_roll[var_names] <- NA
+  lower_col_names <- paste0(var_names, "_lower")
+  upper_col_names <- paste0(var_names, "_upper")
+  
+  # Looped estimation of TR, outputs coefficients and CIs
+  for (l in 1:L) {
+    
+    # 1. Define splits (with rolling scheme)
+    rolled_data <- data[l:(W + l - 1), ]
+    
+    # 2. Estimate TR on split data, using whatever formula is desired
+    TR_estimate <- lm(formula, data = rolled_data)
+    
+    # 3. Pull out coefficients & compute confidence intervals
+    all_coefs <- coef(TR_estimate)
+    all_cis <- confint(TR_estimate)
+    
+    TR_roll[l, var_names] <- all_coefs[var_names] 
+    TR_roll[l, lower_col_names] <- all_cis[var_names, 1]
+    TR_roll[l, upper_col_names] <- all_cis[var_names, 2]   
+  }
+  return(TR_roll)
+}
 
 ```
 
 ```{r rolling TR, message=FALSE, warning=FALSE}
 
-source(here("scripts/roll_TR_script.R"))
+# --------- 1. Estimation ---------
+
+# Estimate a rolling-window (W in quarters) Taylor Rule specification
+TR_roll <- estimate_rolling_TR(data, model_formula, W = 30)
+
+# --------- 1. Plots ---------
+
+# Note: this part is not modular
+plot_rolling_coefs(TR_roll, "rate_lag", var_name_title="Rate Lag")
+plot_rolling_coefs(TR_roll, "inflation_gap", var_name_title="Inflation (Gap)")
+plot_rolling_coefs(TR_roll, "output_gap", var_name_title="Output Gap")
 
 ```
 
@@ -355,13 +726,192 @@ ARIMA models, weighted by the coefficients computed with OLS.
 
 ```{r auto_arima_func, echo=TRUE, message=FALSE, warning=FALSE}
 
-source(here("helpers/auto_ARIMA_replic.R"))
+#--------------------------------------------------------------------------------
+#-----------------                     1                        -----------------
+#--------------------------------------------------------------------------------
+
+# This first small function just enables easy automatic interpretations of
+#   the final selected models.
+explain_arima <- function(model_object, var_name) {
+  
+  var_name = var_name
+  
+  # Extract the resulting model
+  vec <- model_object$arma
+  
+  # Get the specification for p,d,q and put in string
+  p <- vec[1]
+  q <- vec[2]
+  d <- vec[6]
+  spec_str <- paste0("ARIMA(", p, ", ", d, ", ", q, ")")
+  
+  # Make it legible 
+  result <- paste0("The ARIMA model fitted to the '", var_name, 
+                   "' variable is specified as ", spec_str, ". \n\n")
+  return(result) }
+
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     2                        -----------------
+#--------------------------------------------------------------------------------
+
+# This function searches for the best p and q for a *fixed* d (unnecessary 
+#   to loop over d in our project since we either set d=0 for output gap 
+#    or d=1 for interest and inflation)
+
+my.auto.arima <- function(x, max.p, max.q, d, var_name="x") {
+  
+  # Get the length of the time series
+  # We use n = length(x) - d as the effective sample size for BIC/AICc
+  # Note: arima()$nobs will give the exact number used.
+  T_orig <- length(x) 
+  
+  # Initialize matrices to store the criteria values
+  matrix.AIC <- matrix(NA, max.p + 1, max.q + 1)
+  matrix.BIC <- matrix(NA, max.p + 1, max.q + 1)
+  matrix.AICc <- matrix(NA, max.p + 1, max.q + 1)
+  
+  # Add row and column names for clarity
+  rownames(matrix.AICc) <- 0:max.p
+  colnames(matrix.AICc) <- 0:max.q
+  rownames(matrix.AIC) <- 0:max.p
+  colnames(matrix.AIC) <- 0:max.q
+  rownames(matrix.BIC) <- 0:max.p
+  colnames(matrix.BIC) <- 0:max.q
+  
+
+  # Loop over all p from 0 to max.p
+  for(p in 0:max.p) {
+    # Loop over all q from 0 to max.q
+    for(q in 0:max.q) {
+      
+      # tryCatch to handle errors 
+      fit.arima <- try(
+        arima(x, order = c(p, d, q), method = "ML"),
+        silent = TRUE)
+      
+      # Check if the fit was successful
+      if(!inherits(fit.arima, "try-error")) {
+        
+        # Get log-likelihood
+        loglik <- fit.arima$loglik
+        
+        # Get number of parameters.
+        # This includes p, q, and the mean (if d=0), plus the variance (sigma^2).
+        k <- length(fit.arima$coef) + 1 
+        
+        # Get effective number of observations
+        n <- fit.arima$nobs 
+        
+        # Calculate AIC
+        aic_val <- -2 * loglik + 2 * k
+        matrix.AIC[p + 1, q + 1] <- aic_val
+        
+        # Calculate BIC
+        matrix.BIC[p + 1, q + 1] <- -2 * loglik + k * log(n)
+        
+        # Calculate AICc (AIC corrected for small samples)
+        # We add a check for n - k - 1 > 0 to avoid division by zero
+        if (n - k - 1 > 0) {
+          matrix.AICc[p + 1, q + 1] <- aic_val + (2 * k^2 + 2 * k) / (n - k - 1)
+        }}}}
+  
+  # Find the p and q that minimize the AICc
+  # 'na.rm=TRUE' jut in case of fails
+  min_AICc <- min(matrix.AICc, na.rm = TRUE)
+  position_AICc <- which(matrix.AICc == min_AICc, arr.ind = TRUE)
+  
+  # Get the first match if there are ties
+  opt.p <- position_AICc[1, 1] - 1  # -1 to convert from 1-based index to p-value
+  opt.q <- position_AICc[1, 2] - 1  # -1 to convert from 1-based index to q-value
+  
+  # Store the optimal parameters
+  parameters <- c(opt.p, d, opt.q)
+  
+  final.model <- arima(x, order = parameters, method = "ML")
+  
+  # Print the model summary
+  print <- explain_arima(final.model, var_name = var_name)
+  cat(print)
+  
+  # Return a list with all the results
+  return(final.model)}
+
+
+
+#--------------------------------------------------------------------------------
+#-----------------                     3                        -----------------
+#--------------------------------------------------------------------------------
+
+# This function produces forecasts from the my.auto.arima output
+
+my.forecast = function(model, h = 1) {
+  prediction_output = predict(object = model, n.ahead = h)
+  values <- as.vector(prediction_output$pred)
+  return(values)  }
 
 ```
 
-```{r dm_test_func, echo=TRUE, message=FALSE, warning=FALSE}
+```{r dm_replic_func, echo=TRUE, message=FALSE, warning=FALSE}
 
-source(here("helpers/dm_test_replic.R"))
+# This function replicates the dm.test function from the {forecast} package
+
+dm_test <- function(e1, e2, alternative = c("two.sided", "less", "greater"), 
+                    h = 1) {
+  
+  # 1. Setup and Arguments
+  alternative <- match.arg(alternative)
+  h <- as.integer(h)
+  
+  # 2. Calculate Loss Differential
+  d <- e1^2 - e2^2
+  P <- length(d) 
+  
+  # 3. Calculate Variance-Covariance Matrix
+  d.cov <- acf(d, na.action = na.omit, lag.max = h - 1, type = "covariance", 
+               plot = FALSE)$acf[, , 1]
+  
+  # Variance estimator formula
+  d.var <- sum(c(d.cov[1], 2 * d.cov[-1])) / P
+  
+  # 4. Logic for Negative Variance
+  # If variance is negative/zero for h>1, fall back to h=1
+  # We couldn't manage to run our code without including this part
+  # (taken from the base package)
+  # Probable reason is that our R starts quite "late" 
+  if (d.var > 0) {
+    STATISTIC <- mean(d, na.rm = TRUE) / sqrt(d.var)
+  } else if (h == 1) {
+    stop("Variance of DM statistic is zero")
+  } else {
+    warning("Variance is negative. Proceeding with horizon h=1.")
+    return(dm.test(e1, e2, alternative = alternative, h = 1))
+  }
+  
+  # 5. Apply Harvey-Leybourne-Newbold correction (like in slides)
+  #     (corrects for small samples, useful for us)
+  k <- ((P + 1 - 2 * h + (h / P) * (h - 1)) / P)^(1/2)
+  STATISTIC <- STATISTIC * k
+  
+  # 6. pvalue with student distribution (as seen in class)
+  #     use (P-1) degrees of freedom
+  if (alternative == "two.sided") {
+    PVAL <- 2 * pt(-abs(STATISTIC), df = P - 1)
+  } else if (alternative == "less") {
+    PVAL <- pt(STATISTIC, df = P - 1)
+  } else if (alternative == "greater") {
+    PVAL <- pt(STATISTIC, df = P - 1, lower.tail = FALSE)
+  }
+  
+  # 7. Output 
+  structure(list(
+    alternative = alternative, 
+    p.value = PVAL, 
+    method = "Diebold-Mariano Test", 
+    data.name = c(deparse(substitute(e1)), deparse(substitute(e2)))
+  ), class = "htest")
+}
 
 ```
 
@@ -381,15 +931,222 @@ procedure which runs these loops in parallel on a fourth the the users' CPU core
 
 ```{r pseudo-out-of-sample-parameters, echo=TRUE, message=FALSE, warning=FALSE}
 
-#paste just step 0 
-source(here("scripts/pseudo_out_of_sample_estimation_script.R"))
+#-------------------------------------------------------------------
+# 0. Set parameters
+#-------------------------------------------------------------------
+
+# Rolling window size
+R = 85 # Chow: Structural breaks at R=55 and R=85 
+cat("Evaluation sample starts after ",as.character(data$quarter[R]),".",sep="")
+
+# Start of evaluation sample
+P = nrow(data) - R # Will effectively be: P = T-h-R
+
+# Number of different horizons (takes 10 to go until 2028 Q1)
+H = 10 
 
 ```
 
 ```{r pseudo-out-of-sample-estimation, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste steps 1-end
-source(here("scripts/pseudo_out_of_sample_estimation_script.R"))
+#-------------------------------------------------------------------
+# 1. Pre-allocate storage for all results
+#-------------------------------------------------------------------
+
+# We need 4 lists for the TR models, 1 list for the shared benchmark
+init_storage_list <- function(H, P) {
+  storage <- vector("list", length = H)
+  for (h in 1:H) {
+    storage[[h]] <- rep(NA_real_, P)}
+  return(storage)}
+
+# Storage for realised values 
+Actuals <- init_storage_list(H, P)
+
+# Storage for Forecasts 
+F_TR_1 <- init_storage_list(H, P) # Model 1: shadowrate, no lag
+F_TR_2 <- init_storage_list(H, P) # Model 2: rate, no lag
+F_TR_3 <- init_storage_list(H, P) # Model 3: shadowrate, with lag
+F_TR_4 <- init_storage_list(H, P) # Model 4: rate, with lag
+F_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
+
+# Storage for Forecast Errors 
+FE_TR_1 <- init_storage_list(H, P) # Model 1: shadowrate, no lag
+FE_TR_2 <- init_storage_list(H, P) # Model 2: rate, no lag
+FE_TR_3 <- init_storage_list(H, P) # Model 3: shadowrate, with lag
+FE_TR_4 <- init_storage_list(H, P) # Model 4: rate, with lag
+FE_BM   <- init_storage_list(H, P) # Benchmark: ARIMA
+
+
+#-------------------------------------------------------------------
+# 2. Setup & run the parallel "backtesting" (rolling) loop
+#-------------------------------------------------------------------
+num_cores <- detectCores() / 4 
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+# .export sends read-only objects to each core
+# .packages loads libraries on each core
+worker_results <- foreach(
+  p = P:1, 
+  .packages = c("forecast", "stats", "dplyr"),
+  .export = c("data", "H", "formula_1", "formula_2", "formula_3", "formula_4")
+) %dopar% {
+  
+  # 1. Define splits (with rolling scheme)
+  training <- data[(1 + nrow(data) - R - p):(nrow(data) - p), ]
+  testing <- data[(nrow(data) - (p - 1)):nrow(data), ]
+  
+  # --- 2. Fit common models only once --- 
+  # note: d=1 for interest and inflation as non-stationary
+  inflation_arma <- my.auto.arima(training$inflation_gap, max.p=4, max.q=4, d=1)
+  outputgap_arma <- my.auto.arima(training$output_gap, max.p=4, max.q=4, d=0)
+  interest_arma <- my.auto.arima(training$rate, max.p=4, max.q=4, d=1) # Benchmark
+  
+  # --- 3. Get common forecasts only once (all H horizons) ---
+  inflation_forecasts <- my.forecast(inflation_arma, h = H)
+  outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
+  BMpredicted_rates <- my.forecast(interest_arma, h = H)
+  
+  # --- 4. Fit the 4 TR models ---
+  TR_model_1 <- lm(formula_1, data = training)
+  TR_model_2 <- lm(formula_2, data = training)
+  TR_model_3 <- lm(formula_3, data = training)
+  TR_model_4 <- lm(formula_4, data = training)
+  
+  # --- 5. Build forecast input data & get forecasts for non-lagged models ---
+  # These are direct forecasts
+  new_data_base <- data.frame(
+    inflation_gap = inflation_forecasts,
+    output_gap = outputgap_forecasts)
+  
+  TR_preds_1 <- round(pmax(predict(TR_model_1, new_data_base), min(data$rate)) / 0.25) * 0.25
+  TR_preds_2 <- round(pmax(predict(TR_model_2, new_data_base), min(data$rate)) / 0.25) * 0.25
+  BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25
+  
+  # --- 6. Get forecasts for lagged models via iteration ---
+  # We must loop 1 step at a time, feeding forecasts back in.   
+  
+  # a) Pre-allocate storage for H forecasts
+  TR_preds_3 <- numeric(H)
+  TR_preds_4 <- numeric(H)
+  
+  # b) Get the last known lag from the training set (lag for h=1 forecast)
+  current_rate_lag  <- last(training$rate)
+  current_shadowrate_lag <- last(training$shadowrate)
+  
+  # Loop for iterative forecasting 
+  for (h in 1:H) {
+    # --- Prepare dataset for predictions ---
+    new_data_3_h <- data.frame(
+      inflation_gap = inflation_forecasts[h],
+      output_gap = outputgap_forecasts[h],
+      rate_lag = current_rate_lag)
+    new_data_4_h <- data.frame(
+      inflation_gap = inflation_forecasts[h],
+      output_gap = outputgap_forecasts[h],
+      shadowrate_lag = current_shadowrate_lag )
+    
+    # Get the forecast values (keep for lag, and then round for actual prediction)
+    pred_3_h <- predict(TR_model_3, new_data_3_h)
+    TR_preds_3[h] <- round(pmax(pred_3_h, min(data$rate)) / 0.25) * 0.25
+    pred_4_h <- predict(TR_model_4, new_data_4_h)
+    TR_preds_4[h] <- round(pmax(pred_4_h, min(data$rate)) / 0.25) * 0.25
+    
+    # Update lag for h+1 
+    current_shadowrate_lag <- pred_4_h
+    current_rate_lag <- pred_3_h }
+  
+  # --- 7. Get actual values in evaluation sample  ---
+  actual_rates <- testing$rate[1:H]
+  
+  # --- 8. Return all forecasts and actuals from the worker ---
+  list(F_TR_FORMULA_1 = TR_preds_1,
+       F_TR_FORMULA_2 = TR_preds_2,
+       F_TR_FORMULA_3 = TR_preds_3,
+       F_TR_FORMULA_4 = TR_preds_4,
+       F_BM  = BM_preds,
+       actuals = actual_rates) }
+
+# --- Stop the Cluster ---
+stopCluster(cl)
+rm(cl)
+
+
+#-------------------------------------------------------------------
+# 3. Unpack parallel results into storage lists
+#-------------------------------------------------------------------
+
+# 'worker_results' is a list of P lists. We need to re-organize it.
+for (i in 1:P) {
+  # i=1 corresponds to p=P, i=2 to p=P-1, ... i=P to p=1
+  # This 'storage_index' matches the loop order
+  storage_index <- i 
+  p_results <- worker_results[[i]]
+  
+  for (h in 1:H) {
+    # Get the raw values for this h
+    actual_val <- p_results$actuals[h]
+    f_tr1_val  <- p_results$F_TR_FORMULA_1[h]
+    f_tr2_val  <- p_results$F_TR_FORMULA_2[h]
+    f_tr3_val  <- p_results$F_TR_FORMULA_3[h]
+    f_tr4_val  <- p_results$F_TR_FORMULA_4[h]
+    f_bm_val   <- p_results$F_BM[h]
+    
+    # Store Actuals (for MZ)
+    Actuals[[h]][storage_index] <- actual_val
+    
+    # Store Forecasts (for MZ)
+    F_TR_1[[h]][storage_index] <- f_tr1_val
+    F_TR_2[[h]][storage_index] <- f_tr2_val
+    F_TR_3[[h]][storage_index] <- f_tr3_val
+    F_TR_4[[h]][storage_index] <- f_tr4_val
+    F_BM[[h]][storage_index]   <- f_bm_val
+    
+    # Calculate and Store Errors (for MSFE/DM)
+    FE_TR_1[[h]][storage_index] <- f_tr1_val - actual_val
+    FE_TR_2[[h]][storage_index] <- f_tr2_val - actual_val
+    FE_TR_3[[h]][storage_index] <- f_tr3_val - actual_val
+    FE_TR_4[[h]][storage_index] <- f_tr4_val - actual_val
+    FE_BM[[h]][storage_index]   <- f_bm_val  - actual_val } }
+
+
+#-------------------------------------------------------------------
+# 4. Render results more intuitive for further analysis
+#-------------------------------------------------------------------
+
+# Convert the forecast lists (F_TR_x) into single dataframes
+forecast_to_df <- function(forecast_list, period) {
+  # Convert each element to numeric (benchmark is ts object, which is bad)
+  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
+  df <- as.data.frame(numeric_list)
+  # Add period and horizon
+  df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
+  df$horizon <- 1:nrow(df) #counts rows and gives each the horizon corresponding to it
+  df}
+
+# Apply to all forecasting models
+eval_all_models <- do.call(rbind, lapply(seq_along(worker_results), function(i) {
+  forecast_to_df(worker_results[[i]], period = i) }))
+eval_all_models[] <- lapply(eval_all_models, function(x) as.numeric(x))
+
+# Compute date_of_forecast 
+# period = date the forecast was made
+# date_of_forecast = the future date we are predicting
+eval_all_models$date_of_forecast <- eval_all_models$period + 
+  eval_all_models$horizon 
+
+# Compute forecast error
+eval_all_models$forecast_error <- eval_all_models[[model]] - 
+  eval_all_models$actuals
+
+# Compute variance of forecast errors for the h step ahead forecast
+#  (also computes mean)
+var_by_horizon <- eval_all_models %>%
+  group_by(horizon) %>%
+  summarize(
+    mean_fe = mean(forecast_error, na.rm=T),
+    var_fe = sd(forecast_error, na.rm=T)^2, n = n() )
 
 ```
 
@@ -402,11 +1159,9 @@ in order to avoid clutter.
 
 ```{r Spaghetti Plot, message=FALSE, warning=FALSE}
 
-#needs to run but dont paste anything
-source(here("helpers/pseudo_outofsample_tests.R"))
-
-#paste only first
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+spaghetti_plotter(evals = eval_all_models,
+                  model = model,
+                  model_name = model_name)
 
 ```
 
@@ -418,8 +1173,7 @@ plot but computing the forecast errors as the difference between our point
 forecast and the realised value.
 ```{r Plot of Forecast Errors, warning=FALSE, message=FALSE}
 
-#paste only second
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+FE_spaghetti_plotter(evals = eval_all_models)
 
 ```
 
@@ -430,16 +1184,16 @@ one that is scaled in order to compare relative differences, and one that plots
 density in a way to compare both.
 ```{r Density of Forecast Errors}
 
-#paste only third
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+FE_density_plotter_unscaled(evals = eval_all_models)
+FE_density_plotter_scaled(evals = eval_all_models)
+FE_density_plotter_ridges(evals = eval_all_models)
 
 ```
 
 ### Variance of FE
 ```{r Variance of Forecast Errors}
 
-#paste only fourth
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+FE_variance_plotter(var_by_horizon)
 
 ```
 
@@ -449,15 +1203,49 @@ not here in the appendix. Well maybe not idk.}
 
 ```{r Durbin Watson func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only fourth
-source(here("helpers/pseudo_outofsample_tests.R"))
+#add durbin watson. add ONLY the code related to the methodology of the tests.
+#for all code for table making and such, put it in another helper function
+# like "pseudo_outofsample_tables.R" and call it at the end of this function
+#  just like all other functions here
+
+generate_dw_tests <- function(eval_all_models, formula_cols) {
+  
+  dw_results_list <- list()
+  
+  for (e_model_name in formula_cols) {
+    # Compute forecast errors
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[e_model_name]]
+    h1_errors <- all_errors[eval_all_models$horizon == 1]
+    
+    # Run Durbin-Watson test on h=1 errors
+    temp_model <- lm(h1_errors ~ 1)
+    dw_test_result <- durbinWatsonTest(temp_model)
+    
+    # Store result in tibble
+    dw_results_list[[e_model_name]] <- tibble(
+      horizon = 1,
+      dw_stat = dw_test_result$dw,
+      p_value = dw_test_result$p
+    )
+  }
+  
+  return(dw_results_list)
+}
 
 ```
 
 ```{r Durbin Watson test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only fifth
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+# Tests for first autocorrelation at h=1
+
+# Select Forecast Columns
+formula_cols <- grep("^F_TR_FORMULA_", names(eval_all_models), value = TRUE)
+
+# Automatically set max horizon for loop
+max_h <- max(eval_all_models$horizon)
+
+#Run the Table function, the formula is inside
+generate_dw_table(eval_all_models, formula_cols, model_caption = "Durbin Watson Tests", format = format)
 
 ```
 
@@ -468,15 +1256,47 @@ source(here("scripts/pseudo_out_of_sample_results_script.R"))
 
 ```{r Ljung Box func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only fifth
-source(here("helpers/pseudo_outofsample_tests.R"))
+#add ljung box, same instructions as DW
+
+generate_ljung_box_test <- function(eval_all_models, formula_cols, max_h = max_h){
+  lb_results_list <- list()
+  
+  for (model_name in formula_cols) {
+    
+    all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+    
+    # Collect results for each horizon
+    model_results <- tibble(
+      Horizon = 1:max_h,
+      Q_stat = numeric(max_h),
+      p_value = numeric(max_h)
+    )
+    
+    for (h in 1:max_h) {
+      h_errors <- all_errors[eval_all_models$horizon == h]
+      max_lag <- 4 # default quarterly
+      lb_test <- Box.test(h_errors, lag = max_lag, type = "Ljung-Box")
+      model_results$Q_stat[h] <- lb_test$statistic
+      model_results$p_value[h] <- lb_test$p.value
+    }
+    
+    lb_results_list[[model_name]] <- model_results
+  }
+  return(lb_results_list)
+}
 
 ```
 
 ```{r Ljung Box test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only sixth
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+# With Columns & max lags set in Durbin Watson code chunk
+
+# Loop through each TR
+generate_ljung_box_table(eval_all_models, 
+                         formula_cols, 
+                         max_h = max_h, 
+                         format = format, 
+                         model_caption = "Ljung-Box Tests")
 
 ```
 
@@ -486,15 +1306,120 @@ and package where the actual test function is made}
 
 ```{r jb_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
-#print only third
-source(here("helpers/pseudo_outofsample_tests.R"))
+# These Are all functions needed to generate the jarque bera test to test 
+#  for normality of errors in each horizon
+
+# Helper function where formula cols is the list of Models, for each element 
+#  in formula cols (model_name) produce the caption
+create_jb_specs <- function(model_vector) {
+  lapply(model_vector, function(model_name) {
+    list(
+      model_name = model_name,
+      caption = paste("Jarque–Bera Test Results for Model:", model_name)
+    )
+  })
+}
+
+# This function generates the jarques-bera test
+# it creates it for 1 set of errors for each horizon
+# Input is a model name and the dataframe where all the results and actual values are stored
+# max_h is defined globally for all tests
+generate_jb_report <- function(model_name, eval_all_models, max_h) {
+  
+  # for the model get all errors
+  all_errors <- eval_all_models[["actuals"]] - eval_all_models[[model_name]]
+  
+  # generate dataframe for storage
+  model_results <- data.frame(
+    horizon = integer(),
+    X_squared = numeric(),
+    p_value = numeric(),
+    stringsAsFactors = FALSE
+  )
+  
+  # loop pver each horizon
+  for (h in 1:max_h) {
+    
+    # select horizon error
+    h_errors <- all_errors[eval_all_models$horizon == h]
+    
+    # drop nans
+    h_errors <- h_errors[!is.na(h_errors)]
+    
+    # below 3 observation really not useful so skip
+    if (length(h_errors) < 3) {
+      model_results <- dplyr::bind_rows(
+        model_results,
+        data.frame(horizon = h, X_squared = NA, p_value = NA)
+      )
+      next # break and return back to start of loop
+    }
+    
+    # do test
+    jb <- jarque.bera.test(h_errors)
+    
+    # extract and store results in df
+    model_results <- dplyr::bind_rows(
+      model_results,
+      data.frame(
+        horizon = h,
+        X_squared = jb$statistic,
+        p_value = jb$p.value
+      )
+    )
+  }
+  
+  # resturn results
+  return(model_results)
+}
+
+
+# This  function uses the previous one and collects them into a nice tavle
+
+generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h, format = format) {
+  
+  jb_specs <- create_jb_specs(formula_cols)
+  
+  jb_results <- list()
+  
+  for (i in seq_along(jb_specs)) {
+    spec <- jb_specs[[i]]
+    
+    jb_results[[spec$model_name]] <- tryCatch({
+      
+      # Generate JB report for this model using previous function
+      results <- generate_jb_report(
+        model_name = spec$model_name,
+        eval_all_models = eval_all_models,
+        max_h = max_h
+      )
+      
+      # Return the results
+      results
+      
+    }, error = function(e) {
+      message("Error generating JB report for ", spec$model_name, ": ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)
+    })
+  }
+  
+  # Use table generator helper function 
+  table_output <- format_jb_table(jb_results, format = format)
+  return(table_output)
+}
 
 ```
 
 ```{r Jarque Bera Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only seventh
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+# Run with helper
+# missing benchmark
+generate_all_jb_reports(
+  formula_cols =  formula_cols,
+  eval_all_models = eval_all_models,
+  max_h = max_h,
+  format = format)
 
 ```
 
@@ -521,17 +1446,144 @@ Taylor Rule formulas as well as on the benchmark
 
 ```{r mz_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
-# in final markdown, input just the relevant code, i.e. the tests made
-# who cares about code to create tables, that stays in helpers
-source(here("helpers/pseudo_outofsample_tests.R"))
+# This function runs the Mincer-Zarnowitz regression (Actuals ~ Forecasts)
+# for each horizon h and tests the joint null hypothesis H0: (alpha, beta) = (0, 1)
+# and the uses the table generator helper function to make it into a table
+
+generate_absolute_performance_report <- function(F_model, 
+                                   Actual_values, 
+                                   H, 
+                                   model_caption, 
+                                   format = "html") {
+  # Pre-allocate storage for results
+  mz_results <- data.frame(
+    Horizon = 1:H,
+    Alpha = numeric(H),
+    Beta = numeric(H),
+    P_Value_Joint_Test = numeric(H))
+  
+  for (h in 1:H) {
+    # 1. Create a clean data frame for this horizon
+    #    This pairs the forecasts and actual values and removes any NAs,
+    #    ensuring they remain perfectly aligned.
+    df_h <- data.frame(
+      actuals = Actual_values[[h]],
+      forecasts = F_model[[h]] ) %>%
+      na.omit() 
+    
+    # Check if we have enough data to run the regression (at least 2 obs)
+    if (nrow(df_h) > 2) {
+      # 2. Run MZ regression
+      mz_reg <- lm(actuals ~ forecasts, data = df_h)
+      
+      # 3. Get coefficients
+      coeffs <- summary(mz_reg)$coefficients
+      mz_results$Alpha[h] <- coeffs[1, 1] 
+      mz_results$Beta[h]  <- coeffs[2, 1] 
+      
+      # Using NW errors as seen in class, with lag selection h-1
+      v_matrix <-
+        if (h == 1) {
+          # h=1: No autocorrelation, use standard "White" (HC) errors
+          sandwich::vcovHC(mz_reg, type = "HC3")
+        } else {
+          # h>1: Use Newey-West, manually setting lag = h-1
+          sandwich::NeweyWest(mz_reg, lag = h - 1)
+        }
+      
+      # 4. Test Joint Hypothesis H0: Alpha = 0 AND Beta = 1 and store pvalues
+      test_joint <- linearHypothesis(mz_reg,
+                                     c("(Intercept) = 0", "forecasts = 1"), 
+                                     vcov. = v_matrix)
+      mz_results$P_Value_Joint_Test[h] <- test_joint$"Pr(>F)"[2]
+      
+    } else {
+      # Not enough data to run regression for this horizon
+      mz_results$Alpha[h] <- NA_real_
+      mz_results$Beta[h]  <- NA_real_
+      mz_results$P_Value_Joint_Test[h] <- NA_real_ 
+    }
+  }
+  
+  # Generate table with helper
+  table_output <- generate_absolute_performance_table(mz_results=mz_results, 
+                                                  model_caption=model_caption, 
+                                                  format=format)
+  
+  return(table_output) 
+}
 
 ```
 
 
 ```{r forecast-model-efficiency, echo=TRUE, message=TRUE, warning=FALSE, results='asis'}
 
-#paste only eighth
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+# Call MZ-test helper function 4 times.
+#  Note: These reports is wrapped in trycatch as it sometimes fails
+#         If it does fail, simply decrease R in order to have more 
+#          observations, removing potential multicolinearity.
+
+# MZ Report 1: Actual Rate, No Lag
+mz_report_1 <- tryCatch({
+  generate_absolute_performance_report(
+    F_model = F_TR_1,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Actual Rate, No Lag",
+    format = format)}, error = function(e) {
+      message("Error generating MZ Report (Actual Rate, No Lag): ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)})
+
+# MZ Report 2: Shadow Rate, No Lag (
+mz_report_2 <- tryCatch({
+  generate_absolute_performance_report(
+    F_model = F_TR_2,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Shadow Rate, No Lag",
+    format = format)}, error = function(e) {
+      message("Error generating MZ Report (Shadow Rate, No Lag): ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)})
+
+# MZ Report 3: Actual Rate, with Lag
+mz_report_3 <- tryCatch({
+  generate_absolute_performance_report(
+    F_model = F_TR_3,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Actual Rate, with Lag",
+    format = format)}, error = function(e) {
+      message("Error generating MZ Report (Actual Rate, with Lag): ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)})
+
+# MZ Report 4: Shadow Rate, with Lag
+mz_report_4 <- tryCatch({
+  generate_absolute_performance_report(
+    F_model = F_TR_4,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Shadow Rate, with Lag",
+    format = format)}, error = function(e) {
+      message("Error generating MZ Report (Shadow Rate, with Lag): ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)})
+
+# MZ Report 5: Benchmark
+mz_report_BM <- tryCatch({
+  generate_absolute_performance_report(
+    F_model = F_BM,
+    Actual_values = Actuals,
+    H = H,
+    model_caption = "Mincer-Zarnowitz Test: Benchmark ARIMA",
+    format = format)}, error = function(e) {
+      message("Error generating MZ Report (Benchmark ARIMA): ", e$message)
+      message("Skipping this report and continuing...")
+      return(NULL)})
+
+list(mz_report_1, mz_report_2, mz_report_3, mz_report_4, mz_report_BM)
 
 ```
 
@@ -564,16 +1616,102 @@ same loss.
 
 ```{r dm_test_func, echo=TRUE, message=TRUE, warning=FALSE}
 
-# in final markdown, input just the relevant code, i.e. the tests made
-# who cares about code to create tables, that stays in helpers
-source(here("helpers/pseudo_outofsample_tests.R"))
+# This function runs Diebold-Mariano tests and automatically turns the output
+#  into a kable table 
+
+generate_relative_performance_report <- function(FE_TR_model, 
+                                                 FE_BM_model, 
+                                                 H, 
+                                                 model_caption, 
+                                                 format = "html") { 
+  # Preallocate storage for MSFEs and output data
+  MSFE_TR = numeric(H)
+  MSFE_BM = numeric(H)
+  dm_results <- data.frame(
+    Horizon = 1:H,
+    MSFE_TR = MSFE_TR,
+    MSFE_BM = MSFE_BM,
+    Ratio_TR_vs_BM = numeric(H))
+
+  # Calculate MSFEs
+  for (h in 1:H) {
+    # Ensure errors are cleaned of NAs
+    fe1 <- na.omit(FE_TR_model[[h]])
+    fe2 <- na.omit(FE_BM_model[[h]])
+    
+    MSFE_TR[h] = mean((fe1)^2)
+    MSFE_BM[h] = mean((fe2)^2)
+  }
+  
+  # Run DM Tests
+  DMpvalues = matrix(, nrow = H, ncol = 3)
+  colnames(DMpvalues) <- c("DM_Two_Sided", "DM_Greater", "DM_Lesser")
+  for (h in 1:H){
+    # Note: dm.test needs the full (un-omitted) error vectors
+    #       to align them properly, hence using the original list inputs
+    x1 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h)
+    x2 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
+                 alternative = "greater")
+    x3 = dm_test(e1 = FE_BM_model[[h]], e2 = FE_TR_model[[h]], h = h, 
+                 alternative = "less")
+    DMpvalues[h, 1] = round(x1$p.value, digits = 4)
+    DMpvalues[h, 2] = round(x2$p.value, digits = 4)
+    DMpvalues[h, 3] = round(x3$p.value, digits = 4)
+  }
+  
+  # Put results in a dataframe
+  dm_results$MSFE_TR = MSFE_TR 
+  dm_results$MSFE_BM = MSFE_BM
+  dm_results$Ratio_TR_vs_BM = MSFE_TR / MSFE_BM
+  dm_results <- bind_cols(dm_results, as.data.frame(DMpvalues))
+  
+  # Generate table with helper
+  table_output <- generate_relative_performance_table(dm_results=dm_results,
+                                                      model_caption=model_caption,
+                                                      format=format)
+  return(table_output)
+}
+
 
 ```
 
 ```{r forecast-model-perf, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#paste only ninth
-source(here("scripts/pseudo_out_of_sample_results_script.R"))
+# Call DM-test helper function 4 times.
+
+# Report 1: Actual Rate, No Lag
+report_1 <- generate_relative_performance_report(
+  FE_TR_model = FE_TR_1,
+  FE_BM_model = FE_BM,
+  H = H,
+  model_caption = "MSFE Comparison, Trained on Actual Rate, No Lag",
+  format = format)
+
+# Report 2: Shadow Rate, No Lag
+report_2 <- generate_relative_performance_report(
+  FE_TR_model = FE_TR_2,
+  FE_BM_model = FE_BM,
+  H = H,
+  model_caption = "MSFE Comparison, Trained on Shadow Rate, No Lag",
+  format = format)
+
+# Report 3: Actual Rate, with Lag
+report_3 <- generate_relative_performance_report(
+  FE_TR_model = FE_TR_3,
+  FE_BM_model = FE_BM,
+  H = H,
+  model_caption = "MSFE Comparison, Trained on Actual Rate, with Lag",
+  format = format)
+
+# Report 4: Shadow Rate, with Lag
+report_4 <- generate_relative_performance_report(
+  FE_TR_model = FE_TR_4,
+  FE_BM_model = FE_BM,
+  H = H,
+  model_caption = "MSFE Comparison, Trained on Shadow Rate, with Lag",
+  format = format)
+
+list(report_1, report_2, report_3, report_4)
 
 ```
 
@@ -602,15 +1740,87 @@ in estimates.
 
 ```{r forecast funcs, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#do paste without pred int part
-source(here("helpers/actual_forecast_estimator.R"))
+#--------------------------------------------------------------------------------
+#-----------------                     1                        -----------------
+#--------------------------------------------------------------------------------
+
+# Function to make our actual forecast, including forecasts of our inputs,
+#  and also outputting the ARIMA coefficients and models used
+
+our_predict <- function(data,formula,H){
+  
+  # --- 1. Fit inputs and benchmark models  ---
+  inflation_arma <- my.auto.arima(data$inflation_gap, max.p=4, max.q=4, d=1, var_name="Inflation Gap")
+  outputgap_arma <- my.auto.arima(data$output_gap, max.p=4, max.q=4, d=0, var_name="Output Gap")
+  interest_arma <- my.auto.arima(data$rate, max.p=4, max.q=4, d=1, var_name="Interest Rate")
+  
+  # --- 2. Get forecasts of inputs (all H horizons) ---
+  inflation_forecasts <- my.forecast(inflation_arma, h = H)
+  outputgap_forecasts <- my.forecast(outputgap_arma, h = H)
+  BMpredicted_rates <- my.forecast(interest_arma, h = H)
+  
+  # --- 3. Fit TR model
+  TR_model <- lm(formula, data = data)
+  
+  # --- 4. Build forecast input data frame (iteratively for lags) ---
+  
+  # Allocate storage for full horizon
+  TR_preds <- numeric(H)
+  
+  # Get last known lags (starting point for lagged models)
+  current_shadowrate_lag <- last(data$shadowrate)
+  current_rate_lag <- last(data$rate)
+  
+  for (h in 1:H) {
+    new_data_h <- data.frame(
+      inflation_gap = inflation_forecasts[h],
+      output_gap = outputgap_forecasts[h],
+      shadowrate_lag = current_shadowrate_lag,
+      rate_lag = current_rate_lag)
+    
+    # Get forecasted values
+    pred_h <- predict(TR_model, new_data_h)
+    TR_preds[h] <- round(pmax(pred_h, min(data$rate)) / 0.25) * 0.25
+    
+    # Update the lag for h+1
+    current_rate_lag <- pred_h }
+  
+  # --- 5. Compute forecast for BM ---
+  BM_preds <- round(pmax(BMpredicted_rates, min(data$rate)) / 0.25) * 0.25 
+  
+  return(list(TR_Forecast = TR_preds, 
+              BM_Forecast = BM_preds,
+              Inflation_Forecast = inflation_forecasts + 2, #to add back target 
+              OutputGap_Forecast = outputgap_forecasts,  
+              inflation_gap_arma_coef = inflation_arma$coef,
+              output_gap_arma_coef = outputgap_arma$coef,
+              benchmark_arma_coef = interest_arma$coef,
+              inflation_gap_arma_var = inflation_arma$sigma2,
+              output_gap_arma_var = outputgap_arma$sigma2,
+              benchmark_arma_var = interest_arma$sigma2))}
  
 ```
 
 ```{r forecast, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#do paste without pred int part
-source(here("scripts/final_forecast_script.R"))
+# --------- 1. Compute forecast ---------
+
+# Uses our helper function
+final_forecasts <- our_predict(data = data, formula = model_formula, H = H)
+
+
+# --------- 2. Table ---------
+
+# Uses a helper to display the results in a table
+display_forecasts(final_forecasts, 
+                  caption = paste("For model based on:", model_name),
+                  format = format)
+
+
+# --------- 3. Plot ---------
+
+# Uses a helper to display the results in a plot
+plot_forecasts(final_forecasts)
  
 ```
 
@@ -635,17 +1845,43 @@ as in equation \eqref{eq:PI}.
 
 ```{r prediction_intervals func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#do paste only pred int part
-source(here("helpers/actual_forecast_estimator.R"))
+# Function to compute the prediction intervals based on the actual forecasted
+#  values computed from the previous function, and the forecast error variance
+#   estimated in the pseudo out-of-sample evaluation exercise
+
+our_predict_intervals <- function(estimated_variance, forecast) {
+
+  # Preparing data with point forecasts and variance
+  prediction <- estimated_variance
+  final_interval <- forecast[c(1,2,3,4)]
+  prediction$sd_fe <- sqrt(prediction$var_fe)
+  
+  # Computing confidence intervals 
+  final_interval$sd <- prediction$sd_fe
+  final_interval$upper_1_sd <- final_interval$sd + final_interval$TR_Forecast
+  final_interval$lower_1_sd <- final_interval$sd*(-1) + final_interval$TR_Forecast
+  
+  final_interval$upper_2_sd <- final_interval$sd*2 + final_interval$TR_Forecast
+  final_interval$lower_2_sd <- final_interval$sd*2*(-1) + final_interval$TR_Forecast
+  
+  final_interval <- as.data.frame(final_interval)
+  
+  return(final_interval)
+}
 
 ```
 
 
 ```{r prediction_intervals, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
-#do paste only pred int part (4 and 5)
-source(here("scripts/05_final_forecast_script.R"))
+# --------- 4. Compute Prediction Intervals ---------
 
+final_interval <- our_predict_intervals(estimated_variance = var_by_horizon,
+                                        forecast = final_forecasts)
+
+# --------- 5. Plots Prediction Intervals ---------
+
+plot_forecasts_pred_int(data, intervals = final_interval)
 ```
 
 

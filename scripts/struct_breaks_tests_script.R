@@ -11,7 +11,7 @@
 chow_tests(data, break1 = 55, break2 = 85, 
            events_name <- c("ZLB Start", "COVID-19 Start")) 
 
-# --------- 1. Bai-Perron test ---------
+# --------- 2. Bai-Perron test ---------
 # Run test using helper function 
 bp_tests(data)
 
