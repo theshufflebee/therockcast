@@ -30,6 +30,7 @@ therockcast/
   ├── 04_evaluation.R                   # Subscript that runs the pseudo out-of-sample evaluation scripts for our forecasting model
   ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast
 ├── figures/                            # Folder contining all outputted figures (plots & tables)
+├── ECB_Project.rmd                     # R Markdown file producing the companion paper (coding appendix)
 ```
 
 ## Options
