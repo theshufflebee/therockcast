@@ -183,9 +183,9 @@ plot_forecasts_pred_int <- function(data, intervals) {
   
   # --- 2. Make the actual plot ---
   
-  line_color <- "#1f77b4"       
-  ribbon_outer <- "#aec7e8"     
-  ribbon_inner <- "#c6dbef"     
+  line_color <- "#69A3D1"       
+  ribbon_outer <- "#69A3D1"     
+  ribbon_inner <- "#69A3D1"     
   
   final_fc_plot <- ggplot() +
     
@@ -201,6 +201,12 @@ plot_forecasts_pred_int <- function(data, intervals) {
     geom_line(data = plot_df,
               aes(x = quarter_numeric, y = Value),
               color = line_color, size = 1.5) +
+    geom_vline(
+      xintercept = forecast_df$quarter_numeric[1],
+      linetype = "dashed",
+      color = "gray40",
+      size = 0.8
+    ) +
     
     # X-axis formatting: only show every 2 quarters to avoid clutter
     scale_x_continuous(breaks = plot_df$quarter_numeric[seq(1, nrow(plot_df), by = 2)],
@@ -232,9 +238,9 @@ plot_forecasts_pred_int <- function(data, intervals) {
       filename = "forecast_plot.png",
       path = "figures/",
       plot = final_fc_plot,
-      width = 10,          # in inches
-      height = 6,          # in inches
-      dpi = 300            # high-quality for print
+      width = 9.45,     
+      height = 3.4,   
+      dpi = 300
     )
   }
   return(final_fc_plot)
