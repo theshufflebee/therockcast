@@ -4,7 +4,12 @@
 
 This repository contains all files related to a forecasting project on ECB Policy rates.
 
-## Usage
+## Reports
+
+Find the non-technical report and the associated presentationin the "reports" folder as "NonTechnicalReport.pdf" 
+and "NonTechnicalPresentation.pptx".
+
+## Code 
 
 In order our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
 Then, running the "main.R" script should reproduce all our analysis and figures. Alternatively, one can also run the R Markdown
@@ -31,6 +36,9 @@ therockcast/
   ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast
 ├── figures/                            # Folder contining all outputted figures (plots & tables)
 ├── ECB_Project.rmd                     # R Markdown file producing the companion paper (coding appendix)
+├── reports/                            # Folder contining all reports and files associated
+  ├── NonTechnicalReport.pdf            # Non technical report
+  ├── NonTechnicalPresentation.pptx     # Presentation slides for the non technical report
 ```
 
 ## Options
