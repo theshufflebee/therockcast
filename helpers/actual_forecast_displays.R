@@ -214,10 +214,10 @@ plot_forecasts_pred_int <- function(data, intervals) {
     
     # Labels
     labs(title = "ECB Deposit Facility Rate Forecast",
-         subtitle = paste("Model:", model_name),
+         #subtitle = paste("Model:", model_name),
          y = "Interest Rate (%)",
          x = "",
-         caption = "Shaded areas: ±1 S.D. (dark) / ±2 S.D. (light)") +
+         caption = "Shaded areas: 68% CI (dark) / 95% CI. (light)") +
     
     # Theme settings
     theme_minimal() +
@@ -238,8 +238,8 @@ plot_forecasts_pred_int <- function(data, intervals) {
       filename = "forecast_plot.png",
       path = "figures/",
       plot = final_fc_plot,
-      width = 9.45,     
-      height = 3.4,   
+      width = 10,     
+      height = 5,
       dpi = 300
     )
   }
