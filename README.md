@@ -11,7 +11,7 @@ and "NonTechnicalPresentation.pptx".
 
 ## Code 
 
-In order our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
+In order to run our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
 Then, running the "main.R" script should reproduce all our analysis and figures. Alternatively, one can also run the R Markdown
 file in order to have an easier time looking at the outputs and the code together.
 
