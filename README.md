@@ -36,7 +36,7 @@ therockcast/
   ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast
 ├── figures/                            # Folder contining all outputted figures (plots & tables)
 ├── ECB_Project.rmd                     # R Markdown file producing the companion paper (coding appendix)
-├── reports/                            # Folder contining all reports and files associated
+├── reports/                            # Folder contining all reports and files associated (code to make graphs)
   ├── NonTechnicalReport.pdf            # Non technical report
   ├── NonTechnicalPresentation.pptx     # Presentation slides for the non technical report
 ```
