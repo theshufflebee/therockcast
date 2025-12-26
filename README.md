@@ -11,7 +11,7 @@ and "NonTechnicalPresentation.pptx".
 
 ## Code 
 
-In order our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
+In order to run our code, one only needs to set their FRED API key in their R system environment, as "FRED_API_KEY = your_key_here".
 Then, running the "main.R" script should reproduce all our analysis and figures. Alternatively, one can also run the R Markdown
 file in order to have an easier time looking at the outputs and the code together.
 
@@ -36,7 +36,7 @@ therockcast/
   ├── 05_final_forecast_script.R        # Subscript that runs our final actual forecast
 ├── figures/                            # Folder contining all outputted figures (plots & tables)
 ├── ECB_Project.rmd                     # R Markdown file producing the companion paper (coding appendix)
-├── reports/                            # Folder contining all reports and files associated
+├── reports/                            # Folder contining all reports and files associated (code to make graphs)
   ├── NonTechnicalReport.pdf            # Non technical report
   ├── NonTechnicalPresentation.pptx     # Presentation slides for the non technical report
 ```
