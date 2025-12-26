@@ -470,7 +470,7 @@ both expected and realised inflation (gap).
 
 \begin{equation} 
 \begin{aligned}
-  i_t &= \pi^* + \beta(\pi_t-\pi^*) + \gamma(y_t-\bar{y_t}) 
+  i_t &= \pi^* + \beta(\pi_t-\pi^*) + \gamma(y_t-\bar{y}_t) 
 \end{aligned}
 \label{eq:nolagTR}
 \end{equation}
@@ -515,7 +515,7 @@ the models without the lag.
 
 \begin{equation} 
 \begin{aligned}
-  i_t &= \pi^* + \phi i_{t-1} + \beta (\pi_t-\pi^*) + \gamma(y_t-\bar{y_t})
+  i_t &= \pi^* + \phi i_{t-1} + \beta (\pi_t-\pi^*) + \gamma(y_t-\bar{y}_t)
 \end{aligned}
 \label{eq:lagTR}
 \end{equation}
@@ -732,6 +732,61 @@ At the same time as the ARIMA fits, we use OLS to compute the Taylor Rule coeffi
 The second step is then to do the actual forecasting, where we predict future values
 of the interest rate based on the forecasted values of the inputs using the fitted
 ARIMA models, weighted by the coefficients computed with OLS. 
+
+
+
+### Optimal Forecast Proof
+
+Inflation:
+$$
+\begin{aligned}
+    \tilde{\pi}_t &\equiv \pi_t - \pi^* \quad \overset{\mathrm{}}{\sim} \; ARMA(p,q) \\
+    \tilde{\pi}_t &= \phi_1^\pi \tilde{\pi}_{t-1} + \phi_2^\pi \tilde{\pi}_{t-2} + \phi_3^\pi \tilde{\pi}_{t-3} + \phi_4^\pi \tilde{\pi}_{t-4} + \epsilon_t^\pi + \theta_1^\pi \epsilon_{t-1} + \theta_2^\pi \epsilon_{t-2} + \theta_3^\pi \epsilon_{t-3} + \theta_4^\pi \epsilon_{t-4}
+\end{aligned}
+$$
+Where $\pi^*$ is the ECB's inflation target, and where we use $max(p) = 4 = max(q)$ since we use quarterly data
+
+
+Output:
+$$
+\begin{aligned}
+    \tilde{y}_t &\equiv y_t - \bar{y}_t \quad \overset{\mathrm{}}{\sim} \; ARMA(p,q) \\
+    \tilde{y}_t &= \phi_1^y \tilde{y}_{t-1} + \phi_2^y \tilde{y}_{t-2} + \phi_3^y \tilde{y}_{t-3} + \phi_4^y \tilde{y}_{t-4} + \epsilon_t^y + \theta_1^y \epsilon_{t-1} + \theta_2^y \epsilon_{t-2} + \theta_3^y \epsilon_{t-3} + \theta_4^y \epsilon_{t-4}
+\end{aligned}
+$$
+Where $\bar{y}_t$ is potential output in , and where we use $max(p) = 4 = max(q)$ since we use quarterly data
+
+
+Interest Rate:
+$$
+\begin{cases}
+  \text{ Taylor Rule:} \quad i_t = \pi^* + \phi^i i_{t-1} + \beta(\pi_t - \pi^*) + \gamma(y_t-\bar{y}_t) \\
+  \text{ Benchmark:} \quad i_t \overset{\mathrm{}}{\sim} \; ARMA(p,q)
+\end{cases}
+$$
+Where the Taylor Rule model is based on "Formula 3" and the benchmark follows some ARMA process.
+
+
+Proof:
+$$
+\begin{aligned}
+  \forall h \text{:} \quad x_{t+h|t}^* &= \mathbb{E}_t [\phi_1^x x_{t+h-1} + \phi_2^x x_{t+h-2} + \phi_3^x x_{t+h-3} + \phi_4^x x_{t+h-4} + \epsilon_{t+h}^x + \theta_1^x \epsilon_{t+h-1} + \theta_2^x \epsilon_{t+h-2} + \theta_3^x \epsilon_{t+h-3} + \theta_4^x \epsilon_{t+h-4}] \\
+  &= \mathbb{E}_t \left[ \sum_{i=1}^4 \phi_i^x x_{t+h-i} + \epsilon_{t+h} + \sum^4_{i=1}\theta^x_i \epsilon_{t+h-i} \right] \\
+  \text{for } h=1 \text{:} \quad x_{t+1|t}^* &= \sum_{i=1}^4 \phi_i^x \mathbb{E}_t [  x_{t+1-i} ] +  \mathbb{E}_t [\epsilon_{t+1}] + \sum^4_{i=1}\theta^x_i \mathbb{E}_t [\epsilon_{t+1-i}] \\
+  &= \phi^x_1x_t+\phi^x_2x_{t-1}+\phi^x_3x_{t-2}+\phi^x_4x_{t-3}+\theta^x_1\epsilon_{t}+\theta^x_2\epsilon_{t-1}+\theta^x_3\epsilon_{t-2}+\theta^x_4\epsilon_{t-3}
+\end{aligned}
+$$
+Where $x = \{ \tilde{\pi}_t , \tilde{y}_t , i_t \}
+
+Implies:
+$$
+\begin{aligned}
+  i_{t+1|t}^* &= \mathbb{E}_t [i_{t+1}]  \\
+              &= \mathbb{E}_t [\pi^* + \phi^i i_t + \beta \tilde{\pi}_{t+1} + \gamma \tilde{y}_{t+1} + \epsilon_{t+1}] \\
+              &= \pi^* + \phi^i i_t + \beta \tilde{\pi}_{t+1|t}^* + \gamma \tilde{y}_{t+1|t}^*
+\end{aligned}
+$$
+
 
 ```{r explain_arima_func, echo=TRUE, message=FALSE, warning=FALSE}
 
