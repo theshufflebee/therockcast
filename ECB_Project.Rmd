@@ -773,19 +773,16 @@ $$
   \forall h \text{:} \quad x_{t+h|t}^* &= \mathbb{E}_t [\phi_1^x x_{t+h-1} + \phi_2^x x_{t+h-2} + \phi_3^x x_{t+h-3} + \phi_4^x x_{t+h-4} + \epsilon_{t+h}^x + \theta_1^x \epsilon_{t+h-1} + \theta_2^x \epsilon_{t+h-2} + \theta_3^x \epsilon_{t+h-3} + \theta_4^x \epsilon_{t+h-4}] \\
   &= \mathbb{E}_t \left[ \sum_{i=1}^4 \phi_i^x x_{t+h-i} + \epsilon_{t+h} + \sum^4_{i=1}\theta^x_i \epsilon_{t+h-i} \right] \\
   \text{for } h=1 \text{:} \quad x_{t+1|t}^* &= \sum_{i=1}^4 \phi_i^x \mathbb{E}_t [  x_{t+1-i} ] +  \mathbb{E}_t [\epsilon_{t+1}] + \sum^4_{i=1}\theta^x_i \mathbb{E}_t [\epsilon_{t+1-i}] \\
-  &= \phi^x_1x_t+\phi^x_2x_{t-1}+\phi^x_3x_{t-2}+\phi^x_4x_{t-3}+\theta^x_1\epsilon_{t}+\theta^x_2\epsilon_{t-1}+\theta^x_3\epsilon_{t-2}+\theta^x_4\epsilon_{t-3}
-\end{aligned}
-$$
-Where $x = \{ \tilde{\pi}_t , \tilde{y}_t , i_t \}
-
-Implies:
-$$
-\begin{aligned}
-  i_{t+1|t}^* &= \mathbb{E}_t [i_{t+1}]  \\
+  &= \phi^x_1x_t+\phi^x_2x_{t-1}+\phi^x_3x_{t-2}+\phi^x_4x_{t-3}+\theta^x_1\epsilon_{t}+\theta^x_2\epsilon_{t-1}+\theta^x_3\epsilon_{t-2}+\theta^x_4\epsilon_{t-3} \\
+  \text{Which implies:} \quad i_{t+1|t}^* &= \mathbb{E}_t [i_{t+1}]  \\
               &= \mathbb{E}_t [\pi^* + \phi^i i_t + \beta \tilde{\pi}_{t+1} + \gamma \tilde{y}_{t+1} + \epsilon_{t+1}] \\
               &= \pi^* + \phi^i i_t + \beta \tilde{\pi}_{t+1|t}^* + \gamma \tilde{y}_{t+1|t}^*
 \end{aligned}
 $$
+Where $x = \{ \tilde{\pi}_t , \tilde{y}_t , i_t \}$ (for the benchmark). We thus prove that our forecasts using the ARMA models are optimal. We then apply this using the Taylor Rule formula above to prove that this implies our model forecasts the interest rate optimally.
+
+
+
 
 
 ```{r explain_arima_func, echo=TRUE, message=FALSE, warning=FALSE}
