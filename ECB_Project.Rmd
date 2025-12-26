@@ -204,7 +204,7 @@ DBnomics. We convert each variable to the quarterly average and then store them 
 to one dataframe named "data". It includes a date column, the deposit rate, the shadow
 rate, inflation, inflation gap (which is just inflation minus the ECB target, which is
 set at 2\%), expected inflation, expected inflation gap, real GDP, GDP output gap 
-computed with the HP filter and GDP output gap computed with the Hamilton filter.
+computed with the HP filter and GDP output gap computed with the Hamilton filter. Note that we have no missing values, so we do not do any operation to deal with NA's. We do however cut out Q4 of 2025 as the data on said quarter is not fully available.
 
 ```{r data, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -356,7 +356,8 @@ In this section, we run various tests to understand the properties of our main v
 interest rate, inflation and output gap.
 These include both ADF and KPSS stationarity tests (using the tseries package) and a cointegration test (using the aTSA package) to see if the interest rate is 
 cointegrated with inflation. We wrap these in custom functions that automatically report
-the results and intepret them based on the relevant p-value.
+the results and interpret them based on the relevant p-value. For the ADF tests, a p-value smaller
+than 0.05 means that we reject the null hypothesis H0 that the time series has a unit root (i.e non stationary). For the KPSS test, a p-value smaller than 0.05 means that we reject stationarity of the time series.
 
 ```{r stat_test_func, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -373,13 +374,17 @@ check_stationarity <- function(y, var_name) {
   # Automatically assign interpretation (yes, modular!)
   interpretation <- ""
   if (adf_p < 0.05 && kpss_p > 0.05) {
-    interpretation <- "Stationary I(0): ADF rejects unit root, KPSS confirms stationarity." 
+    interpretation <- "Stationary I(0): ADF rejects unit root, 
+                        KPSS confirms stationarity." 
   } else if (adf_p > 0.05 && kpss_p < 0.05) {
-    interpretation <- "Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity." 
+    interpretation <- "Non-Stationary I(1): ADF confirms unit root, 
+                        KPSS rejects stationarity." 
   } else if (adf_p > 0.05 && kpss_p > 0.05) {
-    interpretation <- "Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity." 
+    interpretation <- "Conflicting Results: ADF confirms unit root, 
+                        while KPSS suggests stationarity." 
   } else { # adf_p < 0.05 && kpss_p < 0.05
-    interpretation <- "Conflicting Results: ADF rejects unit root, while KPSS rejects stationarity." 
+    interpretation <- "Conflicting Results: ADF rejects unit root, 
+                        while KPSS rejects stationarity." 
   }
   
   # Export results
@@ -460,7 +465,8 @@ cat("\\clearpage")
 
 # Taylor Rule Estimation
 We now run basic Taylor Rule estimations using OLS on the complete dataset in order
-to get some information on the historical Taylor coefficients.
+to get some information on the historical Taylor coefficients. We use Newey-West standard errors 
+which is standard for time series estimation.
 
 ## Without Lags
 The "No Lag" Taylor Rule specifications follow the regression expressed in equation \eqref{eq:nolagTR}. We run 6 variations total of this, starting with the base case
@@ -486,6 +492,7 @@ TRsr <- lm(shadowrate ~ realised_inflation_gap + output_gap, data = data)
 # List them and print them as tables using our helper function
 models <- list(TR, TRsr)
 taylor_regression_to_table(models, caption = "No Lag, No Expectations")
+#Note that this helper function reports the Newey-West standard errors.
 
 ```
 
@@ -564,9 +571,9 @@ to see if there are any using the "strucchange" package. The Chow test is run on
 two dates where we suspect there have been breaks which are in the third quarter of 
 2012, representing the start 
 of the Zero Lower Bound, and in the first quarter of 2020, representing the start
-of the COVID-19 pandemic. The Bai-Perron test, however, works by finding any
-structural breaks present in the overall sample \textcolor{red}{which minimise
-the Aikake Information Criterion}. 
+of the COVID-19 pandemic. The null hypothesis is that there are no structural breaks, and thus a p-value below 0.05 signifies we reject said hypothesis and believe that there is a break. The Bai-Perron test, however, works by finding any
+structural breaks present in the overall sample which minimise
+the Bayesian Information Criterion. 
 
 ```{r chow test func, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -759,7 +766,7 @@ Where the Taylor Rule model is based on "Formula 3" and the benchmark follows so
 Proof:
 $$
 \begin{aligned}
-  \forall h \text{:} \quad x_{t+h|t}^* &= \mathbb{E}_t [\phi_1^x x_{t+h-1} + \phi_2^x x_{t+h-2} + \phi_3^x x_{t+h-3} + \phi_4^x x_{t+h-4} + \epsilon_{t+h}^x + \theta_1^x \epsilon_{t+h-1} + \theta_2^x \epsilon_{t+h-2} + \theta_3^x \epsilon_{t+h-3} + \theta_4^x \epsilon_{t+h-4}] \\
+  \forall h \text{:} \quad x_{t+h|t}^* &= \mathbb{E}_t [\phi_1^x x_{t+h-1} + \phi_2^x x_{t+h-2} + \phi_3^x x_{t+h-3} + \phi_4^x x_{t+h-4} + \\ & \qquad \quad  \epsilon_{t+h}^x + \theta_1^x  \epsilon_{t+h-1} + \theta_2^x \epsilon_{t+h-2} + \theta_3^x \epsilon_{t+h-3} + \theta_4^x \epsilon_{t+h-4}] \\
   &= \mathbb{E}_t \left[ \sum_{i=1}^4 \phi_i^x x_{t+h-i} + \epsilon_{t+h} + \sum^4_{i=1}\theta^x_i \epsilon_{t+h-i} \right] \\
   \text{for } h=1 \text{:} \quad x_{t+1|t}^* &= \sum_{i=1}^4 \phi_i^x \mathbb{E}_t [  x_{t+1-i} ] +  \mathbb{E}_t [\epsilon_{t+1}] + \sum^4_{i=1}\theta^x_i \mathbb{E}_t [\epsilon_{t+1-i}] \\
   &= \phi^x_1x_t+\phi^x_2x_{t-1}+\phi^x_3x_{t-2}+\phi^x_4x_{t-3}+\theta^x_1\epsilon_{t}+\theta^x_2\epsilon_{t-1}+\theta^x_3\epsilon_{t-2}+\theta^x_4\epsilon_{t-3} \\
@@ -768,18 +775,18 @@ $$
               &= \pi^* + \phi^i i_t + \beta \tilde{\pi}_{t+1|t}^* + \gamma \tilde{y}_{t+1|t}^*
 \end{aligned}
 $$
-Where $x = \{ \tilde{\pi}_t , \tilde{y}_t , i_t \}$ (for the benchmark). We thus prove that our forecasts using the ARMA models are optimal for horizon 1. We then apply this using the Taylor Rule formula above to prove that this implies our model forecasts the interest rate optimally for horizon 1. 
-As all the equations are linear, we can take advantage of the chain rule of forecasting for iterative forecasting for all horizons $h>1$, plugging in the values forecasted for $(t+1)$ in order to get forecasts for $(t+2)$ and so on, which is what we do until horizon 10.
+Where $x = \{ \tilde{\pi}_t , \tilde{y}_t , i_t \}$. 
 
-\textcolor{red}{Note: something something note that we do not actually use arma(4,4) specifications. the actual specifications we use (insert those that are output in the end of chunks) where d=1 for inflation and interest rate as those are non-stationary}
+We thus prove that our forecasts using the ARMA models are optimal for horizon 1. We then apply this using the Taylor Rule formula above to prove that this implies our model forecasts the interest rate optimally for horizon 1. As all the equations are linear, we can take advantage of the chain rule of forecasting for iterative forecasting for all horizons $h>1$, plugging in the values forecasted for $(t+1)$ in order to get forecasts for $(t+2)$ and so on, which is what we do until horizon 10.
+Note that we do not actually use ARMA(4,4) specifications in the empirical application of this, but that this consists the upper bound of the number of $p$ and $q$ of our specifications.
 
 
 ### Empirical Application
 The way we apply the theory consists of two steps. First, we run our custom auto 
-ARIMA function on the inputs of the Taylor Rule (inflation and output gap). This 
+ARIMA function on the inputs of the Taylor Rule (inflation and output gap) which automatically selects the best combination of $p$ and $q$ that minimises the AIC. This 
 function replicates the one in the "forecast" package, though does not loop over
 the differentiation parameter as we want to set that value manually based on the 
-stationarity tests run above. We additionally run this function on the interest
+stationarity tests run above. Since the output gap is the only non-stationary variable, we set $d=0$ for that variable and $d=1$ for the others. The maximum $p$ and $q$ we use is four, as we have quarterly data. We additionally run this function on the interest
 rate in order to serve as our benchmark model for relative forecasting performance 
 evaluation. In order to compute the forecasts based on the fitted ARIMA models,
 we use a custom function that replicates the same use-case in the "forecast" package.
