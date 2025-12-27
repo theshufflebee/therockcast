@@ -988,7 +988,7 @@ the evaluation sample, and dropping the very first quarter in the overall sample
 For the lagged models, we additionally need to include an iterative forecasting step, where 
 we loop over each horizon in order to use the previous point forecast to compute
 the next one. In order to speed up the process, we include a simple parallelization
-procedure which runs these loops in parallel on a fourth the the users' CPU cores.
+procedure which runs these loops in parallel on a fourth of the users' CPU cores.
 
 ### Parameters
 ```{r pseudo-out-of-sample-parameters, echo=TRUE, message=FALSE, warning=FALSE}
@@ -1175,7 +1175,7 @@ for (i in 1:P) {
 # Convert the forecast lists (F_TR_x) into single dataframes
 forecast_to_df <- function(forecast_list, period) {
   # Convert each element to numeric (benchmark is ts object, which is bad)
-  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #just make each list inside numeric
+  numeric_list <- lapply(forecast_list, function(x) as.numeric(x)) #make each list numeric
   df <- as.data.frame(numeric_list)
   # Add period and horizon
   df$period <- period #first list is all horizon 1 forecasts, gives this to all observations
@@ -1492,7 +1492,7 @@ values of the interest rate on the forecasted ones, as seen in equation
 hypothesis that $\alpha = 0$ (model is unbiased) and $\beta = 1$ (model is efficient).
 We run this with a custom function that loops over each horizon, in order to assess
 the performance of our models in the shorter vs longer term, and do so on all
-Taylor Rule formulas as well as on the benchmark
+Taylor Rule formulas as well as on the benchmark.
 
 \begin{equation} 
 \begin{aligned}
@@ -1652,8 +1652,8 @@ This allows us to see the average performance of each estimation. For a deeper
 comparison, we implement Diebold-Mariano tests on each horizon. This test compares 
 the forecast errors of both models by computing a loss differential, which is the 
 difference of the squared forecast errors between the main model and the benchmark.
-The test statistic is as reported in equation \eqref{eq:DM} \textcolor{red}{and 
-assumes that $\hat{d_{h,t}}$ is covariance stationary}. We include three versions
+The test statistic is as reported in equation \eqref{eq:DM} and 
+assumes that $\hat{d}_{h,t}$ is covariance stationary. We include three versions
 of the test, one where the alternative hypothesis is that the two models bring
 about different losses, one where the alternative hypothesis is that the tested 
 model is greater than the benchmark, and one where the alternative hypothesis is
@@ -1666,7 +1666,7 @@ same loss.
 \begin{aligned}
   DM &= \frac{\bar{\hat{d_h}}}{\hat{\sigma^2_{\bar{\hat{d_h}}}}} \\
    &= \frac{\frac{1}{P}\sum^{T-h}_{t=R}\hat{d}_{h,t}}{\hat{\sigma^2_{\bar{\hat{d_h}}}}} \\
-   \text{where } \hat{d_{h,t}} &= \hat{e_{1,t+h|t}^2} - \hat{e_{2,t+h|t}^2}
+   \text{where } \hat{d}_{h,t} &= \hat{e}_{1,t+h|t}^2 - \hat{e}_{2,t+h|t}^2
 \end{aligned}
 \label{eq:DM}
 \end{equation}
