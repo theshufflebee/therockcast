@@ -731,7 +731,7 @@ Our method relies on forecasting inputs to a Taylor Rule using ARIMA models, and
 
 
 ### Optimal Forecast Proof
-We thus need to prove optimality of ARMA forecasts for the inflation gap, the output gap, and the interest rate (for the benchmark). We can then prove optimality of the Taylor Rule forecasts
+We thus need to prove optimality of ARMA forecasts for the inflation gap, the output gap, and the interest rate (for the benchmark). We can then prove optimality of the Taylor Rule forecasts.
 
 Inflation Gap:
 $$
@@ -740,7 +740,7 @@ $$
     \tilde{\pi}_t &= \phi_1^\pi \tilde{\pi}_{t-1} + \phi_2^\pi \tilde{\pi}_{t-2} + \phi_3^\pi \tilde{\pi}_{t-3} + \phi_4^\pi \tilde{\pi}_{t-4} + \epsilon_t^\pi + \theta_1^\pi \epsilon_{t-1} + \theta_2^\pi \epsilon_{t-2} + \theta_3^\pi \epsilon_{t-3} + \theta_4^\pi \epsilon_{t-4}
 \end{aligned}
 $$
-Where $\pi^*$ is the ECB's inflation target, and where we use $max(p) = 4 = max(q)$ since we use quarterly data
+Where $\pi^*$ is the ECB's inflation target, and where we use $max(p) = 4 = max(q)$ since we use quarterly data.
 
 
 Output Gap: 
@@ -750,7 +750,7 @@ $$
     \tilde{y}_t &= \phi_1^y \tilde{y}_{t-1} + \phi_2^y \tilde{y}_{t-2} + \phi_3^y \tilde{y}_{t-3} + \phi_4^y \tilde{y}_{t-4} + \epsilon_t^y + \theta_1^y \epsilon_{t-1} + \theta_2^y \epsilon_{t-2} + \theta_3^y \epsilon_{t-3} + \theta_4^y \epsilon_{t-4}
 \end{aligned}
 $$
-Where $\bar{y}_t$ is potential output in , and where we use $max(p) = 4 = max(q)$ since we use quarterly data
+Where $\bar{y}_t$ is potential output in , and where we use $max(p) = 4 = max(q)$ since we use quarterly data.
 
 
 Interest Rate:
@@ -1239,7 +1239,7 @@ We can then plot the distribution of these forecast errors using a density plot.
 We include 3 versions: one that is unscaled in order to compare the absolute values,
 one that is scaled in order to compare relative differences, and one that plots
 density in a way to compare both.
-```{r Density of Forecast Errors}
+```{r Density of Forecast Errors, warning=FALSE, message=FALSE}
 
 FE_density_plotter_unscaled(evals = eval_all_models)
 FE_density_plotter_scaled(evals = eval_all_models)
@@ -1248,7 +1248,7 @@ FE_density_plotter_ridges(evals = eval_all_models)
 ```
 
 ### Variance of FE
-```{r Variance of Forecast Errors}
+```{r Variance of Forecast Errors, warning=FALSE, message=FALSE}
 
 FE_variance_plotter(var_by_horizon)
 
