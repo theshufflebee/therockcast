@@ -239,7 +239,7 @@ plot_forecasts_pred_int <- function(data, intervals) {
       path = "figures/",
       plot = final_fc_plot,
       width = 10,     
-      height = 5,
+      height = 6,
       dpi = 300
     )
   }
