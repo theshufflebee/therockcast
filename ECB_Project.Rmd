@@ -1308,8 +1308,15 @@ generate_dw_table(eval_all_models,
 
 
 ### Overall Autocorrelation of FE
-\textcolor{red}{We don't reject H0 -> h+1 are uncorrelated
-1,2, are autocorrelated, 3 and 4 are not.}
+
+Here we run the Ljung-Box test to test if the model contains a lack of fit, or in other words, if there is significant autocorrelation amongst the model errors. Rejecting H0 means therefore that the fit of the model is bad and we're missing some explainative Variable. Concrently the Test statistic is as follows:
+
+$$
+Q_{LB} = T(T+2) \sum_{\tau =1}^{m} (\frac{1}{1 - \tau}) \hat{p}^2(\tau) \xrightarrow[]{d} \chi^2_{m}
+
+$$
+
+
 
 ```{r Ljung Box func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
@@ -1357,8 +1364,26 @@ generate_ljung_box_table(eval_all_models,
 
 ```
 
+\textcolor{red}{We don't reject H0 -> h+1 are uncorrelated
+1,2, are auto correlated, 3 and 4 are not.}
+
+We conclude from these results that model 1 and 2 have significant autocorrelation in the residuals,
+while model 3 and 4 don't.
+
+
 ### Errors Normally Distributed
-Run the Jarque-Bera test using a custom function that \textcolor{red}{explain loop
+Run the Jarque-Bera test using a custom function that runs the test on all horizon errors and tests
+if they are normally distributed. The test statistic uses the third and forth moment (Skewness and Kurtosis) and 
+checks if the match a normal distribution. If H0 is rejected, they errors aren't normally distributed.
+
+$$
+JB = \frac{n}{6}(S^2 + \frac{1}{4} (K-3)^2)
+$$
+
+S is the Skewness and K is the Kurtosis. 
+
+
+\textcolor{red}{explain loop
 and package where the actual test function is made}
 
 ```{r jb_test_func, echo=TRUE, message=TRUE, warning=FALSE}
@@ -1467,6 +1492,8 @@ generate_all_jb_reports <- function(formula_cols, eval_all_models, max_h, format
 }
 
 ```
+
+
 
 ```{r Jarque Bera Test, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
