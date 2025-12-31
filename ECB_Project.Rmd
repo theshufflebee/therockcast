@@ -1309,12 +1309,14 @@ generate_dw_table(eval_all_models,
 
 ### Overall Autocorrelation of FE
 
-Here we run the Ljung-Box test to test if the model contains a lack of fit, or in other words, if there is significant autocorrelation amongst the model errors. Rejecting H0 means therefore that the fit of the model is bad and we're missing some explainative Variable. Concrently the Test statistic is as follows:
+We employ the Ljung-Box test to assess model adequacy by checking for significant autocorrelation in the residuals. The null hypothesis ($H_0$) assumes the errors are white noise; therefore, a rejection of $H_0$ indicates that the model fails to capture specific temporal dependencies, suggesting a potential lack of fit or model misspecification. The test statistic is specified in \eqref{eqLB} where $T$ represents the sample size, $m$ is the number of lags being tested, and $\hat{\rho}(\tau)$ is the sample autocorrelation at lag $\tau$. Under $H_0$, $Q_{LB}$ asymptotically follows a $\chi^2$ distribution with $m$ degrees of freedom. Below we run the test for all models using the function from the stats package
 
-$$
-Q_{LB} = T(T+2) \sum_{\tau =1}^{m} (\frac{1}{1 - \tau}) \hat{p}^2(\tau) \xrightarrow[]{d} \chi^2_{m}
-
-$$
+\begin{equation} 
+\begin{aligned}
+  Q_{LB} = T(T + 2) \sum_{\tau=1}^{m} \left( \frac{1}{T - \tau} \right) \hat{\rho}^2(\tau) \xrightarrow{d} \chi^2_m
+\end{aligned}
+\label{eq:LB}
+\end{equation}
 
 
 
@@ -1372,16 +1374,14 @@ while model 3 and 4 don't.
 
 
 ### Errors Normally Distributed
-Run the Jarque-Bera test using a custom function that runs the test on all horizon errors and tests
-if they are normally distributed. The test statistic uses the third and forth moment (Skewness and Kurtosis) and 
-checks if the match a normal distribution. If H0 is rejected, they errors aren't normally distributed.
+We Run the Jarque-Bera test using a function from the tseries package that runs the test on all horizon errors and tests if they are normally distributed. The Test is specified in \eqref{eqJB}, where $n$ is the number of observations, $S$ is the sample skewness, and $K$ is the sample kurtosis. Under $H_0$, the statistic asymptotically follows a $\chi^2$ distribution with 2 degrees of freedom. A rejection of $H_0$ indicates that the residuals exhibit significant asymmetry (or "fat tails)," suggesting that standard confidence intervals may be inappropriate.
 
-$$
-JB = \frac{n}{6}(S^2 + \frac{1}{4} (K-3)^2)
-$$
-
-S is the Skewness and K is the Kurtosis. 
-
+\begin{equation} 
+\begin{aligned}
+  JB = \frac{n}{6}(S^2 + \frac{1}{4} (K-3)^2) \sim \chi^2_2
+\end{aligned}
+\label{eq:JB}
+\end{equation}
 
 \textcolor{red}{explain loop
 and package where the actual test function is made}
