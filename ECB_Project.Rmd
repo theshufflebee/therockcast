@@ -1309,7 +1309,7 @@ generate_dw_table(eval_all_models,
 
 ### Overall Autocorrelation of FE
 
-We employ the Ljung-Box test to assess model adequacy by checking for significant autocorrelation in the residuals. The null hypothesis ($H_0$) assumes the errors are white noise; therefore, a rejection of $H_0$ indicates that the model fails to capture specific temporal dependencies, suggesting a potential lack of fit or model misspecification. The test statistic is specified in \eqref{eq:LB} where $T$ represents the sample size, $m$ is the number of lags being tested, and $\hat{\rho}(\tau)$ is the sample autocorrelation at lag $\tau$. Under $H_0$, $Q_{LB}$ asymptotically follows a $\chi^2$ distribution with $m$ degrees of freedom. Below we run the test for all models using the function from the stats package
+We employ the Ljung-Box test to assess model adequacy by checking for significant autocorrelation in the residuals. The null hypothesis ($H_0$) assumes the errors are white noise; therefore, a rejection of $H_0$ indicates that the model fails to capture specific temporal dependencies, suggesting a potential lack of fit or model misspecification. The test statistic is specified in \eqref{eq:LB} where $T$ represents the sample size, $m$ is the number of lags being tested, and $\hat{\rho}(\tau)$ is the sample autocorrelation at lag $\tau$. Under $H_0$, $Q_{LB}$ asymptotically follows a $\chi^2$ distribution with $m$ degrees of freedom. Below we run the test for all models using the function from the stats package.
 
 \begin{equation} 
 \begin{aligned}
@@ -1374,7 +1374,7 @@ while model 3 and 4 don't.
 
 
 ### Errors Normally Distributed
-We Run the Jarque-Bera test using a function from the tseries package that runs the test on all horizon errors and tests if they are normally distributed. The Test is specified in \eqref{eqJB}, where $n$ is the number of observations, $S$ is the sample skewness, and $K$ is the sample kurtosis. Under $H_0$, the statistic asymptotically follows a $\chi^2$ distribution with 2 degrees of freedom. A rejection of $H_0$ indicates that the residuals exhibit significant asymmetry (or "fat tails)," suggesting that standard confidence intervals may be inappropriate.
+We Run the Jarque-Bera test using a function from the tseries package that runs the test on all horizon errors and tests if they are normally distributed. The Test is specified in \eqref{eq:JB}, where $n$ is the number of observations, $S$ is the sample skewness, and $K$ is the sample kurtosis. Under $H_0$, the statistic asymptotically follows a $\chi^2$ distribution with 2 degrees of freedom. A rejection of $H_0$ indicates that the residuals exhibit significant asymmetry (or "fat tails)," suggesting that standard confidence intervals may be inappropriate.
 
 \begin{equation} 
 \begin{aligned}
