@@ -1309,7 +1309,7 @@ generate_dw_table(eval_all_models,
 
 ### Overall Autocorrelation of FE
 
-We employ the Ljung-Box test to assess model adequacy by checking for significant autocorrelation in the residuals. The null hypothesis ($H_0$) assumes the errors are white noise; therefore, a rejection of $H_0$ indicates that the model fails to capture specific temporal dependencies, suggesting a potential lack of fit or model misspecification. The test statistic is specified in \eqref{eqLB} where $T$ represents the sample size, $m$ is the number of lags being tested, and $\hat{\rho}(\tau)$ is the sample autocorrelation at lag $\tau$. Under $H_0$, $Q_{LB}$ asymptotically follows a $\chi^2$ distribution with $m$ degrees of freedom. Below we run the test for all models using the function from the stats package
+We employ the Ljung-Box test to assess model adequacy by checking for significant autocorrelation in the residuals. The null hypothesis ($H_0$) assumes the errors are white noise; therefore, a rejection of $H_0$ indicates that the model fails to capture specific temporal dependencies, suggesting a potential lack of fit or model misspecification. The test statistic is specified in \eqref{eq:LB} where $T$ represents the sample size, $m$ is the number of lags being tested, and $\hat{\rho}(\tau)$ is the sample autocorrelation at lag $\tau$. Under $H_0$, $Q_{LB}$ asymptotically follows a $\chi^2$ distribution with $m$ degrees of freedom. Below we run the test for all models using the function from the stats package
 
 \begin{equation} 
 \begin{aligned}
