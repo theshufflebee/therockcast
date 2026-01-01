@@ -9,13 +9,13 @@
 raw_data_to_plot_data <- function(data) {
 
   plot_data <- data %>%
-    pivot_longer(cols = c(rate, inflation, exp_inflation, output_gap_hp, output_gap_ham),
+    pivot_longer(cols = c(rate, shadowrate, inflation, exp_inflation, output_gap_hp, output_gap_ham),
                  names_to = "series",
                  values_to = "value") %>%
       mutate(series = factor(series, 
-                           levels = c("rate", "inflation", "exp_inflation", 
+                           levels = c("rate", "shadowrate", "inflation", "exp_inflation", 
                                       "output_gap_hp", "output_gap_ham"),
-                           labels = c("Deposit Rate", "(Realised) Inflation", 
+                           labels = c("Deposit Rate", "Shadow Rate", "(Realised) Inflation", 
                                       "(Expected) Inflation", "Output Gap (HP)", 
                                       "Output Gap (Hamilton)")))
   return(plot_data)

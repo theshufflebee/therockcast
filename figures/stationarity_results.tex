@@ -1,17 +1,22 @@
 \begin{table}
 \centering
-\caption{Summary of Stationarity Tests (ADF \& KPSS)}
+\caption{\label{tab:data_prop}Summary of Stationarity Tests (ADF \& KPSS)}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \begin{tabular}[t]{>{}l|rr>{\raggedright\arraybackslash}p{6cm}}
 \toprule
 Variable & ADF p-value & KPSS p-value & Result\\
 \midrule
-Interest Rate & 0.4350 & 0.0359 & Non-Stationary I(1): ADF confirms unit root, KPSS rejects stationarity.\\
-Inflation & 0.2257 & 0.1000 & Conflicting Results: ADF confirms unit root, while KPSS suggests stationarity.\\
-Output Gap & 0.0131 & 0.1000 & Stationary I(0): ADF rejects unit root, KPSS confirms stationarity.\\
-Interest Rate (1st Diff) & 0.0100 & 0.1000 & Stationary I(0): ADF rejects unit root, KPSS confirms stationarity.\\
-Inflation (1st Diff) & 0.0100 & 0.1000 & Stationary I(0): ADF rejects unit root, KPSS confirms stationarity.\\
+Interest Rate & 0.4350 & 0.0359 & Non-Stationary I(1): ADF confirms unit root, 
+                        KPSS rejects stationarity.\\
+Inflation & 0.2257 & 0.1000 & Conflicting Results: ADF confirms unit root, 
+                        while KPSS suggests stationarity.\\
+Output Gap & 0.0131 & 0.1000 & Stationary I(0): ADF rejects unit root, 
+                        KPSS confirms \vphantom{2} stationarity.\\
+Interest Rate (1st Diff) & 0.0100 & 0.1000 & Stationary I(0): ADF rejects unit root, 
+                        KPSS confirms \vphantom{1} stationarity.\\
+Inflation (1st Diff) & 0.0100 & 0.1000 & Stationary I(0): ADF rejects unit root, 
+                        KPSS confirms stationarity.\\
 \bottomrule
 \end{tabular}}
 \end{table}

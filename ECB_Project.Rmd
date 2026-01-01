@@ -109,9 +109,8 @@ HORIZON <- 10
 
 # --------- 2. Related to Document Output ---------
 
-format <- "html"
 format <- "latex" 
-save_figures <- FALSE 
+save_figures <- T 
 
 ```
 
