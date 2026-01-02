@@ -1254,8 +1254,17 @@ FE_variance_plotter(var_by_horizon)
 ```
 
 ### Horizon 1 Autocorrelation of FE
-\textcolor{red}{Model 1, 2, 3 are autocorrelated at h=1. Include results in paper,
-not here in the appendix. Well maybe not idk.}
+
+We utilize the Durbin-Watson test to detect the presence of first-order autocorrelation in the forecast errors at the $h=1$ horizon. The null hypothesis ($H_0$) assumes that the residuals are uncorrelated, while the alternative hypothesis ($H_a$) suggests that they follow a first-order autoregressive process. The test statistic $d$ is defined as the ratio of the sum of squared differences in successive residuals to the residual sum of squares:
+
+\begin{equation}
+\begin{aligned}
+d = \frac{\sum_{t=2}^{T} (e_t - e_{t-1})^2}{\sum_{t=1}^{T} e_t^2}
+\end{aligned}
+\label{eq:DW}
+\end{equation}
+
+Where $e_t$ represents the forecast error at time $t$. The statistic $d$ typically ranges between 0 and 4; a value near 2 indicates no serial correlation, whereas values approaching 0 suggest positive autocorrelation and values approaching 4 suggest negative autocorrelation. Below, we apply this test to the $h=1$ errors across all models to ensure that the immediate forecast residuals do not contain exploitable patterns ("can't forecast the errors").
 
 ```{r Durbin Watson func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
