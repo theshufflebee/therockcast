@@ -170,11 +170,9 @@ cat("\\clearpage")
                     The ECB Monetary Policy is steered through this rate.
 
 * Shadow Interest Rate: The Shadow rate was developed by 
-                        \cite{wuTimeVaryingLowerBound2017} and does quantify 
-                        a hypothetical removal of the ZLB. The rate does not 
-                        track 1:1 on the deposit facility in the data before 
-                        the ZLB, instead being closer to the refinancing rate. 
-                        \textcolor{red}{(maybe need to adjust, oui je crois faux, surtout la                          partie sur refinancing rate)}
+                        Wu & Xia (2017) and does quantify 
+                        a hypothetical removal of the ZLB as it tracks the deposit
+                        facility rate very closely before the ZLB.
 
 * GDP: The GDP Data is quarterly real GDP in 2010 Euros in million retrieved from FRED 
        via Eurostat. The data is seasonally adjusted.
@@ -1264,7 +1262,9 @@ d = \frac{\sum_{t=2}^{T} (e_t - e_{t-1})^2}{\sum_{t=1}^{T} e_t^2}
 \label{eq:DW}
 \end{equation}
 
-Where $e_t$ represents the forecast error at time $t$. The statistic $d$ typically ranges between 0 and 4; a value near 2 indicates no serial correlation, whereas values approaching 0 suggest positive autocorrelation and values approaching 4 suggest negative autocorrelation. Below, we apply this test to the $h=1$ errors across all models to ensure that the immediate forecast residuals do not contain exploitable patterns ("can't forecast the errors").
+Where $e_t$ represents the forecast error at time $t$. The statistic $d$ typically ranges between 0 and 4; a value near 2 indicates no serial correlation, whereas values approaching 0 suggest positive autocorrelation and values approaching 4 suggest negative autocorrelation. Below, we apply this test to the $h=1$ errors across all models to ensure that the immediate forecast residuals do not contain exploitable patterns ("can't forecast the errors"). A p value below 0.1 indicates that we reject $H_0$ at the 10% level and a p value of 0.05 and 0.01 mean we reject at a 5% and 1% level respectively
+
+We find that the models based on the Taylor Rule formula without lags have heavily auto correlated errors significant at the 1% level, while the ones with lagged inflation exhibit autocorrelation to a lesser degree. For our model 3 we reject $H_0$ at only the 5\% significance level, while model 4 exhibits no autocorrelation in the horizon 1 errors.
 
 ```{r Durbin Watson func, echo=TRUE, message=FALSE, warning=FALSE, results='asis'}
 
@@ -1375,7 +1375,9 @@ generate_ljung_box_table(eval_all_models,
 ```
 
 
-We conclude from these results that model 1 and 2 have significant autocorrelation in the residuals, while model 3 and 4 do not.
+We reject the null hypothesis for the “no-lag” models (1 & 2), indicating that the residuals exhibit significant serial correlation at h-1. For these models, the errors can not be considered White Noise, suggesting that they may be specified or missing an explanatory variable. In contrast, for the lagged Taylor Rule models, we only reject the null for h-1 at the 5% level for model 3 and for model 4 we do not reject the null at h-1 at all. We conclude from these results that model 1 and 2 have heavily autocorrelation in the h-1 residuals, while model 3 has autocorrelation to a lesser degree and 4 does have none at all.
+
+Since we utilize an iterative forecasting approach where the $h$-step ahead forecast is contingent upon the $h-1$ prediction, any misspecification identified by the Ljung-Box test at short horizons is subject to propagation across the entire forecast trajectory. 
 
 
 ### Errors Normally Distributed
