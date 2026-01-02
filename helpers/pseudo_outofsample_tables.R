@@ -162,13 +162,13 @@ format_jb_table <- function(jb_results_list, format = format) {
     column_spec(1, bold = TRUE, border_right = TRUE) %>%
     column_spec(4, monospace = TRUE) %>%
     footnote(
-      general = "This test checks if the errors are normally distributed.",
+      general = "A low p-value indicates the rejection of the Null Hypothesis that the errors are normally distributed.",
       symbol = c(
-        "'Errors aren't normally distributed",
+        "The errors do not follow a normal distribution (indicating high skewness or fat tails).",
         "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"
       ),
       general_title = "Note:",
-      symbol_title = "Jarque-Berra Test Alternative Hypothesis (H_A):",
+      symbol_title = "Jarque-Bera Test Alternative Hypothesis (H_A):",
       footnote_as_chunk = TRUE,
       threeparttable = TRUE
     )
@@ -218,10 +218,10 @@ generate_dw_table <- function(eval_all_models, formula_cols, model_caption, form
     column_spec(1, bold = TRUE, border_right = TRUE) %>%
     column_spec(4, monospace = TRUE) %>%
     footnote(
-      general = "This test checks the first order autocorrelation of forecasting errors. A test statistic around 2 indicates no autocorrelation.",
+      general = "A low p-value indicates the rejection of H_0 (no first-order autocorrelation). The DW statistic ranges from 0 to 4, where a value of approximately 2 suggests the absence of serial correlation.",
       symbol = c(
-        "'Greater 2' means negative autocorrelations.",
-        "'Lesser 2' means positive autocorrelation.",
+        "Values significantly greater than 2 indicate negative autocorrelation.",
+        "Values significantly less than 2 indicate positive autocorrelation.",
         "Signif. codes:  '***' 0.01,  '**' 0.05,  '*' 0.1"
       ),
       general_title = "Note:",
@@ -296,7 +296,7 @@ generate_ljung_box_table <- function(eval_all_models, formula_cols, max_h, forma
     ) %>%
     column_spec(1, bold = TRUE, border_right = TRUE) %>%
     footnote(
-      general = "This test checks residual are randomly distributed up to a certain lag.",
+      general = "A low p-value indicates the rejection of H_0 that residuals are randomly distributed up to a certain lag.",
       symbol = c(
         "'There is autocorrelation in the errors at one (or more) lags."      ),
       general_title = "Note:",
