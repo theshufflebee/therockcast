@@ -1,0 +1,29 @@
+\begin{table}
+\centering
+\caption[MSFE Comparison]{\label{fig:DM_table} MSFE Comparison, Trained on Actual Rate, with Lag}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{threeparttable}
+\begin{tabular}[t]{>{}r|rrr>{}l>{}l>{}l}
+\toprule
+h & MSFE TR & MSFE BM & Ratio & DM Two-Sided & DM Greater & DM Lesser\\
+\midrule
+\textbf{\cellcolor{gray!10}{1}} & \cellcolor{gray!10}{0.1364} & \cellcolor{gray!10}{0.1591} & \cellcolor{gray!10}{0.8571} & \ttfamily{\cellcolor{gray!10}{0.540}} & \ttfamily{\cellcolor{gray!10}{0.270}} & \ttfamily{\cellcolor{gray!10}{0.730}}\\
+\textbf{2} & 0.4435 & 0.6458 & 0.6866 & \ttfamily{0.196} & \ttfamily{0.098 *} & \ttfamily{0.902}\\
+\textbf{\cellcolor{gray!10}{3}} & \cellcolor{gray!10}{0.9719} & \cellcolor{gray!10}{1.6062} & \cellcolor{gray!10}{0.6051} & \ttfamily{\cellcolor{gray!10}{0.136}} & \ttfamily{\cellcolor{gray!10}{0.068 *}} & \ttfamily{\cellcolor{gray!10}{0.932}}\\
+\textbf{4} & 1.6217 & 2.8224 & 0.5746 & \ttfamily{0.113} & \ttfamily{0.056 *} & \ttfamily{0.944}\\
+\textbf{\cellcolor{gray!10}{5}} & \cellcolor{gray!10}{2.5347} & \cellcolor{gray!10}{4.3368} & \cellcolor{gray!10}{0.5845} & \ttfamily{\cellcolor{gray!10}{0.037 **}} & \ttfamily{\cellcolor{gray!10}{0.018 **}} & \ttfamily{\cellcolor{gray!10}{0.982}}\\
+\addlinespace
+\textbf{6} & 3.4632 & 5.8787 & 0.5891 & \ttfamily{0.008 ***} & \ttfamily{0.004 ***} & \ttfamily{0.996}\\
+\textbf{\cellcolor{gray!10}{7}} & \cellcolor{gray!10}{4.7305} & \cellcolor{gray!10}{7.4570} & \cellcolor{gray!10}{0.6344} & \ttfamily{\cellcolor{gray!10}{0.009 ***}} & \ttfamily{\cellcolor{gray!10}{0.004 ***}} & \ttfamily{\cellcolor{gray!10}{0.996}}\\
+\textbf{8} & 6.2083 & 9.0333 & 0.6873 & \ttfamily{0.002 ***} & \ttfamily{0.001 ***} & \ttfamily{0.999}\\
+\textbf{\cellcolor{gray!10}{9}} & \cellcolor{gray!10}{7.9732} & \cellcolor{gray!10}{10.1786} & \cellcolor{gray!10}{0.7833} & \ttfamily{\cellcolor{gray!10}{0.013 **}} & \ttfamily{\cellcolor{gray!10}{0.006 ***}} & \ttfamily{\cellcolor{gray!10}{0.994}}\\
+\textbf{10} & 9.7356 & 11.5721 & 0.8413 & \ttfamily{0.080 *} & \ttfamily{0.040 **} & \ttfamily{0.960}\\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[para]
+\item \textit{Note:} TR refers to the forecast made with an estimated Taylor Rule. BM refers to a benchmark of the interest rate using an ARIMA model. Ratio < 1 indicates that the TR model has lower MSFE. \\
+\item DM Test Alternative Hypotheses ($H_A$): ``DM Greater" tests if the TR model is significantly more accurate than the BM model. ``DM Lesser" tests if the TR model is significantly less accurate than the BM model.
+\end{tablenotes}
+\end{threeparttable}}
+\end{table}

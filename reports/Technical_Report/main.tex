@@ -1,0 +1,49 @@
+\documentclass[a4,10pt]{article}
+\input{preamble}
+
+\title{Forecasting the ECB Deposit Facility Rate -- An Iterative Taylor Rule Approach}
+\author{Jonas Bruno, Marcos Constantinou, Benoit Goye}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We developed a comprehensive forecasting framework to evaluate various specifications of the Taylor Rule for the ECB Deposit Facility Rate. Our results indicate that a model incorporating an Auto-ARIMA process to forecast inflation and the output gap, augmented with lagged inflation outperforms all alternative specifications. We find that models excluding lag structures or those utilizing a shadow rate to quantify monetary policy at the Zero Lower Bound (ZLB) yield inferior predictive accuracy and higher utility loss.
+
+\end{abstract}
+
+\begin{figure}[b]
+    \centering
+    University of Lausanne -- Faculty of Business and Economics
+    
+    \noindent MScE Economic Forecasting for Decision Making 
+
+\end{figure}
+
+
+\newpage
+
+\tableofcontents
+\listoftables
+\listoffigures
+
+
+\newpage
+
+
+\input{1-intro}
+
+\input{2-model}
+
+\input{3-results}
+
+\input{4-conclusion}
+
+
+\bibliographystyle{apalike}
+\bibliography{bibliography}
+
+\input{appendix}
+
+\end{document}

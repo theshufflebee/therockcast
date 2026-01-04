@@ -1,0 +1,35 @@
+%\clearpage
+\section{Results}\label{sec:res}
+
+
+\subsection{Model Evaluation}
+
+\subsubsection{Absolute Standards}
+
+In order to evaluate the absolute performance of our model with the results from the pseudo out-of-sample
+estimation, we use Mincer-Zarnowitz regressions \citep{mincer1969evaluation} to check for both efficiency and bias. The method is to regress the actual realised values of the interest rate on the forecasted ones, on which we run a joint test with the null hypothesis that the model is unbiased and that the model is efficient. We run this over each horizon on all Taylor Rule formulas as well as on the benchmark. The results for the the model based on \eqref{eq:TR_w_lags} are on \autoref{fig:MZ_table}, where we see that the model performs well up to horizon seven. The results for the other formulas as well as for the benchmark can be found in the \href{https://github.com/theshufflebee/therockcast/blob/main/ECB_Project.pdf}{online coding appendix}, where we observe the the models trained on the shadow rate are very biased, likely from the fact that the the shadow rate was computed precisely to diverge from the actual rate thus not being fit to forecast it. We also observe that the model trained on the actual rate but without a lag, as well as the benchmark, perform slightly worse than our main model.
+
+
+\subsubsection{Relative Standards}
+
+In order to evaluate the relative performance of our model against the benchmark ARIMA, we first compute the Mean Squared Forecast Errors (MSFE) for each horizon. This allows us to see the average performance of each estimation. For a deeper comparison, we implement Diebold-Mariano tests \citep{diebold1995comparing} on each horizon. We include three versions of the test, one where the alternative hypothesis is that the two models bring about different losses, one where the alternative hypothesis is that the tested model is greater than the benchmark, and one where the alternative hypothesis is that the tested model is worse than the benchmark (greater loss). The results are reported in \autoref{fig:DM_table}, where we see that our model out-performs the benchmark for all horizons greater than one. The tables for the other formulas can be found in our \href{https://github.com/theshufflebee/therockcast/blob/main/ECB_Project.pdf}{online coding appendix}, which we did not include as the model based on \eqref{eq:TR_w_lags} is by far our best performing one.
+
+
+\subsubsection{Properties of Forecast Errors}
+
+To investigate the properties of the forecast errors, we run multiple tests. We first need to evaluate our errors to see if the model is misspecified, which is usually done through the examination of autocorrelation in errors. We first investigate the errors visually with a "spaghetti-chart" in figure \autoref{fig:spaghetti_errors} and trough a plot of the forecast error variance by horizon in \autoref{fig:errors_variance}. More detailed explanations and results of all the tests run are available in the \href{https://github.com/theshufflebee/therockcast/blob/main/ECB_Project.pdf}{online coding appendix}.
+
+First, we run a Durbin-Watson test \citep{durbinTestingSerialCorrelation1950} to see if errors of horizon one forecasts are autocorrelated. The null hypothesis ($H_0$) indicates there is no first order autocorrelation, while a rejection would indicate first order autocorrelation. We find that the model based on \eqref{eq:TR_w_lags} exhibits modest autocorrelation as we reject $H_0$ at the 5\% significance level. Models based on a Taylor Rule without lags, however, exhibit heavily autocorrelated errors.
+
+Next, we employ the Ljung-Box \citep{ljungMeasureLackFit1978} test to assess model adequacy. This serves as a generalization of the Durbin-Watson test by evaluating serial correlation across multiple lags. The null hypothesis assumes the residuals are White Noise (independently distributed). We reject $H_0$ for the Taylor Rule specification in \eqref{eq:TR_w_lags} at the 5\% significance level for $h=1$, indicating that the residuals exhibit modest serial correlation. Because we employ an iterative rolling forecast, where the $h$-step ahead forecast is contingent upon the $h-1$ prediction, errors are propagated throughout the horizon. Consequently, the test results at higher horizons must be interpreted with caution, as significant statistics at $h > 1$ may reflect the accumulation of initial errors rather than independent instances of misspecification.
+
+We then conduct the Jarque-Bera test \citep{jarqueTestNormalityObservations1987} to determine if the forecast errors are normally distributed and our standard confidence intervals are appropriate. Under the null hypothesis, the errors follow a normal distribution; a rejection indicates that the residuals exhibit significant asymmetry (skewness) or "fat tails" (kurtosis). The distribution of errors is visualized through error density plots in \autoref{fig:errors_density}. We find that the model specification in \eqref{eq:TR_w_lags} rejects $H_0$ only for horizons $h=2$ and $h=3$ at the 5\% significance level. Given that the null hypothesis cannot be rejected for the majority of the forecast horizons, we conclude that the errors generally align with Gaussian assumptions, and standard confidence intervals remain appropriate for our analysis.
+
+%\textcolor{red}{dont write "model 1" etc, but explain as done for previous paragraphs. and focus a lot more on "model 3", i.e. the one based on \eqref{eq:TR_w_lags}}
+
+\subsection{Forecast}
+
+Our point and density forecasts are shown in \autoref{fig:both_forecasts}, along with an external forecast from the ECB's survey of professional forecasters. As shown in the plots, we predict a gradual easing cycle of 25 basis points starting in Q1 2026, decreasing another 25 basis points in Q1 2027, and with a final rate cut down to 1.25 in Q1 2028. The prediction interval in \autoref{fig:actual_forecast} shows uncertainty increasing with the forecast horizon. In \autoref{fig:forecast_comparison}, we see that our model deviates substantially from the broader consensus which sees the rate slightly increasing in Q1 2027. This is likely from our model predicting a future negative output gap while inflation stays steady, which according to the Taylor Rule would directly imply a lower interest rate. An intuitive explanation of our results, accompanied by a judgement on the model's predictions, can be found in our \href{https://github.com/theshufflebee/therockcast/blob/main/reports/NonTechnicalReport.pdf}{non-technical report}.
+
+
+

@@ -1,0 +1,90 @@
+\usepackage[margin=0.85in]{geometry}
+\usepackage{natbib}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    urlcolor=blue,      % Makes \href and URLs blue
+    linkcolor=black,    
+    citecolor=black,    
+    filecolor=magenta}
+
+% Paragraph formating
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Modify spacing for section titles
+\titlespacing*{\section}
+{0pt}        % left margin
+{8pt}       % space before (vertical)
+{6pt}        % space after (vertical)
+
+% Set document language and ensure correct language-specific typography
+	\usepackage{polyglossia}
+	\setmainlanguage[variant=british]{english}
+	\usepackage[british]{selnolig}
+	
+
+%% Load packages for correct mathematical typesetting
+	\usepackage{amsmath} 
+	\usepackage{amssymb} % loads amsfonts, allowing mathfrak and mathbb
+%	\usepackage{xparse}\usepackage{physics} % adds loads of useful cmds
+	\usepackage[output-decimal-marker={.},
+				exponent-product = {\cdot}, 
+				range-units=single,
+				range-phrase={–},
+%				detect-mode, 
+				]{siunitx} 	% Correct typesetting of units
+    \usepackage[math-style=TeX,
+                bold-style=ISO,
+                nabla=upright,
+                partial=upright
+                ]{unicode-math} 
+\newcommand{\pdv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\mbeq}{\overset{!}{=}}
+
+%% Utility packages
+%	\usepackage[hyphens]{url}
+%	\usepackage{enumerate}
+
+%\usepackage[backend=biber,style=ext-authoryear-comp, maxnames=2]{biblatex}
+%    \DeclareLanguageMapping{english}{british}
+%    \DeclareNameAlias{sortname}{family-given}
+%	\renewcommand{\mkbibnamefamily}[1]{\textsc{#1}} 
+%	\renewcommand{\mkbibnameprefix}[1]{\textsc{#1}}
+%    \renewcommand{\finalnamedelim}{\space\&\space}
+%	\renewcommand{\multicitedelim}{;\space}
+%	\renewcommand{\intitlepunct}{\space} % goes from « in: » to « in »
+%\addbibresource{bibliography.bib}
+%\usepackage[numbib,notlof,notlot,nottoc]{tocbibind}
+\usepackage{blindtext}
+
+
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+%	\usepackage{wrapfig}
+	\usepackage{float}
+	\usepackage[font=small,justification=centerlast]{caption,subcaption}
+ \usepackage{booktabs}
+ \usepackage{multirow}
+ \usepackage{comment}
+\usepackage[table]{xcolor}
+\usepackage{threeparttable}
+
+%Last
+%\usepackage[hidelinks, bookmarks]{hyperref} % hyperlinks!
+%\hypersetup{
+%    colorlinks=true,
+%    urlcolor=blue,      % Makes \href and URLs blue
+%    linkcolor=black,    
+%    citecolor=black,    
+%    filecolor=magenta}
+\usepackage{cleveref} % clever section referencing; use \cref and \Cref
+
+
+\usepackage{mathtools} % Better than amsmath alone
+
+\usepackage[minimal]{yhmath}
+
+

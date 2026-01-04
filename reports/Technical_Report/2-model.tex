@@ -1,0 +1,39 @@
+%\clearpage
+\section{Model Methodology}\label{sec:model}
+
+\subsection{Data}
+
+Our data spans from Q1 1999 to Q3 2025 and is almost exclusively sourced by API calls\footnote{The ID's of the series are: ECBDFR (Deposit Facility Rate), CLVMEURSCAB1GQEA19 (GDP), prc\_hicp\_manr (Inflation), ECB/SPF/M.U2.HICP.POINT.P12M.Q.AVG (Inflation Expectations) }. We retrieve the deposit facility fate from FRED, which is a direct reprint from the ECB. It is in percent and not seasonally adjusted. We also source GDP from FRED which is a reprint from Eurostat and expressed in millions of 2010 Euros, seasonally adjusted. To create the output gap variable, we use both the HP and and Hamilton filter to estimate ``potential GDP" and subtract said value from actual GDP. Inflation represents the Eurozone's HICP monthly inflation from Eurostat, in percent. It is the main inflation indicator used by the ECB and its target variable for monetary policy. We also retrieve forecasts of 12-month-ahead HICP inflation from DBnomics, which are sourced from the ECB's survey of professional forecasters and that we use as a proxy for inflation expectations. Lastly, the only data which is not sourced by an API call, is the ``shadow interest rate" theorised by \cite{wuNegativeInterestRate2020, wu2016measuring, wuTimeVaryingLowerBound2017}. This rate quantifies a hypothetical removal of the lower bound, tracking the ECB deposit facility relatively well before the ZLB. It thus quantifies monetary policy below the ZLB by turning negative, while the effective rate is stuck at zero. 
+
+\subsubsection{Data Properties}
+
+Our main variables are plotted in \autoref{fig:raw_data_plot}.
+We run some diagnostic checks of stationarity, using ADF \& KPSS tests shown in \autoref{fig:stat_table}, and look for structural breaks, using Chow \& Bai-Perron tests. We find that both the ADF \citep{dickey1979distribution} and KPSS \citep{shin1992testing} tests indicate that the interest rate is not stationary. For inflation, our results are conflicting as KPSS suggests stationarity while ADF rejects it. For output, we find that both tests suggest stationarity. If we take the interest rate and inflation in first differences, both tests confirm stationarity showing that they are integrated of order one. We also check co-integration of inflation and the interest rate, and find evidence that they are not.
+We check for structural breaks because in the time frame of our data episodes such as the reaching the ZLB and the COVID-19 pandemic may have affected how the ECB handles the deposit facility rate. For this we run the test developed by \cite{chowTestsEqualitySets1960} to see if there are structural breaks at dates we ourselves identified as potential breaks, being Q3 2012 (entering the ZLB) and Q1 2020. As a complement, we also run the test developed by \cite{baiEstimatingTestingLinear1998} for structural breaks in the whole series. The Chow test confirms Q3 2012 as a structural break but rejects Q1 2020, while the Bai-Perron test suggests Q2 2006 and Q4 2019 as structural breaks. Since we observe that there have indeed been structural breaks in the Taylor Rule, we run a rolling estimation scheme where the coefficients vary through time.
+%are plotted in \autoref{fig:all_TR_coefs}.
+
+
+
+\subsection{Forecasting Model}
+
+Our forecasting method consists of estimating a Taylor Rule of the form of \eqref{eq:TR_w_lags}, where $i_t$ is the deposit facility rate in quarter t, $\pi_t$ is the inflation rate, $y_t$ is output, $\pi^*$ is the ECB's inflation target, fixed at 2\%, and $\bar{y}$ is the output gap, defined as the log of GDP minus potential GDP (estimated either with a Hodrick-Prescott filter or a Hamilton filter). 
+\begin{equation}
+    i_t = \pi^* + \phi i_{t-1} + \beta (\pi_t - \pi^*)+\gamma (y_t-\bar{y}) \label{eq:TR_w_lags}
+\end{equation}
+We landed on this specification of the Taylor Rule with a one-quarter lag and without using the shadow interest rate nor inflation expectations, as it is the one that performs best in terms of both absolute and relative standards. All possible formulas we run are shown in \autoref{fig:TR_formulas}\footnote{$i_t^{SR}$ refers to the case of models where the coefficients are fit using the shadow interest rate.}. We estimate the coefficients of this equation with past data using a standard OLS regression. At the same time, we also fit ARIMA models automatically using the same data for both the inflation and output gap. The automatic part refers to a routine which loops over each model specification parameter and then selects the combination which minimises the Akaike Information Criterion. In order to then generate our forecasts, we proceed in two steps. First, we predict future values of the Taylor Rule inputs (inflation \& output gap) based on the fitted ARIMA model. Second, we use these forecasts to predict future values of the interest rate, weighted by the coefficients estimated with OLS. We then round the forecast to the nearest one-fourth and bound it to not go below -0.5, which has been the historical minimum for the ECB policy rate. The detailed proof of optimality for this approach can be found in our \href{https://github.com/theshufflebee/therockcast/blob/main/ECB_Project.pdf}{online coding appendix}. For our forecasts up to Q1 2028, based on data from Q1 1999 up to Q3 2025 (horizon of ten quarters), the specification of the ARIMA models are that the inflation gap follows an ARIMA(1,1,4) and the output gap follows an ARIMA(2,0,3) with the values in parentheses representing the number of auto-regressive lags, $p$, the degree of differencing (integration, chosen manually based on the stationarity tests), $d$, and the order of the moving-average parameter, $q$, respectively.
+
+In order to then assess the performance of our methodology, we generate data using a pseudo out-of-sample rolling estimation scheme of direct forecasts for four Taylor Rule formulas. The first two do not include the one-quarter lag of the interest rate, while the other two do. The other difference is that formulas two and four use the \cite{wu2016measuring} shadow rate. Formula three corresponds to the one in \eqref{eq:TR_w_lags}. We also can run these four formulas using inflation expectations. For comparison, we additionally run the same exercise for a simple benchmark ARIMA model of the interest rate. In detail, we loop over quarters starting just before the evaluation sample, which starts in Q1 2020 (last structural break), where we then implement our methodology to forecast up to the farthest horizon. This generates the point forecast which we compare to the realised values in order to attain the forecast errors. Then, the loop starts again, adding one more quarter from the evaluation sample and dropping the very first quarter in the overall sample. For the lagged models, we additionally need to include an iterative forecasting step, where we loop over each horizon in order to use the previous point forecast to compute the next one.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
