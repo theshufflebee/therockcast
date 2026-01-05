@@ -38,7 +38,9 @@ therockcast/
 ├── ECB_Project.rmd                     # R Markdown file producing the companion paper (coding appendix)
 ├── reports/                            # Folder contining all reports and files associated (code to make graphs)
   ├── NonTechnicalReport.pdf            # Non technical report
-  ├── NonTechnicalPresentation.pptx     # Presentation slides for the non technical report
+  ├── NonTechnicalPresentation.pdf      # Presentation slides for the non technical report
+  ├── TechnicalReport.pdf               # Technical report 
+  ├── CodingAppendix.pdf                # Companion paper to code (coding appendix)
 ```
 
 ## Options
