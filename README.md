@@ -6,8 +6,8 @@ This repository contains all files related to a forecasting project on ECB Polic
 
 ## Reports
 
-Find the non-technical report and the associated presentationin the "reports" folder as "NonTechnicalReport.pdf" 
-and "NonTechnicalPresentation.pptx".
+Find the non-technical report and the associated presentation in the "reports" folder as "NonTechnicalReport.pdf" 
+and "NonTechnicalPresentation.pptx". The technical report as well as the coding appendix are in the same folder, as "TechnicalReport.pdf" and "CodingAppendix.pdf".
 
 ## Code 
 
